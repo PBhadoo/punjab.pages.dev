@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BSA Hash Analyzer | Electronic Evidence Hash Calculator</title>
+    <title>Punjab Hashing Tool | Electronic Evidence Hash Calculator</title>
     <meta name="description" content="Generate SHA-256, SHA-512, SHA3-256, BLAKE2b, SHA-1, and MD5 hash values for electronic evidence under Bharatiya Sakshya Adhiniyam 2023 Section 63(4)(c)">
     
     <!-- Fonts -->
@@ -19,20 +19,24 @@
     
     <!-- hash-wasm Library for high-performance hashing -->
     <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4"></script>
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <!-- Header -->
     <header class="header">
         <div class="header-container">
-            <div class="logo">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
                 <div class="logo-icon">
                     <i class="fas fa-shield-halved"></i>
                 </div>
                 <div class="logo-text">
-                    <span class="logo-title">BSA Hash Analyzer</span>
+                    <span class="logo-title">Punjab Hashing Tool</span>
                     <span class="logo-subtitle" id="logoSubtitle">Section 63(4)(c) Evidence Tool</span>
                 </div>
-            </div>
+            </a>
             <div class="header-actions">
                 <div class="language-switcher">
                     <i class="fas fa-globe"></i>
@@ -171,9 +175,10 @@
                 <a href="javascript:void(0)" onclick="showDisclaimer()" id="disclaimerLink"><i class="fas fa-exclamation-triangle"></i> Disclaimer</a>
                 <a href="javascript:void(0)" onclick="showAboutHash()" id="aboutHashLink"><i class="fas fa-hashtag"></i> About Hash</a>
                 <a href="javascript:void(0)" onclick="showAboutBSA()" id="aboutBsaLink"><i class="fas fa-gavel"></i> About BSA 2023</a>
+                <a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank" id="officialFormLink"><i class="fas fa-file-pdf"></i> Official BSA Form</a>
             </div>
             <div class="footer-copyright">
-                <p id="copyright">© 2024-2025 BSA Hash Analyzer. Open source tool for electronic evidence authentication.</p>
+                <p id="copyright">© 2024-<span id="currentYear"></span> Punjab Hashing Tool. Open source tool for electronic evidence authentication.</p>
             </div>
         </div>
     </footer>
@@ -217,6 +222,26 @@
                         <i class="fas fa-file-pdf"></i> Save as PDF
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal" id="infoModal">
+        <div class="modal-content info-modal">
+            <div class="modal-header">
+                <h2 id="infoModalTitle"><i class="fas fa-info-circle"></i> Information</h2>
+                <button class="close-btn" onclick="closeInfoModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="infoModalContent">
+                <!-- Content will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="closeInfoModal()">
+                    <i class="fas fa-check"></i> Got it
+                </button>
             </div>
         </div>
     </div>

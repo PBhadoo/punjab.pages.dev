@@ -1,4 +1,4 @@
-// BSA Hash Analyzer - Main Application JavaScript
+// Punjab Hashing Tool - Main Application JavaScript
 // Uses hash-wasm for high-performance hashing with chunked processing for large files
 
 // Global variables
@@ -83,7 +83,7 @@ function applySiteLanguage(lang) {
     if (copyright) copyright.textContent = t.copyright;
     
     // Update page title
-    document.title = 'BSA Hash Analyzer | ' + t.heroTitle;
+    document.title = 'Punjab Hashing Tool | ' + t.heroTitle;
     
     // Sync certificate modal language selector
     const certificateLangSelect = document.getElementById('languageSelect');
@@ -113,6 +113,12 @@ document.addEventListener('DOMContentLoaded', function() {
     setupDragAndDrop();
     setupFileInput();
     loadSavedLanguage();
+    
+    // Set current year dynamically
+    const currentYearEl = document.getElementById('currentYear');
+    if (currentYearEl) {
+        currentYearEl.textContent = new Date().getFullYear();
+    }
     
     // Check if hash-wasm is loaded
     if (typeof hashwasm !== 'undefined') {
@@ -164,10 +170,18 @@ async function processFiles(files) {
 
     progressContainer.classList.add('active');
     updateStatus('Processing files...', 'processing');
+    
+    const totalFiles = files.length;
 
-    for (let i = 0; i < files.length; i++) {
+    for (let i = 0; i < totalFiles; i++) {
         const file = files[i];
-        progressFile.textContent = `Processing: ${file.name} (${formatFileSize(file.size)})`;
+        const fileIndex = i;
+        progressFile.textContent = `Processing (${i + 1}/${totalFiles}): ${file.name} (${formatFileSize(file.size)})`;
+        
+        // Set progress to start of this file
+        const baseProgress = (fileIndex / totalFiles) * 100;
+        progressFill.style.width = baseProgress + '%';
+        progressPercent.textContent = Math.round(baseProgress) + '%';
         
         const fileData = {
             name: file.name,
@@ -182,9 +196,11 @@ async function processFiles(files) {
         try {
             // Use chunked hashing for large files to prevent browser freezing
             const hashes = await calculateHashesChunked(file, (chunkProgress) => {
-                const overallProgress = ((i + chunkProgress) / files.length) * 100;
-                progressFill.style.width = overallProgress + '%';
-                progressPercent.textContent = Math.round(overallProgress) + '%';
+                // Calculate progress: base + (chunk progress within this file's portion)
+                const filePortionSize = 100 / totalFiles;
+                const currentProgress = baseProgress + (chunkProgress * filePortionSize);
+                progressFill.style.width = currentProgress + '%';
+                progressPercent.textContent = Math.round(currentProgress) + '%';
             });
             
             fileData.hashes = hashes;
@@ -194,9 +210,10 @@ async function processFiles(files) {
             showToast(`Error processing ${file.name}: ${error.message}`);
         }
 
-        const progress = ((i + 1) / files.length) * 100;
-        progressFill.style.width = progress + '%';
-        progressPercent.textContent = Math.round(progress) + '%';
+        // Set progress to end of this file
+        const endProgress = ((fileIndex + 1) / totalFiles) * 100;
+        progressFill.style.width = endProgress + '%';
+        progressPercent.textContent = Math.round(endProgress) + '%';
     }
 
     progressContainer.classList.remove('active');
@@ -497,8 +514,8 @@ function generateCertificate() {
     const formattedDate = `${dd}/${mm}/${yyyy}`;
     const formattedTime = `${hh}:${min}:${ss}`;
     
-    // Build Annexure pages (10 files per page)
-    const filesPerPage = 10;
+    // Build Annexure pages (5 files per page)
+    const filesPerPage = 5;
     const totalAnnexures = Math.ceil(processedFiles.length / filesPerPage) || 1;
     
     // Generate annexure pages for Part A
@@ -823,9 +840,93 @@ function printCertificate() {
     setTimeout(() => { document.title = originalTitle; }, 1000);
 }
 
-function downloadCertificateAsPDF() {
-    showToast('Use Print and select "Save as PDF" option');
-    printCertificate();
+async function downloadCertificateAsPDF() {
+    const element = document.getElementById('certificateContent');
+    
+    if (!element || element.innerHTML.trim() === '') {
+        showToast('No certificate content to download!');
+        return;
+    }
+    
+    // Generate filename with format: Certificate-63-4-c-YYYYMMDD-HHmmss
+    const now = new Date();
+    const dateStr = now.getFullYear().toString() +
+                   (now.getMonth() + 1).toString().padStart(2, '0') +
+                   now.getDate().toString().padStart(2, '0') + '-' +
+                   now.getHours().toString().padStart(2, '0') +
+                   now.getMinutes().toString().padStart(2, '0') +
+                   now.getSeconds().toString().padStart(2, '0');
+    const filename = 'Certificate-63-4-c-' + dateStr + '.pdf';
+    
+    showToast('Generating PDF, please wait...');
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        // Get all certificate pages
+        const certificates = element.querySelectorAll('.certificate');
+        
+        if (certificates.length === 0) {
+            showToast('No certificate pages found!');
+            return;
+        }
+        
+        for (let i = 0; i < certificates.length; i++) {
+            const cert = certificates[i];
+            
+            // Temporarily make it visible and styled for capture
+            const originalStyle = cert.getAttribute('style') || '';
+            cert.style.cssText = 'background: #fff !important; color: #000 !important; width: 800px; padding: 30px;';
+            
+            // Capture the certificate as canvas
+            const canvas = await html2canvas(cert, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                width: 800,
+                windowWidth: 800
+            });
+            
+            // Restore original style
+            cert.setAttribute('style', originalStyle);
+            
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const imgWidth = pageWidth - 20; // 10mm margin on each side
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // Add new page if not the first certificate
+            if (i > 0) {
+                pdf.addPage();
+            }
+            
+            // If image is taller than page, we need to split it
+            let heightLeft = imgHeight;
+            let position = 10; // Start 10mm from top
+            
+            // Add first part of image
+            pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+            heightLeft -= (pageHeight - 20);
+            
+            // Add remaining parts on new pages if needed
+            while (heightLeft > 0) {
+                pdf.addPage();
+                position = 10 - (imgHeight - heightLeft);
+                pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                heightLeft -= (pageHeight - 20);
+            }
+        }
+        
+        pdf.save(filename);
+        showToast('PDF downloaded successfully!');
+        
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        showToast('Error generating PDF. Try Print option instead.');
+    }
 }
 
 // Escape HTML
@@ -837,17 +938,101 @@ function escapeHtml(text) {
 
 // Show disclaimer
 function showDisclaimer() {
-    alert('DISCLAIMER:\n\nThis tool is provided for educational and informational purposes only. The hash values generated are computed entirely client-side in your browser using hash-wasm library. No file data is transmitted or stored on any server.\n\nThe developers make no warranties regarding the accuracy or reliability of the hash values for legal or forensic purposes. Users should verify results using multiple tools when used for official purposes.\n\nThe certificates generated are templates and require proper authentication by authorized officers as per Bharatiya Sakshya Adhiniyam, 2023.\n\nBy using this tool, you agree to use it responsibly and in compliance with all applicable laws and regulations.');
+    const t = translations[currentSiteLanguage];
+    const title = `<i class="fas fa-exclamation-triangle"></i> ${t.infoDisclaimerTitle}`;
+    const content = `
+        <div class="info-content">
+            <p><strong>${t.infoDisclaimerP1}</strong></p>
+            <p>${t.infoDisclaimerP2}</p>
+            <p>${t.infoDisclaimerP3}</p>
+            <p><strong>${t.infoDisclaimerP4}</strong></p>
+        </div>
+    `;
+    showInfoModal(title, content);
 }
 
 // Show about hash
 function showAboutHash() {
-    alert('ABOUT HASH ALGORITHMS:\n\nA hash function is a mathematical algorithm that converts data of any size into a fixed-size string of characters. This output is called a hash value or digest.\n\nKey Properties:\n• Deterministic: Same input always produces same output\n• Fast: Quick to compute for any input size\n• One-way: Cannot reverse to get original data\n• Collision-resistant: Hard to find two inputs with same hash\n\nAlgorithms Used:\n• MD5 (128-bit) - Legacy, for reference only\n• SHA-1 (160-bit) - Deprecated but still referenced\n• SHA-256 (256-bit) - Recommended for evidence\n• SHA-512 (512-bit) - Highest security in SHA-2 family\n• SHA3-256 (256-bit) - Latest SHA-3 standard\n• BLAKE2b-256 (256-bit) - Modern, fast, secure\n\nCommon Uses:\n• File integrity verification\n• Digital signatures\n• Electronic evidence authentication\n• Digital forensics');
+    const t = translations[currentSiteLanguage];
+    const title = `<i class="fas fa-hashtag"></i> ${t.infoHashTitle}`;
+    const content = `
+        <div class="info-content">
+            <p><strong>${t.infoHashIntro}</strong></p>
+            
+            <h4>${t.infoHashPropertiesTitle}</h4>
+            <ul>
+                <li><strong>${t.infoHashProp1.split(':')[0]}:</strong> ${t.infoHashProp1.split(':').slice(1).join(':') || t.infoHashProp1}</li>
+                <li><strong>${t.infoHashProp2.split(':')[0]}:</strong> ${t.infoHashProp2.split(':').slice(1).join(':') || t.infoHashProp2}</li>
+                <li><strong>${t.infoHashProp3.split(':')[0]}:</strong> ${t.infoHashProp3.split(':').slice(1).join(':') || t.infoHashProp3}</li>
+                <li><strong>${t.infoHashProp4.split(':')[0]}:</strong> ${t.infoHashProp4.split(':').slice(1).join(':') || t.infoHashProp4}</li>
+            </ul>
+            
+            <h4>${t.infoHashAlgoTitle}</h4>
+            <ul>
+                <li><strong>MD5 (128-bit)</strong> - ${t.infoHashAlgo1.split('-').slice(1).join('-').trim() || t.infoHashAlgo1}</li>
+                <li><strong>SHA-1 (160-bit)</strong> - ${t.infoHashAlgo2.split('-').slice(1).join('-').trim() || t.infoHashAlgo2}</li>
+                <li><strong>SHA-256 (256-bit)</strong> - ${t.infoHashAlgo3.split('-').slice(1).join('-').trim() || t.infoHashAlgo3}</li>
+                <li><strong>SHA-512 (512-bit)</strong> - ${t.infoHashAlgo4.split('-').slice(1).join('-').trim() || t.infoHashAlgo4}</li>
+                <li><strong>SHA3-256 (256-bit)</strong> - ${t.infoHashAlgo5.split('-').slice(1).join('-').trim() || t.infoHashAlgo5}</li>
+                <li><strong>BLAKE2b-256 (256-bit)</strong> - ${t.infoHashAlgo6.split('-').slice(1).join('-').trim() || t.infoHashAlgo6}</li>
+            </ul>
+            
+            <h4>${t.infoHashUsesTitle}</h4>
+            <ul>
+                <li>${t.infoHashUse1}</li>
+                <li>${t.infoHashUse2}</li>
+                <li>${t.infoHashUse3}</li>
+                <li>${t.infoHashUse4}</li>
+            </ul>
+        </div>
+    `;
+    showInfoModal(title, content);
 }
 
 // Show about BSA 2023
 function showAboutBSA() {
-    alert('BHARATIYA SAKSHYA ADHINIYAM, 2023\n(Indian Evidence Act Replacement)\n\nSection 63 - Admissibility of Electronic Records:\n\nSection 63(4) states that for electronic records to be admissible as evidence, a certificate must be provided identifying:\n\n(a) The electronic record and manner of production\n(b) The device that produced the record\n(c) Conditions under which the record was produced\n(d) The particulars to show that the computer was operating properly\n\nSection 63(4)(c) specifically requires:\nA certificate signed by a person occupying a responsible official position in relation to the operation of the relevant device or management of the relevant activities.\n\nThis tool generates:\n• PART A: Certificate under Section 63(4) conditions\n• PART B: Hash value certificate for integrity verification\n\nNote: Hash values serve as digital fingerprints to verify that electronic evidence has not been altered.');
+    const t = translations[currentSiteLanguage];
+    const title = `<i class="fas fa-gavel"></i> ${t.infoBsaTitle}`;
+    const content = `
+        <div class="info-content">
+            <h4>${t.infoBsaFullName}</h4>
+            <p><em>${t.infoBsaAltName}</em></p>
+            
+            <h4>${t.infoBsaSection63Title}</h4>
+            <p>${t.infoBsaSection63Desc}</p>
+            
+            <ul>
+                <li><strong>${t.infoBsaCondA}</strong></li>
+                <li><strong>${t.infoBsaCondB}</strong></li>
+                <li><strong>${t.infoBsaCondC}</strong></li>
+                <li><strong>${t.infoBsaCondD}</strong></li>
+            </ul>
+            
+            <h4>${t.infoBsaSection63cTitle}</h4>
+            <p>${t.infoBsaSection63cDesc}</p>
+            
+            <h4>${t.infoBsaToolGenTitle}</h4>
+            <ul>
+                <li><strong>${t.infoBsaToolGen1}</strong></li>
+                <li><strong>${t.infoBsaToolGen2}</strong></li>
+            </ul>
+            
+            <p><em>${t.infoBsaNote}</em></p>
+        </div>
+    `;
+    showInfoModal(title, content);
+}
+
+// Show info modal
+function showInfoModal(title, content) {
+    document.getElementById('infoModalTitle').innerHTML = title;
+    document.getElementById('infoModalContent').innerHTML = content;
+    document.getElementById('infoModal').classList.add('active');
+}
+
+// Close info modal
+function closeInfoModal() {
+    document.getElementById('infoModal').classList.remove('active');
 }
 
 // Close modal on outside click
@@ -857,6 +1042,15 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
                 closeCertificateModal();
+            }
+        });
+    }
+    
+    const infoModal = document.getElementById('infoModal');
+    if (infoModal) {
+        infoModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeInfoModal();
             }
         });
     }

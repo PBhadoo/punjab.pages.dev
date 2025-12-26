@@ -1,4 +1,4 @@
-/* BSA Hash Analyzer - Stylesheet */
+/* Punjab Hashing Tool - Stylesheet */
 /* Modern dark theme with gradient background */
 
 :root {
@@ -34,11 +34,6 @@ body {
     justify-content: center;
     align-items: center;
     border-bottom: 1px solid var(--card-border);
-    backdrop-filter: blur(10px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(26, 26, 46, 0.9);
 }
 
 .header-container {
@@ -100,18 +95,35 @@ body {
 }
 
 .language-switcher select {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    color: var(--text-primary);
+    background-color: #1e1e3a;
+    border: 1px solid #4a4a6a;
+    color: #ffffff;
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
     font-family: inherit;
+    font-size: 14px;
+    min-width: 100px;
+}
+
+.language-switcher select option {
+    background-color: #1e1e3a;
+    color: #ffffff;
+    padding: 8px;
 }
 
 .language-switcher select:focus {
     outline: none;
     border-color: var(--accent-secondary);
+}
+
+.language-switcher select:hover {
+    border-color: var(--accent-secondary);
+}
+
+.language-switcher label {
+    color: var(--text-secondary);
+    font-size: 14px;
 }
 
 .status-badge {
@@ -656,6 +668,46 @@ body {
     max-width: 900px;
 }
 
+.info-modal {
+    max-width: 600px;
+}
+
+.info-modal .modal-body {
+    max-height: 70vh;
+}
+
+.info-content {
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+.info-content p {
+    margin-bottom: 15px;
+}
+
+.info-content h4 {
+    color: var(--text-primary);
+    margin: 20px 0 10px;
+    font-size: 1rem;
+}
+
+.info-content ul {
+    margin: 10px 0 15px 20px;
+}
+
+.info-content li {
+    margin-bottom: 8px;
+}
+
+.info-content strong {
+    color: var(--accent-secondary);
+}
+
+.info-content em {
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -683,12 +735,17 @@ body {
 }
 
 .modal-lang-switcher select {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    color: var(--text-primary);
+    background-color: #1e1e3a;
+    border: 1px solid #4a4a6a;
+    color: #ffffff;
     padding: 6px 10px;
     border-radius: 6px;
     font-size: 0.85rem;
+}
+
+.modal-lang-switcher select option {
+    background-color: #1e1e3a;
+    color: #ffffff;
 }
 
 .close-btn {
@@ -968,7 +1025,8 @@ body {
     .footer,
     .modal-header,
     .modal-footer,
-    .toast {
+    .toast,
+    #infoModal {
         display: none !important;
     }
     
@@ -978,6 +1036,10 @@ body {
         background: none !important;
         padding: 0 !important;
         overflow: visible !important;
+    }
+    
+    #infoModal {
+        display: none !important;
     }
     
     .modal-content {
