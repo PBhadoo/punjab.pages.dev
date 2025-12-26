@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BSA Hash Analyzer - Section 63(4)(c) Electronic Evidence Hash Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --accent-color: #e94560;
+            --accent-secondary: #00d9ff;
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(233, 69, 96, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 217, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(233, 69, 96, 0.05) 0%, transparent 30%);
+            animation: bgPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 2%) rotate(1deg); }
+            66% { transform: translate(-1%, 1%) rotate(-1deg); }
+        }
+
+        /* Grid Pattern Overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 20px rgba(233, 69, 96, 0.3);
+        }
+
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* Header Right Section */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Language Selector */
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: var(--accent-secondary);
+        }
+
+        .language-selector i {
+            font-size: 1rem;
+        }
+
+        .language-selector select {
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .language-selector select option {
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #fff, var(--accent-secondary), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: var(--card-bg);
+            border: 2px dashed var(--card-border);
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-section:hover {
+            border-color: var(--accent-color);
+            background: rgba(233, 69, 96, 0.05);
+        }
+
+        .upload-section.drag-over {
+            border-color: var(--accent-secondary);
+            background: rgba(0, 217, 255, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 25px;
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.2), rgba(0, 217, 255, 0.2));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: var(--accent-secondary);
+            border: 2px solid var(--card-border);
+        }
+
+        .upload-section h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-section p {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, var(--accent-color), #c23a51);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(233, 69, 96, 0.5);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .results-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-count {
+            background: var(--accent-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 12px 25px;
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-secondary);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--accent-color), #c23a51);
+            border: none;
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-2px);
+        }
+
+        /* File Cards */
+        .file-cards {
+            display: grid;
+            gap: 25px;
+        }
+
+        .file-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .file-card-header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .file-details h4 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .file-meta {
+            display: flex;
+            gap: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .file-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--success-color);
+        }
+
+        .file-card-body {
+            padding: 25px;
+        }
+
+        .hash-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .hash-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        .hash-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .hash-type {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            padding: 5px 12px;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .copy-btn.copied {
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .hash-value {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            word-break: break-all;
+            line-height: 1.6;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 1px solid var(--card-border);
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--accent-secondary);
+        }
+
+        .footer p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Certificate Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: auto;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: white;
+        }
+
+        .close-modal {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        /* Certificate Styles */
+        .certificate {
+            background: #fff;
+            border: 3px solid #1a1a2e;
+            padding: 40px;
+            position: relative;
+        }
+
+        .certificate::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 2px solid #e94560;
+            pointer-events: none;
+        }
+
+        .cert-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #1a1a2e;
+            padding-bottom: 20px;
+        }
+
+        .cert-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+        }
+
+        .cert-subtitle {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .cert-subtitle-punjabi {
+            font-size: 1rem;
+            color: #444;
+            margin-top: 5px;
+        }
+
+        .cert-body {
+            margin-bottom: 30px;
+        }
+
+        .cert-section {
+            margin-bottom: 25px;
+        }
+
+        .cert-section-title {
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            border-left: 4px solid #e94560;
+            padding-left: 10px;
+        }
+
+        .cert-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .cert-table th,
+        .cert-table td {
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .cert-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .cert-table td {
+            font-family: 'Consolas', monospace;
+            word-break: break-all;
+            color: #333;
+        }
+
+        .cert-footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #ddd;
+        }
+
+        .cert-signature {
+            text-align: center;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 60px;
+            padding-top: 10px;
+        }
+
+        .cert-stamp {
+            text-align: center;
+        }
+
+        .stamp-placeholder {
+            width: 100px;
+            height: 100px;
+            border: 2px dashed #999;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 0.8rem;
+        }
+
+        .cert-timestamp {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .print-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .print-btn {
+            background: linear-gradient(135deg, #e94560, #c23a51);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lang-select {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        /* Info Section */
+        .info-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .info-section h3 {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            color: var(--accent-secondary);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .info-card h4 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .info-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--success-color);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            display: none;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.active {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .upload-section {
+                padding: 40px 20px;
+            }
+
+            .file-card-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .file-info {
+                flex-direction: column;
+            }
+
+            .action-buttons {
+                justify-content: center;
+            }
+
+            .cert-footer {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-body {
+                padding: 15px;
+            }
+
+            .certificate {
+                padding: 20px;
+            }
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+
+            .certificate {
+                border: 3px solid #000 !important;
+            }
+
+            .certificate::before {
+                border: 2px solid #e94560 !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div>
+                <div class="logo-text">BSA Hash Analyzer</div>
+                <div class="logo-subtitle" id="logoSubtitle">Digital Evidence Tool</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="language-selector">
+                <i class="fas fa-globe"></i>
+                <select id="siteLanguage" onchange="changeSiteLanguage()">
+                    <option value="en">English</option>
+                    <option value="pa">ਪੰਜਾਬੀ</option>
+                    <option value="hi">हिंदी</option>
+                </select>
+            </div>
+            <div class="header-badge">
+                <span class="status-dot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <!-- Hero -->
+        <section class="hero">
+            <h1 id="heroTitle"><i class="fas fa-fingerprint"></i> BSA 2023 - Section 63(4)(c) Hash Calculator</h1>
+            <p id="heroDesc">Generate cryptographic hash values for electronic evidence under Bharatiya Sakshya Adhiniyam, 2023. Supports MD5, SHA-1, SHA-256, and SHA-512 algorithms with Part A & Part B certificate generation.</p>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section" id="uploadArea">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-arrow-up"></i>
+            </div>
+            <h3 id="uploadTitle">Upload Files for Hash Analysis</h3>
+            <p id="uploadDesc">Drag and drop files here or click to browse</p>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-folder-open"></i> <span id="selectFilesBtn">Select Files</span>
+            </button>
+            <input type="file" id="fileInput" multiple>
+
+            <!-- Progress -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-info">
+                    <span id="progressFile">Processing...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div class="results-title">
+                    <i class="fas fa-list-check"></i>
+                    <span id="processedFilesTitle">Processed Files</span>
+                    <span class="file-count" id="fileCount">0</span>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="copyAllHashes()">
+                        <i class="fas fa-copy"></i> <span id="copyAllBtn">Copy All</span>
+                    </button>
+                    <button class="action-btn" onclick="exportCSV()">
+                        <i class="fas fa-file-csv"></i> <span id="exportCsvBtn">Export CSV</span>
+                    </button>
+                    <button class="action-btn primary" onclick="openCertificateModal()">
+                        <i class="fas fa-certificate"></i> <span id="genCertBtn">Generate Certificate (Part A & B)</span>
+                    </button>
+                </div>
+            </div>
+            <div class="file-cards" id="fileCards"></div>
+        </section>
+
+        <!-- Info Section -->
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> <span id="aboutHashTitle">About Hash Algorithms</span></h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>MD5 (128-bit)</h4>
+                    <p id="md5Desc">Message Digest Algorithm 5. Fast but considered cryptographically broken. Still used for checksums and non-security purposes.</p>
+                </div>
+                <div class="info-card">
+                    <h4>SHA-1 (160-bit)</h4>
+                    <p id="sha1Desc">Secure Hash Algorithm 1. Deprecated for security use but still referenced in legacy systems and some verification processes.</p>
+                </div>
+                <div class="info-card">
+                    <h4>SHA-256 (256-bit)</h4>
+                    <p id="sha256Desc">Part of SHA-2 family. Widely used and recommended for security applications. Standard for digital evidence verification.</p>
+                </div>
+                <div class="info-card">
+                    <h4>SHA-512 (512-bit)</h4>
+                    <p id="sha512Desc">Highest security in SHA-2 family. Provides maximum protection for sensitive digital evidence and forensic applications.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">BSA Hash Analyzer</div>
+            <p id="footerDesc">Client-side processing ensures your files never leave your device. All hash calculations are performed locally in your browser as per Bharatiya Sakshya Adhiniyam, 2023 - Section 63(4)(c) requirements.</p>
+            <div class="footer-links">
+                <a href="#" onclick="showDisclaimer()"><i class="fas fa-gavel"></i> <span id="disclaimerLink">Disclaimer</span></a>
+                <a href="#" onclick="showAboutHash()"><i class="fas fa-question-circle"></i> <span id="aboutHashLink">About Hash</span></a>
+                <a href="#" onclick="showAboutBSA()"><i class="fas fa-balance-scale"></i> <span id="aboutBsaLink">About BSA 2023</span></a>
+                <span id="copyright">© 2025 BSA Hash Analyzer. All rights reserved.</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Certificate Modal -->
+    <div class="modal-overlay" id="certificateModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-certificate"></i> BSA 2023 - Section 63(4)(c) Certificate</h3>
+                <button class="close-modal" onclick="closeCertificateModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="printArea">
+                    <div class="certificate" id="certificateContent">
+                        <!-- Certificate content will be generated dynamically -->
+                    </div>
+                </div>
+            </div>
+            <div class="print-actions no-print">
+                <select class="lang-select" id="languageSelect" onchange="updateCertificateLanguage()">
+                    <option value="en">English</option>
+                    <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                    <option value="hi">हिंदी (Hindi)</option>
+                </select>
+                <button class="print-btn" onclick="printCertificate()">
+                    <i class="fas fa-print"></i> Print Certificate
+                </button>
+                <button class="print-btn" onclick="downloadCertificateAsPDF()" style="background: linear-gradient(135deg, #00d9ff, #0099cc);">
+                    <i class="fas fa-file-pdf"></i> Save as PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Copied to clipboard!</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        // Global variables
+        let processedFiles = [];
+        let currentLanguage = 'en';
+
+        // Get IST Time
+        function getISTDateTime() {
+            const now = new Date();
+            const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+            const istTime = new Date(now.getTime() + (istOffset + now.getTimezoneOffset() * 60 * 1000));
+            
+            const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+            
+            const dateStr = istTime.toLocaleDateString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const timeStr = istTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            
+            return {
+                full: `${dateStr} ${timeStr} IST`,
+                date: dateStr,
+                time: `${timeStr} IST`
+            };
+        }
+
+        // Language translations for BSA 2023 Section 63(4)(c) Certificate
+        const translations = {
+            en: {
+                // Part A - Certificate under Section 63(4) of BSA 2023
+                partATitle: 'PART A',
+                partASubtitle: 'Certificate under Section 63(4) of Bharatiya Sakshya Adhiniyam, 2023',
+                partASubtitleAlt: '[Corresponding to Section 65B(4) of Indian Evidence Act, 1872]',
+                
+                // Part B - Hash Value Certificate
+                partBTitle: 'PART B',
+                partBSubtitle: 'Hash Value Certificate for Electronic Evidence',
+                
+                // Common fields
+                sectionRef: 'BSA 2023 - Section 63(4)(c)',
+                fileDetails: 'File/Electronic Record Details',
+                hashValues: 'Hash Values (Digital Fingerprint)',
+                fileName: 'File Name',
+                fileSize: 'File Size',
+                fileType: 'File Type/Format',
+                processedOn: 'Hash Generated On',
+                algorithm: 'Algorithm',
+                hashValue: 'Hash Value',
+                
+                // Part A specific
+                electronicRecord: 'Electronic Record Information',
+                sourceDevice: 'Source Device/Computer',
+                operatingSystem: 'Operating System',
+                browser: 'Browser/Application',
+                certConditions: 'Certificate Conditions under Section 63(4)',
+                condition1: '(a) The electronic record was produced by the computer during the period when it was regularly used to store or process information.',
+                condition2: '(b) During the said period, information was regularly fed into the computer in the ordinary course of activities.',
+                condition3: '(c) The computer was operating properly, and if not, the defect did not affect the electronic record or its accuracy.',
+                condition4: '(d) The information contained in the electronic record reproduces or is derived from information fed into the computer in the ordinary course of activities.',
+                
+                // Certification statements
+                certificationPartA: 'Certification Statement (Part A)',
+                certStatementA: 'I hereby certify that the conditions mentioned in Section 63(4) of Bharatiya Sakshya Adhiniyam, 2023 are satisfied in respect of the electronic record(s) described above. The electronic record is a computer output and the information contained therein is admissible as evidence.',
+                
+                certificationPartB: 'Certification Statement (Part B)',
+                certStatementB: 'I hereby certify that the hash values mentioned above have been computed using standard cryptographic algorithms (MD5, SHA-1, SHA-256, SHA-512) on the electronic record(s) specified. These hash values serve as unique digital fingerprints for verification of file integrity and authenticity.',
+                
+                // Signature fields
+                signatureTitle: 'Signature of Certifying Officer',
+                nameDesignation: 'Name & Designation',
+                datePlace: 'Date & Place',
+                stampTitle: 'Official Seal/Stamp',
+                stampText: 'SEAL',
+                
+                // Footer
+                generatedAt: 'Certificate Generated',
+                toolName: 'BSA Hash Analyzer',
+                timezone: 'Indian Standard Time (IST)',
+                disclaimer: 'This certificate is generated for electronic evidence verification under Bharatiya Sakshya Adhiniyam, 2023. Hash values are computed client-side and no data is stored or transmitted.',
+                
+                // Additional
+                serialNo: 'Serial No.',
+                pageOf: 'Page'
+            },
+            pa: {
+                // Part A - ਭਾਗ ੳ
+                partATitle: 'ਭਾਗ ੳ',
+                partASubtitle: 'ਭਾਰਤੀ ਸਾਖਸ਼ਯ ਅਧਿਨਿਯਮ, 2023 ਦੀ ਧਾਰਾ 63(4) ਅਧੀਨ ਸਰਟੀਫਿਕੇਟ',
+                partASubtitleAlt: '[ਭਾਰਤੀ ਸਾਕਸ਼ਯ ਐਕਟ, 1872 ਦੀ ਧਾਰਾ 65B(4) ਦੇ ਅਨੁਸਾਰੀ]',
+                
+                // Part B - ਭਾਗ ਅ
+                partBTitle: 'ਭਾਗ ਅ',
+                partBSubtitle: 'ਇਲੈਕਟ੍ਰਾਨਿਕ ਸਬੂਤ ਲਈ ਹੈਸ਼ ਮੁੱਲ ਸਰਟੀਫਿਕੇਟ',
+                
+                // Common fields
+                sectionRef: 'BSA 2023 - ਧਾਰਾ 63(4)(c)',
+                fileDetails: 'ਫਾਈਲ/ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ ਵੇਰਵੇ',
+                hashValues: 'ਹੈਸ਼ ਮੁੱਲ (ਡਿਜੀਟਲ ਫਿੰਗਰਪ੍ਰਿੰਟ)',
+                fileName: 'ਫਾਈਲ ਦਾ ਨਾਮ',
+                fileSize: 'ਫਾਈਲ ਦਾ ਆਕਾਰ',
+                fileType: 'ਫਾਈਲ ਕਿਸਮ/ਫਾਰਮੈਟ',
+                processedOn: 'ਹੈਸ਼ ਬਣਾਇਆ ਗਿਆ',
+                algorithm: 'ਐਲਗੋਰਿਦਮ',
+                hashValue: 'ਹੈਸ਼ ਮੁੱਲ',
+                
+                // Part A specific
+                electronicRecord: 'ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ ਜਾਣਕਾਰੀ',
+                sourceDevice: 'ਸਰੋਤ ਡਿਵਾਈਸ/ਕੰਪਿਊਟਰ',
+                operatingSystem: 'ਓਪਰੇਟਿੰਗ ਸਿਸਟਮ',
+                browser: 'ਬ੍ਰਾਊਜ਼ਰ/ਐਪਲੀਕੇਸ਼ਨ',
+                certConditions: 'ਧਾਰਾ 63(4) ਅਧੀਨ ਸਰਟੀਫਿਕੇਟ ਸ਼ਰਤਾਂ',
+                condition1: '(ੳ) ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ ਕੰਪਿਊਟਰ ਦੁਆਰਾ ਉਸ ਸਮੇਂ ਦੌਰਾਨ ਤਿਆਰ ਕੀਤਾ ਗਿਆ ਸੀ ਜਦੋਂ ਇਹ ਨਿਯਮਿਤ ਤੌਰ \'ਤੇ ਜਾਣਕਾਰੀ ਸਟੋਰ ਜਾਂ ਪ੍ਰੋਸੈਸ ਕਰਨ ਲਈ ਵਰਤਿਆ ਜਾਂਦਾ ਸੀ।',
+                condition2: '(ਅ) ਉਕਤ ਸਮੇਂ ਦੌਰਾਨ, ਗਤੀਵਿਧੀਆਂ ਦੇ ਆਮ ਕੋਰਸ ਵਿੱਚ ਕੰਪਿਊਟਰ ਵਿੱਚ ਨਿਯਮਿਤ ਤੌਰ \'ਤੇ ਜਾਣਕਾਰੀ ਫੀਡ ਕੀਤੀ ਜਾਂਦੀ ਸੀ।',
+                condition3: '(ੲ) ਕੰਪਿਊਟਰ ਸਹੀ ਢੰਗ ਨਾਲ ਕੰਮ ਕਰ ਰਿਹਾ ਸੀ, ਅਤੇ ਜੇ ਨਹੀਂ, ਤਾਂ ਨੁਕਸ ਨੇ ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ ਜਾਂ ਇਸਦੀ ਸ਼ੁੱਧਤਾ ਨੂੰ ਪ੍ਰਭਾਵਿਤ ਨਹੀਂ ਕੀਤਾ।',
+                condition4: '(ਸ) ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ ਵਿੱਚ ਸ਼ਾਮਲ ਜਾਣਕਾਰੀ ਗਤੀਵਿਧੀਆਂ ਦੇ ਆਮ ਕੋਰਸ ਵਿੱਚ ਕੰਪਿਊਟਰ ਵਿੱਚ ਫੀਡ ਕੀਤੀ ਗਈ ਜਾਣਕਾਰੀ ਨੂੰ ਦੁਬਾਰਾ ਪੈਦਾ ਕਰਦੀ ਹੈ ਜਾਂ ਇਸ ਤੋਂ ਲਈ ਗਈ ਹੈ।',
+                
+                // Certification statements
+                certificationPartA: 'ਤਸਦੀਕ ਬਿਆਨ (ਭਾਗ ੳ)',
+                certStatementA: 'ਮੈਂ ਇਸ ਦੁਆਰਾ ਤਸਦੀਕ ਕਰਦਾ/ਕਰਦੀ ਹਾਂ ਕਿ ਭਾਰਤੀ ਸਾਖਸ਼ਯ ਅਧਿਨਿਯਮ, 2023 ਦੀ ਧਾਰਾ 63(4) ਵਿੱਚ ਦੱਸੀਆਂ ਸ਼ਰਤਾਂ ਉੱਪਰ ਦੱਸੇ ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ(ਆਂ) ਦੇ ਸਬੰਧ ਵਿੱਚ ਸੰਤੁਸ਼ਟ ਹਨ। ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ ਇੱਕ ਕੰਪਿਊਟਰ ਆਉਟਪੁੱਟ ਹੈ ਅਤੇ ਇਸ ਵਿੱਚ ਸ਼ਾਮਲ ਜਾਣਕਾਰੀ ਸਬੂਤ ਵਜੋਂ ਮਾਨਣਯੋਗ ਹੈ।',
+                
+                certificationPartB: 'ਤਸਦੀਕ ਬਿਆਨ (ਭਾਗ ਅ)',
+                certStatementB: 'ਮੈਂ ਇਸ ਦੁਆਰਾ ਤਸਦੀਕ ਕਰਦਾ/ਕਰਦੀ ਹਾਂ ਕਿ ਉੱਪਰ ਦੱਸੇ ਹੈਸ਼ ਮੁੱਲਾਂ ਦੀ ਗਣਨਾ ਨਿਰਧਾਰਤ ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ(ਆਂ) \'ਤੇ ਮਿਆਰੀ ਕ੍ਰਿਪਟੋਗ੍ਰਾਫਿਕ ਐਲਗੋਰਿਦਮ (MD5, SHA-1, SHA-256, SHA-512) ਦੀ ਵਰਤੋਂ ਕਰਕੇ ਕੀਤੀ ਗਈ ਹੈ। ਇਹ ਹੈਸ਼ ਮੁੱਲ ਫਾਈਲ ਦੀ ਇਕਸਾਰਤਾ ਅਤੇ ਪ੍ਰਮਾਣਿਕਤਾ ਦੀ ਪੁਸ਼ਟੀ ਲਈ ਵਿਲੱਖਣ ਡਿਜੀਟਲ ਫਿੰਗਰਪ੍ਰਿੰਟ ਵਜੋਂ ਕੰਮ ਕਰਦੇ ਹਨ।',
+                
+                // Signature fields
+                signatureTitle: 'ਤਸਦੀਕ ਕਰਨ ਵਾਲੇ ਅਧਿਕਾਰੀ ਦੇ ਦਸਤਖਤ',
+                nameDesignation: 'ਨਾਮ ਅਤੇ ਅਹੁਦਾ',
+                datePlace: 'ਮਿਤੀ ਅਤੇ ਸਥਾਨ',
+                stampTitle: 'ਸਰਕਾਰੀ ਮੋਹਰ/ਛਾਪ',
+                stampText: 'ਮੋਹਰ',
+                
+                // Footer
+                generatedAt: 'ਸਰਟੀਫਿਕੇਟ ਬਣਾਇਆ ਗਿਆ',
+                toolName: 'BSA ਹੈਸ਼ ਐਨਾਲਾਈਜ਼ਰ',
+                timezone: 'ਭਾਰਤੀ ਮਿਆਰੀ ਸਮਾਂ (IST)',
+                disclaimer: 'ਇਹ ਸਰਟੀਫਿਕੇਟ ਭਾਰਤੀ ਸਾਖਸ਼ਯ ਅਧਿਨਿਯਮ, 2023 ਅਧੀਨ ਇਲੈਕਟ੍ਰਾਨਿਕ ਸਬੂਤ ਤਸਦੀਕ ਲਈ ਤਿਆਰ ਕੀਤਾ ਗਿਆ ਹੈ। ਹੈਸ਼ ਮੁੱਲਾਂ ਦੀ ਗਣਨਾ ਕਲਾਇੰਟ-ਸਾਈਡ ਕੀਤੀ ਜਾਂਦੀ ਹੈ ਅਤੇ ਕੋਈ ਡੇਟਾ ਸਟੋਰ ਜਾਂ ਸੰਚਾਰਿਤ ਨਹੀਂ ਕੀਤਾ ਜਾਂਦਾ।',
+                
+                // Additional
+                serialNo: 'ਸੀਰੀਅਲ ਨੰ.',
+                pageOf: 'ਪੰਨਾ'
+            },
+            hi: {
+                // Part A
+                partATitle: 'भाग अ',
+                partASubtitle: 'भारतीय साक्ष्य अधिनियम, 2023 की धारा 63(4) के अंतर्गत प्रमाणपत्र',
+                partASubtitleAlt: '[भारतीय साक्ष्य अधिनियम, 1872 की धारा 65B(4) के अनुरूप]',
+                
+                // Part B
+                partBTitle: 'भाग ब',
+                partBSubtitle: 'इलेक्ट्रॉनिक साक्ष्य के लिए हैश मान प्रमाणपत्र',
+                
+                // Common fields
+                sectionRef: 'BSA 2023 - धारा 63(4)(c)',
+                fileDetails: 'फ़ाइल/इलेक्ट्रॉनिक रिकॉर्ड विवरण',
+                hashValues: 'हैश मान (डिजिटल फ़िंगरप्रिंट)',
+                fileName: 'फ़ाइल का नाम',
+                fileSize: 'फ़ाइल का आकार',
+                fileType: 'फ़ाइल प्रकार/फॉर्मेट',
+                processedOn: 'हैश जनरेट किया गया',
+                algorithm: 'एल्गोरिदम',
+                hashValue: 'हैश मान',
+                
+                // Part A specific
+                electronicRecord: 'इलेक्ट्रॉनिक रिकॉर्ड जानकारी',
+                sourceDevice: 'स्रोत डिवाइस/कंप्यूटर',
+                operatingSystem: 'ऑपरेटिंग सिस्टम',
+                browser: 'ब्राउज़र/एप्लिकेशन',
+                certConditions: 'धारा 63(4) के अंतर्गत प्रमाणपत्र शर्तें',
+                condition1: '(क) इलेक्ट्रॉनिक रिकॉर्ड कंप्यूटर द्वारा उस अवधि के दौरान तैयार किया गया था जब इसका नियमित रूप से जानकारी संग्रहीत या प्रोसेस करने के लिए उपयोग किया जाता था।',
+                condition2: '(ख) उक्त अवधि के दौरान, गतिविधियों के सामान्य क्रम में कंप्यूटर में नियमित रूप से जानकारी फीड की जाती थी।',
+                condition3: '(ग) कंप्यूटर ठीक से काम कर रहा था, और यदि नहीं, तो दोष ने इलेक्ट्रॉनिक रिकॉर्ड या उसकी सटीकता को प्रभावित नहीं किया।',
+                condition4: '(घ) इलेक्ट्रॉनिक रिकॉर्ड में निहित जानकारी गतिविधियों के सामान्य क्रम में कंप्यूटर में फीड की गई जानकारी को पुनः प्रस्तुत करती है या उससे प्राप्त है।',
+                
+                // Certification statements
+                certificationPartA: 'प्रमाणन कथन (भाग अ)',
+                certStatementA: 'मैं एतद्द्वारा प्रमाणित करता/करती हूं कि भारतीय साक्ष्य अधिनियम, 2023 की धारा 63(4) में उल्लिखित शर्तें ऊपर वर्णित इलेक्ट्रॉनिक रिकॉर्ड(ों) के संबंध में संतुष्ट हैं। इलेक्ट्रॉनिक रिकॉर्ड एक कंप्यूटर आउटपुट है और इसमें निहित जानकारी साक्ष्य के रूप में स्वीकार्य है।',
+                
+                certificationPartB: 'प्रमाणन कथन (भाग ब)',
+                certStatementB: 'मैं एतद्द्वारा प्रमाणित करता/करती हूं कि ऊपर उल्लिखित हैश मानों की गणना निर्दिष्ट इलेक्ट्रॉनिक रिकॉर्ड(ों) पर मानक क्रिप्टोग्राफ़िक एल्गोरिदम (MD5, SHA-1, SHA-256, SHA-512) का उपयोग करके की गई है। ये हैश मान फ़ाइल अखंडता और प्रामाणिकता के सत्यापन के लिए अद्वितीय डिजिटल फ़िंगरप्रिंट के रूप में कार्य करते हैं।',
+                
+                // Signature fields
+                signatureTitle: 'प्रमाणित करने वाले अधिकारी के हस्ताक्षर',
+                nameDesignation: 'नाम एवं पदनाम',
+                datePlace: 'दिनांक एवं स्थान',
+                stampTitle: 'आधिकारिक मुहर/छाप',
+                stampText: 'मुहर',
+                
+                // Footer
+                generatedAt: 'प्रमाणपत्र जनरेट किया गया',
+                toolName: 'BSA हैश एनालाइज़र',
+                timezone: 'भारतीय मानक समय (IST)',
+                disclaimer: 'यह प्रमाणपत्र भारतीय साक्ष्य अधिनियम, 2023 के अंतर्गत इलेक्ट्रॉनिक साक्ष्य सत्यापन के लिए जनरेट किया गया है। हैश मानों की गणना क्लाइंट-साइड की जाती है और कोई डेटा संग्रहीत या प्रेषित नहीं किया जाता है।',
+                
+                // Additional
+                serialNo: 'क्रम सं.',
+                pageOf: 'पृष्ठ'
+            }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragAndDrop();
+            setupFileInput();
+            updateStatus('Libraries loaded successfully!', 'success');
+        });
+
+        // Drag and Drop Setup
+        function setupDragAndDrop() {
+            const uploadArea = document.getElementById('uploadArea');
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    processFiles(files);
+                }
+            });
+        }
+
+        // File Input Setup
+        function setupFileInput() {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    processFiles(e.target.files);
+                }
+            });
+        }
+
+        // Process Files
+        async function processFiles(files) {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressFile = document.getElementById('progressFile');
+            const progressPercent = document.getElementById('progressPercent');
+
+            progressContainer.classList.add('active');
+            updateStatus('Processing files...', 'processing');
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                progressFile.textContent = `Processing: ${file.name}`;
+                
+                const fileData = {
+                    name: file.name,
+                    size: formatFileSize(file.size),
+                    sizeBytes: file.size,
+                    type: file.type || 'Unknown',
+                    lastModified: new Date(file.lastModified).toLocaleString(),
+                    processedAt: new Date().toLocaleString(),
+                    hashes: {}
+                };
+
+                // Read file and calculate hashes
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                const wordArray = arrayBufferToWordArray(arrayBuffer);
+
+                // Calculate all hashes
+                fileData.hashes.md5 = CryptoJS.MD5(wordArray).toString();
+                fileData.hashes.sha1 = CryptoJS.SHA1(wordArray).toString();
+                fileData.hashes.sha256 = CryptoJS.SHA256(wordArray).toString();
+                fileData.hashes.sha512 = CryptoJS.SHA512(wordArray).toString();
+
+                processedFiles.push(fileData);
+
+                const progress = ((i + 1) / files.length) * 100;
+                progressFill.style.width = progress + '%';
+                progressPercent.textContent = Math.round(progress) + '%';
+            }
+
+            progressContainer.classList.remove('active');
+            updateStatus('Ready', 'ready');
+            displayResults();
+        }
+
+        // Read file as ArrayBuffer
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // Convert ArrayBuffer to WordArray for CryptoJS
+        function arrayBufferToWordArray(ab) {
+            const i8a = new Uint8Array(ab);
+            const a = [];
+            for (let i = 0; i < i8a.length; i += 4) {
+                a.push(i8a[i] << 24 | i8a[i + 1] << 16 | i8a[i + 2] << 8 | i8a[i + 3]);
+            }
+            return CryptoJS.lib.WordArray.create(a, i8a.length);
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Display results
+        function displayResults() {
+            const resultsSection = document.getElementById('resultsSection');
+            const fileCards = document.getElementById('fileCards');
+            const fileCount = document.getElementById('fileCount');
+
+            resultsSection.classList.add('active');
+            fileCount.textContent = processedFiles.length;
+
+            fileCards.innerHTML = processedFiles.map((file, index) => `
+                <div class="file-card">
+                    <div class="file-card-header">
+                        <div class="file-info">
+                            <div class="file-icon">
+                                <i class="fas fa-file"></i>
+                            </div>
+                            <div class="file-details">
+                                <h4>${escapeHtml(file.name)}</h4>
+                                <div class="file-meta">
+                                    <span><i class="fas fa-weight-hanging"></i> ${file.size}</span>
+                                    <span><i class="fas fa-tag"></i> ${escapeHtml(file.type)}</span>
+                                    <span><i class="fas fa-clock"></i> ${file.processedAt}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="file-status">
+                            <i class="fas fa-check-circle"></i>
+                            Verified
+                        </div>
+                    </div>
+                    <div class="file-card-body">
+                        <div class="hash-grid">
+                            <div class="hash-item">
+                                <div class="hash-label">
+                                    <span class="hash-type">MD5</span>
+                                    <button class="copy-btn" onclick="copyHash('${file.hashes.md5}', this)">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                                <div class="hash-value">${file.hashes.md5}</div>
+                            </div>
+                            <div class="hash-item">
+                                <div class="hash-label">
+                                    <span class="hash-type">SHA-1</span>
+                                    <button class="copy-btn" onclick="copyHash('${file.hashes.sha1}', this)">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                                <div class="hash-value">${file.hashes.sha1}</div>
+                            </div>
+                            <div class="hash-item">
+                                <div class="hash-label">
+                                    <span class="hash-type">SHA-256</span>
+                                    <button class="copy-btn" onclick="copyHash('${file.hashes.sha256}', this)">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                                <div class="hash-value">${file.hashes.sha256}</div>
+                            </div>
+                            <div class="hash-item">
+                                <div class="hash-label">
+                                    <span class="hash-type">SHA-512</span>
+                                    <button class="copy-btn" onclick="copyHash('${file.hashes.sha512}', this)">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                                <div class="hash-value">${file.hashes.sha512}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update status
+        function updateStatus(message, type) {
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = message;
+        }
+
+        // Copy hash to clipboard
+        function copyHash(hash, button) {
+            navigator.clipboard.writeText(hash).then(() => {
+                button.classList.add('copied');
+                button.innerHTML = '<i class="fas fa-check"></i> Copied';
+                showToast('Hash copied to clipboard!');
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                }, 2000);
+            });
+        }
+
+        // Copy all hashes
+        function copyAllHashes() {
+            let text = '';
+            processedFiles.forEach(file => {
+                text += `File: ${file.name}\n`;
+                text += `Size: ${file.size}\n`;
+                text += `MD5: ${file.hashes.md5}\n`;
+                text += `SHA-1: ${file.hashes.sha1}\n`;
+                text += `SHA-256: ${file.hashes.sha256}\n`;
+                text += `SHA-512: ${file.hashes.sha512}\n`;
+                text += '\n---\n\n';
+            });
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('All hashes copied to clipboard!');
+            });
+        }
+
+        // Export CSV
+        function exportCSV() {
+            let csv = 'File Name,File Size,MD5,SHA-1,SHA-256,SHA-512,Processed At\n';
+            processedFiles.forEach(file => {
+                csv += `"${file.name}","${file.size}","${file.hashes.md5}","${file.hashes.sha1}","${file.hashes.sha256}","${file.hashes.sha512}","${file.processedAt}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hash_report_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('CSV file downloaded!');
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.textContent = message;
+            toast.classList.add('active');
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        // Certificate Modal Functions
+        function openCertificateModal() {
+            if (processedFiles.length === 0) {
+                showToast('Please process files first!');
+                return;
+            }
+            generateCertificate();
+            document.getElementById('certificateModal').classList.add('active');
+        }
+
+        function closeCertificateModal() {
+            document.getElementById('certificateModal').classList.remove('active');
+        }
+
+        function updateCertificateLanguage() {
+            currentLanguage = document.getElementById('languageSelect').value;
+            generateCertificate();
+        }
+
+        function generateCertificate() {
+            const t = translations[currentLanguage];
+            const certContent = document.getElementById('certificateContent');
+            const istDateTime = getISTDateTime();
+            
+            // Get system info
+            const userAgent = navigator.userAgent;
+            const platform = navigator.platform || 'Unknown';
+            const browserInfo = getBrowserInfo();
+            
+            // Generate unique certificate number
+            const certNumber = `BSA-${Date.now().toString(36).toUpperCase()}`;
+            
+            let filesHtmlPartA = '';
+            let filesHtmlPartB = '';
+            
+            processedFiles.forEach((file, index) => {
+                // Part A - File Details
+                filesHtmlPartA += `
+                    <div class="cert-section">
+                        <div class="cert-section-title">${t.serialNo} ${index + 1} - ${t.fileDetails}</div>
+                        <table class="cert-table">
+                            <tr>
+                                <th style="width: 35%">${t.fileName}</th>
+                                <td>${escapeHtml(file.name)}</td>
+                            </tr>
+                            <tr>
+                                <th>${t.fileSize}</th>
+                                <td>${file.size} (${file.sizeBytes} bytes)</td>
+                            </tr>
+                            <tr>
+                                <th>${t.fileType}</th>
+                                <td>${escapeHtml(file.type) || 'application/octet-stream'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                `;
+                
+                // Part B - Hash Details
+                filesHtmlPartB += `
+                    <div class="cert-section">
+                        <div class="cert-section-title">${t.serialNo} ${index + 1} - ${escapeHtml(file.name)}</div>
+                        <table class="cert-table">
+                            <tr>
+                                <th style="width: 35%">${t.fileName}</th>
+                                <td>${escapeHtml(file.name)}</td>
+                            </tr>
+                            <tr>
+                                <th>${t.fileSize}</th>
+                                <td>${file.size} (${file.sizeBytes} bytes)</td>
+                            </tr>
+                            <tr>
+                                <th>${t.processedOn}</th>
+                                <td>${istDateTime.full}</td>
+                            </tr>
+                        </table>
+                        
+                        <div class="cert-section-title" style="margin-top: 15px;">${t.hashValues}</div>
+                        <table class="cert-table">
+                            <tr>
+                                <th style="width: 15%">${t.algorithm}</th>
+                                <th>${t.hashValue}</th>
+                            </tr>
+                            <tr>
+                                <td><strong>MD5</strong></td>
+                                <td style="font-family: 'Consolas', monospace; font-size: 0.85rem;">${file.hashes.md5}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>SHA-1</strong></td>
+                                <td style="font-family: 'Consolas', monospace; font-size: 0.85rem;">${file.hashes.sha1}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>SHA-256</strong></td>
+                                <td style="font-family: 'Consolas', monospace; font-size: 0.8rem;">${file.hashes.sha256}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>SHA-512</strong></td>
+                                <td style="font-family: 'Consolas', monospace; font-size: 0.7rem; word-break: break-all;">${file.hashes.sha512}</td>
+                            </tr>
+                        </table>
+                    </div>
+                `;
+            });
+
+            certContent.innerHTML = `
+                <!-- PART A - Certificate under Section 63(4) of BSA 2023 -->
+                <div class="certificate" style="margin-bottom: 30px; page-break-after: always;">
+                    <div class="cert-header">
+                        <div style="font-weight: bold; color: #e94560; font-size: 1.1rem; margin-bottom: 5px;">${t.partATitle}</div>
+                        <div class="cert-title">${t.partASubtitle}</div>
+                        <div class="cert-subtitle">${t.partASubtitleAlt}</div>
+                        <div style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                            ${t.sectionRef} | Certificate No: <strong>${certNumber}-A</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="cert-body">
+                        <!-- Electronic Record Information -->
+                        <div class="cert-section">
+                            <div class="cert-section-title">${t.electronicRecord}</div>
+                            <table class="cert-table">
+                                <tr>
+                                    <th style="width: 35%">${t.sourceDevice}</th>
+                                    <td>${platform}</td>
+                                </tr>
+                                <tr>
+                                    <th>${t.browser}</th>
+                                    <td>${browserInfo}</td>
+                                </tr>
+                                <tr>
+                                    <th>${t.processedOn}</th>
+                                    <td>${istDateTime.full}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <!-- File Details -->
+                        ${filesHtmlPartA}
+                        
+                        <!-- Certificate Conditions -->
+                        <div class="cert-section">
+                            <div class="cert-section-title">${t.certConditions}</div>
+                            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #e94560;">
+                                <p style="margin-bottom: 10px; color: #333; line-height: 1.6;">${t.condition1}</p>
+                                <p style="margin-bottom: 10px; color: #333; line-height: 1.6;">${t.condition2}</p>
+                                <p style="margin-bottom: 10px; color: #333; line-height: 1.6;">${t.condition3}</p>
+                                <p style="color: #333; line-height: 1.6;">${t.condition4}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Certification Statement Part A -->
+                        <div class="cert-section">
+                            <div class="cert-section-title">${t.certificationPartA}</div>
+                            <p style="color: #333; line-height: 1.8; text-align: justify; padding: 15px; background: #f0f8ff; border-radius: 8px; border: 1px solid #cce5ff;">
+                                ${t.certStatementA}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="cert-footer">
+                        <div class="cert-signature">
+                            <div style="margin-bottom: 60px;"></div>
+                            <div class="signature-line">${t.signatureTitle}</div>
+                            <div style="margin-top: 15px; border-top: 1px dashed #999; padding-top: 8px;">${t.nameDesignation}: _____________________</div>
+                            <div style="margin-top: 10px;">${t.datePlace}: _____________________</div>
+                        </div>
+                        <div class="cert-stamp">
+                            <div class="stamp-placeholder">${t.stampText}</div>
+                            <div>${t.stampTitle}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cert-timestamp">
+                        <strong>${t.generatedAt}:</strong> ${istDateTime.full}<br>
+                        <strong>${t.timezone}</strong><br>
+                        <em style="font-size: 0.8rem; color: #888;">${t.partATitle} - ${t.toolName}</em>
+                    </div>
+                </div>
+                
+                <!-- PART B - Hash Value Certificate -->
+                <div class="certificate">
+                    <div class="cert-header">
+                        <div style="font-weight: bold; color: #00d9ff; font-size: 1.1rem; margin-bottom: 5px;">${t.partBTitle}</div>
+                        <div class="cert-title">${t.partBSubtitle}</div>
+                        <div class="cert-subtitle">${t.partASubtitleAlt}</div>
+                        <div style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                            ${t.sectionRef} | Certificate No: <strong>${certNumber}-B</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="cert-body">
+                        <!-- Hash Values for Each File -->
+                        ${filesHtmlPartB}
+                        
+                        <!-- Certification Statement Part B -->
+                        <div class="cert-section">
+                            <div class="cert-section-title">${t.certificationPartB}</div>
+                            <p style="color: #333; line-height: 1.8; text-align: justify; padding: 15px; background: #f0fff4; border-radius: 8px; border: 1px solid #c6f6d5;">
+                                ${t.certStatementB}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="cert-footer">
+                        <div class="cert-signature">
+                            <div style="margin-bottom: 60px;"></div>
+                            <div class="signature-line">${t.signatureTitle}</div>
+                            <div style="margin-top: 15px; border-top: 1px dashed #999; padding-top: 8px;">${t.nameDesignation}: _____________________</div>
+                            <div style="margin-top: 10px;">${t.datePlace}: _____________________</div>
+                        </div>
+                        <div class="cert-stamp">
+                            <div class="stamp-placeholder">${t.stampText}</div>
+                            <div>${t.stampTitle}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cert-timestamp">
+                        <strong>${t.generatedAt}:</strong> ${istDateTime.full}<br>
+                        <strong>${t.timezone}</strong><br>
+                        <em style="font-size: 0.8rem; color: #888;">${t.partBTitle} - ${t.toolName}</em><br><br>
+                        <div style="font-size: 0.75rem; color: #999; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
+                            ${t.disclaimer}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            let browser = 'Unknown Browser';
+            
+            if (ua.indexOf('Firefox') > -1) {
+                browser = 'Mozilla Firefox';
+            } else if (ua.indexOf('Opera') > -1 || ua.indexOf('OPR') > -1) {
+                browser = 'Opera';
+            } else if (ua.indexOf('Trident') > -1) {
+                browser = 'Internet Explorer';
+            } else if (ua.indexOf('Edge') > -1) {
+                browser = 'Microsoft Edge (Legacy)';
+            } else if (ua.indexOf('Edg') > -1) {
+                browser = 'Microsoft Edge';
+            } else if (ua.indexOf('Chrome') > -1) {
+                browser = 'Google Chrome';
+            } else if (ua.indexOf('Safari') > -1) {
+                browser = 'Safari';
+            }
+            
+            return browser;
+        }
+
+        function printCertificate() {
+            window.print();
+        }
+
+        function downloadCertificateAsPDF() {
+            showToast('Use Print and select "Save as PDF" option');
+            window.print();
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Show disclaimer
+        function showDisclaimer() {
+            alert('DISCLAIMER:\n\nThis tool is provided for educational and informational purposes only. The hash values generated are computed entirely client-side in your browser. No file data is transmitted or stored on any server.\n\nThe developers make no warranties regarding the accuracy or reliability of the hash values for legal or forensic purposes. Users should verify results using multiple tools when used for official purposes.\n\nThe certificates generated are templates and require proper authentication by authorized officers as per Bharatiya Sakshya Adhiniyam, 2023.\n\nBy using this tool, you agree to use it responsibly and in compliance with all applicable laws and regulations.');
+        }
+
+        // Show about hash
+        function showAboutHash() {
+            alert('ABOUT HASH ALGORITHMS:\n\nA hash function is a mathematical algorithm that converts data of any size into a fixed-size string of characters. This output is called a hash value or digest.\n\nKey Properties:\n• Deterministic: Same input always produces same output\n• Fast: Quick to compute for any input size\n• One-way: Cannot reverse to get original data\n• Collision-resistant: Hard to find two inputs with same hash\n\nAlgorithms Used:\n• MD5 (128-bit) - Legacy, for reference only\n• SHA-1 (160-bit) - Deprecated but still referenced\n• SHA-256 (256-bit) - Recommended for evidence\n• SHA-512 (512-bit) - Highest security level\n\nCommon Uses:\n• File integrity verification\n• Digital signatures\n• Electronic evidence authentication\n• Digital forensics');
+        }
+        
+        // Show about BSA 2023
+        function showAboutBSA() {
+            alert('BHARATIYA SAKSHYA ADHINIYAM, 2023\n(Indian Evidence Act Replacement)\n\nSection 63 - Admissibility of Electronic Records:\n\nSection 63(4) states that for electronic records to be admissible as evidence, a certificate must be provided identifying:\n\n(a) The electronic record and manner of production\n(b) The device that produced the record\n(c) Conditions under which the record was produced\n(d) The particulars to show that the computer was operating properly\n\nSection 63(4)(c) specifically requires:\nA certificate signed by a person occupying a responsible official position in relation to the operation of the relevant device or management of the relevant activities.\n\nThis tool generates:\n• PART A: Certificate under Section 63(4) conditions\n• PART B: Hash value certificate for integrity verification\n\nNote: Hash values serve as digital fingerprints to verify that electronic evidence has not been altered.');
+        }
+
+        // Close modal on outside click
+        document.getElementById('certificateModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCertificateModal();
+            }
+        });
+    </script>
+</body>
+</html>
