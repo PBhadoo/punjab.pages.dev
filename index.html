@@ -612,136 +612,268 @@
             padding: 30px;
         }
 
-        /* Certificate Styles */
+        /* Certificate Styles - Official BSA 2023 Government Format */
         .certificate {
             background: #fff;
-            border: 3px solid #1a1a2e;
-            padding: 40px;
-            position: relative;
+            padding: 15px 20px;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #000;
+            max-width: 100%;
+            margin: 0 auto;
         }
 
-        .certificate::before {
-            content: '';
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            bottom: 10px;
-            border: 2px solid #e94560;
-            pointer-events: none;
-        }
-
-        .cert-header {
+        .cert-main-title {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #1a1a2e;
-            padding-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 5px;
         }
 
-        .cert-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            color: #1a1a2e;
-            margin-bottom: 10px;
+        .cert-section-ref {
+            text-align: center;
+            font-size: 12px;
+            font-style: italic;
+            margin-bottom: 15px;
         }
 
-        .cert-subtitle {
-            color: #666;
-            font-size: 1rem;
+        .cert-part-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 15px 0 5px 0;
         }
 
-        .cert-subtitle-punjabi {
-            font-size: 1rem;
-            color: #444;
-            margin-top: 5px;
+        .cert-part-subtitle {
+            text-align: center;
+            font-size: 12px;
+            font-style: italic;
+            margin-bottom: 20px;
         }
 
-        .cert-body {
-            margin-bottom: 30px;
+        .cert-form-line {
+            border-bottom: 1px solid #000;
+            min-width: 80px;
+            min-height: 1.2em;
+            display: inline-block;
+            margin: 0 3px;
+            vertical-align: bottom;
+            flex-grow: 1;
         }
 
-        .cert-section {
-            margin-bottom: 25px;
+        .cert-field-name {
+            min-width: 160px;
         }
 
-        .cert-section-title {
-            font-weight: 700;
-            color: #1a1a2e;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-            border-left: 4px solid #e94560;
-            padding-left: 10px;
+        .cert-field-spouse {
+            min-width: 160px;
         }
 
-        .cert-table {
+        .cert-form-line-long {
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            min-width: 70%;
+            min-height: 18px;
+            vertical-align: bottom;
+            flex-grow: 1;
+        }
+
+        .cert-blank {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .cert-blank-long {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .cert-checkbox-grid {
+            padding-right: 20px;
+        }
+
+        .cert-personal-info .cert-value .cert-form-line,
+        .cert-personal-info .cert-value .cert-form-line-long {
+            width: 100%;
+            min-width: unset;
+        }
+
+        .cert-checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+
+        .cert-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .cert-checkbox {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #000;
+            display: inline-block;
+        }
+
+        .cert-device-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin: 10px 0;
         }
 
-        .cert-table th,
-        .cert-table td {
-            border: 1px solid #ddd;
-            padding: 10px 15px;
-            text-align: left;
-            font-size: 0.9rem;
+        .cert-device-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            font-size: 12px;
         }
 
-        .cert-table th {
+        .cert-device-table .label {
             background: #f5f5f5;
-            font-weight: 600;
-            color: #1a1a2e;
+            font-weight: bold;
+            width: 25%;
         }
 
-        .cert-table td {
-            font-family: 'Consolas', monospace;
+        .cert-para {
+            text-align: justify;
+            margin: 12px 0;
+        }
+
+        .cert-hash-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 11px;
+        }
+
+        .cert-hash-table th,
+        .cert-hash-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .cert-hash-table th {
+            background: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .cert-hash-table td.sno {
+            text-align: center;
+            width: 5%;
+        }
+
+        .cert-hash-table td.filename {
+            width: 25%;
+            word-break: break-word;
+        }
+
+        .cert-hash-table td.filetype {
+            width: 10%;
+            text-align: center;
+        }
+
+        .cert-hash-table td.filesize {
+            width: 12%;
+            text-align: right;
+        }
+
+        .cert-hash-table td.hashvalues {
+            width: 48%;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 10px;
             word-break: break-all;
-            color: #333;
         }
 
-        .cert-footer {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .cert-datetime-block {
+            display: flex;
+            justify-content: flex-start;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .cert-datetime-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cert-info-row {
+            display: flex;
+            justify-content: flex-start;
             gap: 40px;
-            margin-top: 40px;
-            padding-top: 30px;
-            border-top: 1px solid #ddd;
+            margin: 10px 0;
+            flex-wrap: wrap;
         }
 
-        .cert-signature {
+        .cert-info-item {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .cert-signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+
+        .cert-signature-left {
+            width: 45%;
+        }
+
+        .cert-signature-right {
+            width: 45%;
+            text-align: right;
+        }
+
+        .cert-sign-box {
+            border: 1px solid #000;
+            min-height: 60px;
+            margin-bottom: 5px;
             text-align: center;
-        }
-
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-top: 60px;
-            padding-top: 10px;
-        }
-
-        .cert-stamp {
-            text-align: center;
-        }
-
-        .stamp-placeholder {
-            width: 100px;
-            height: 100px;
-            border: 2px dashed #999;
-            border-radius: 50%;
-            margin: 0 auto 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #999;
-            font-size: 0.8rem;
+            font-size: 11px;
         }
 
-        .cert-timestamp {
+        .cert-annexure-title {
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            font-size: 14px;
+        }
+
+        .cert-page-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 11px;
             color: #666;
-            font-size: 0.85rem;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        .cert-page-break {
+            page-break-after: always;
+            margin-bottom: 20px;
+        }
+
+        .cert-part-b {
+            margin-top: 30px;
+            padding-top: 30px;
         }
 
         .print-actions {
@@ -750,7 +882,7 @@
             gap: 15px;
             padding: 20px;
             background: #f5f5f5;
-            border-radius: 0 0 16px 16px;
+            flex-wrap: wrap;
         }
 
         .print-btn {
@@ -849,6 +981,16 @@
                 gap: 15px;
             }
 
+            .header-right {
+                flex-direction: row;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .language-selector {
+                padding: 6px 12px;
+            }
+
             .hero h1 {
                 font-size: 1.8rem;
             }
@@ -871,8 +1013,23 @@
                 justify-content: center;
             }
 
-            .cert-footer {
-                grid-template-columns: 1fr;
+            .cert-signature-section {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .cert-signature-left,
+            .cert-signature-right {
+                width: 100%;
+                text-align: left;
+            }
+
+            .cert-checkbox-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .cert-datetime-block {
+                flex-direction: column;
             }
 
             .modal-body {
@@ -880,36 +1037,115 @@
             }
 
             .certificate {
-                padding: 20px;
+                padding: 15px;
+                font-size: 12px;
             }
         }
 
         @media print {
-            body * {
-                visibility: hidden;
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
-            #printArea, #printArea * {
-                visibility: visible;
+            body {
+                margin: 0;
+                padding: 0;
+                background: white !important;
+            }
+            
+            body > *:not(#printArea):not(.modal-overlay) {
+                display: none !important;
+            }
+            
+            .modal-overlay {
+                position: static !important;
+                background: none !important;
+                overflow: visible !important;
+            }
+            
+            .modal-content {
+                position: static !important;
+                max-height: none !important;
+                max-width: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                background: white !important;
+                overflow: visible !important;
+            }
+            
+            .modal-header, .no-print, .print-actions {
+                display: none !important;
+            }
+            
+            .modal-body {
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            
+            @page {
+                size: A4;
+                margin: 5mm;
             }
             
             #printArea {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
+                width: 100% !important;
             }
-
+            
             .certificate {
-                border: 3px solid #000 !important;
+                padding: 3mm 5mm !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-inside: avoid;
+                font-size: 12px !important;
+                line-height: 1.6 !important;
             }
-
-            .certificate::before {
-                border: 2px solid #e94560 !important;
+            
+            .cert-form-line {
+                border-bottom: 1px solid #000 !important;
+                min-width: 80px !important;
+                min-height: 1.2em !important;
+                display: inline-block !important;
+                vertical-align: bottom !important;
+                margin: 0 3px !important;
             }
-
-            .no-print {
-                display: none !important;
+            
+            .cert-form-line-long {
+                border-bottom: 1px solid #000 !important;
+                display: inline-block !important;
+                min-width: 84% !important;
+                vertical-align: bottom !important;
+            }
+            
+            .cert-info-item {
+                display: inline-flex !important;
+                align-items: flex-end !important;
+            }
+            
+            .cert-info-row {
+                page-break-inside: avoid !important;
+            }
+            
+            .cert-page-break {
+                page-break-after: always !important;
+            }
+            
+            .cert-hash-table {
+                page-break-inside: avoid;
+            }
+            
+            .cert-signature-section {
+                page-break-inside: avoid;
+            }
+            
+            .cert-device-table {
+                page-break-inside: avoid;
+            }
+            
+            .cert-part-b {
+                margin-top: 30px !important;
+                padding-top: 30px !important;
             }
         }
     </style>
@@ -1045,6 +1281,20 @@
                 <h3><i class="fas fa-certificate"></i> BSA 2023 - Section 63(4)(c) Certificate</h3>
                 <button class="close-modal" onclick="closeCertificateModal()">×</button>
             </div>
+            <!-- Action buttons ABOVE the certificate -->
+            <div class="print-actions no-print">
+                <select class="lang-select" id="languageSelectTop" onchange="updateCertificateLanguageFromTop()">
+                    <option value="en">English</option>
+                    <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                    <option value="hi">हिंदी (Hindi)</option>
+                </select>
+                <button class="print-btn" onclick="printCertificate()">
+                    <i class="fas fa-print"></i> Print Certificate
+                </button>
+                <button class="print-btn" onclick="downloadCertificateAsPDF()" style="background: linear-gradient(135deg, #00d9ff, #0099cc);">
+                    <i class="fas fa-file-pdf"></i> Save as PDF
+                </button>
+            </div>
             <div class="modal-body">
                 <div id="printArea">
                     <div class="certificate" id="certificateContent">
@@ -1052,6 +1302,7 @@
                     </div>
                 </div>
             </div>
+            <!-- Action buttons BELOW the certificate -->
             <div class="print-actions no-print">
                 <select class="lang-select" id="languageSelect" onchange="updateCertificateLanguage()">
                     <option value="en">English</option>
@@ -1110,6 +1361,32 @@
         // Language translations for BSA 2023 Section 63(4)(c) Certificate
         const translations = {
             en: {
+                // Site UI translations
+                logoSubtitle: 'Digital Evidence Tool',
+                statusReady: 'Ready',
+                statusProcessing: 'Processing...',
+                heroTitle: 'BSA 2023 - Section 63(4)(c) Hash Calculator',
+                heroDesc: 'Generate cryptographic hash values for electronic evidence under Bharatiya Sakshya Adhiniyam, 2023. Supports MD5, SHA-1, SHA-256, and SHA-512 algorithms with Part A & Part B certificate generation.',
+                uploadTitle: 'Upload Files for Hash Analysis',
+                uploadDesc: 'Drag and drop files here or click to browse',
+                selectFilesBtn: 'Select Files',
+                processedFilesTitle: 'Processed Files',
+                copyAllBtn: 'Copy All',
+                exportCsvBtn: 'Export CSV',
+                genCertBtn: 'Generate Certificate (Part A & B)',
+                aboutHashTitle: 'About Hash Algorithms',
+                md5Desc: 'Message Digest Algorithm 5. Fast but considered cryptographically broken. Still used for checksums and non-security purposes.',
+                sha1Desc: 'Secure Hash Algorithm 1. Deprecated for security use but still referenced in legacy systems and some verification processes.',
+                sha256Desc: 'Part of SHA-2 family. Widely used and recommended for security applications. Standard for digital evidence verification.',
+                sha512Desc: 'Highest security in SHA-2 family. Provides maximum protection for sensitive digital evidence and forensic applications.',
+                footerDesc: 'Client-side processing ensures your files never leave your device. All hash calculations are performed locally in your browser as per Bharatiya Sakshya Adhiniyam, 2023 - Section 63(4)(c) requirements.',
+                disclaimerLink: 'Disclaimer',
+                aboutHashLink: 'About Hash',
+                aboutBsaLink: 'About BSA 2023',
+                copyright: '© 2025 BSA Hash Analyzer. All rights reserved.',
+                copyBtn: 'Copy',
+                copiedText: 'Copied!',
+                
                 // Part A - Certificate under Section 63(4) of BSA 2023
                 partATitle: 'PART A',
                 partASubtitle: 'Certificate under Section 63(4) of Bharatiya Sakshya Adhiniyam, 2023',
@@ -1163,9 +1440,94 @@
                 
                 // Additional
                 serialNo: 'Serial No.',
-                pageOf: 'Page'
+                pageOf: 'Page',
+                
+                // Certificate Body Text
+                certTitle: 'CERTIFICATE',
+                certSectionRef: '(Under section 63(4)(c) of Bharatiya Sakshya Adhiniyam, 2023)',
+                partALabel: 'PART-A',
+                partADesc: '(to be filled by the Party)',
+                partBLabel: 'PART-B',
+                partBDesc: '(to be filled by the Expert)',
+                certI: 'I,',
+                certSonDaughterSpouse: 'Son/Daughter/Spouse of',
+                certAge: 'Age',
+                certResidingAt: 'residing/employed at',
+                certAffirm: 'do hereby solemnly affirm and sincerely state and submit as follows:—',
+                certProducedRecord: 'I have produced electronic record/output of the digital record taken from the following device/digital record source (tick mark):—',
+                certProducedRecordB: 'The produced electronic record/output of the digital record are obtained from the following device/digital record source (tick mark):—',
+                certDeviceComputer: 'Computer/Storage Media',
+                certDeviceDVR: 'DVR',
+                certDeviceMobile: 'Mobile',
+                certDeviceFlash: 'Flash Drive',
+                certDeviceCD: 'CD/DVD',
+                certDeviceServer: 'Server',
+                certDeviceCloud: 'Cloud',
+                certDeviceOther: 'Other',
+                certMakeModel: 'Make & Model:',
+                certColor: 'Color:',
+                certSerialNumber: 'Serial Number:',
+                certIMEI: 'IMEI/UIN/UID/MAC/Cloud ID:',
+                certDeviceInfo: '(as applicable) and any other relevant information, if any, about the device/digital record (specify):',
+                certDeviceStatement: 'The digital device or the digital record source was under the lawful control for regularly creating, storing or processing information for the purposes of carrying out regular activities and during this period, the computer or the communication device was working properly and the relevant information was regularly fed into the computer during the ordinary course of business.',
+                certDeviceNotWorking: 'If the computer/digital device at any point of time was not working properly or out of operation, then it has not affected the electronic/digital record or its accuracy. The digital device or the source of the digital record is:—',
+                certOwned: 'Owned',
+                certMaintained: 'Maintained',
+                certManaged: 'Managed',
+                certOperated: 'Operated',
+                certByMe: 'by me (select as applicable)',
+                certHashStatement: 'I state that the HASH value/s of the electronic/digital record/s is as per',
+                certObtainedThrough: ', obtained through SHA1 and SHA256 algorithm.',
+                certAttached: 'Attached',
+                certDate: 'Date (DD/MM/YYYY):',
+                certTime: 'Time (IST HH:mm:ss):',
+                certPlace: 'Place:',
+                certName: 'Name:',
+                certDesignation: 'Designation:',
+                certSignature: 'Signature',
+                certFooter: '[Under section 63(4)(c) of Bharatiya Sakshya Adhiniyam, 2023]',
+                certAnnexure: 'Annexure-I',
+                certPages: 'pages',
+                certAttachedTo: 'Attached to',
+                certPartACert: 'Part-A Certificate',
+                certPartBCert: 'Part-B Certificate',
+                certGeneratedOn: 'Generated on:',
+                certAt: 'at',
+                certIST: 'IST',
+                certHashNote: 'Hash values computed client-side. No data stored or transmitted.',
+                certSNo: 'S.No',
+                certFileName: 'File Name',
+                certFileType: 'File Type',
+                certFileSize: 'File Size',
+                certHashValues: 'Hash Values'
             },
             pa: {
+                // Site UI translations - Punjabi
+                logoSubtitle: 'ਡਿਜੀਟਲ ਸਬੂਤ ਟੂਲ',
+                statusReady: 'ਤਿਆਰ',
+                statusProcessing: 'ਪ੍ਰੋਸੈਸ ਹੋ ਰਿਹਾ ਹੈ...',
+                heroTitle: 'BSA 2023 - ਧਾਰਾ 63(4)(c) ਹੈਸ਼ ਕੈਲਕੁਲੇਟਰ',
+                heroDesc: 'ਭਾਰਤੀ ਸਾਖਸ਼ਯ ਅਧਿਨਿਯਮ, 2023 ਅਧੀਨ ਇਲੈਕਟ੍ਰਾਨਿਕ ਸਬੂਤ ਲਈ ਕ੍ਰਿਪਟੋਗ੍ਰਾਫਿਕ ਹੈਸ਼ ਮੁੱਲ ਬਣਾਓ। MD5, SHA-1, SHA-256, ਅਤੇ SHA-512 ਐਲਗੋਰਿਦਮ ਭਾਗ A ਅਤੇ ਭਾਗ B ਸਰਟੀਫਿਕੇਟ ਜਨਰੇਸ਼ਨ ਨਾਲ ਸਹਾਇਤਾ।',
+                uploadTitle: 'ਹੈਸ਼ ਵਿਸ਼ਲੇਸ਼ਣ ਲਈ ਫਾਈਲਾਂ ਅਪਲੋਡ ਕਰੋ',
+                uploadDesc: 'ਫਾਈਲਾਂ ਨੂੰ ਇੱਥੇ ਖਿੱਚੋ ਅਤੇ ਛੱਡੋ ਜਾਂ ਬ੍ਰਾਊਜ਼ ਕਰਨ ਲਈ ਕਲਿੱਕ ਕਰੋ',
+                selectFilesBtn: 'ਫਾਈਲਾਂ ਚੁਣੋ',
+                processedFilesTitle: 'ਪ੍ਰੋਸੈਸ ਕੀਤੀਆਂ ਫਾਈਲਾਂ',
+                copyAllBtn: 'ਸਭ ਕਾਪੀ ਕਰੋ',
+                exportCsvBtn: 'CSV ਐਕਸਪੋਰਟ ਕਰੋ',
+                genCertBtn: 'ਸਰਟੀਫਿਕੇਟ ਬਣਾਓ (ਭਾਗ A ਅਤੇ B)',
+                aboutHashTitle: 'ਹੈਸ਼ ਐਲਗੋਰਿਦਮ ਬਾਰੇ',
+                md5Desc: 'ਮੈਸੇਜ ਡਾਇਜੈਸਟ ਐਲਗੋਰਿਦਮ 5। ਤੇਜ਼ ਪਰ ਕ੍ਰਿਪਟੋਗ੍ਰਾਫਿਕ ਤੌਰ \'ਤੇ ਟੁੱਟਿਆ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ। ਅਜੇ ਵੀ ਚੈਕਸਮ ਅਤੇ ਗੈਰ-ਸੁਰੱਖਿਆ ਉਦੇਸ਼ਾਂ ਲਈ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ।',
+                sha1Desc: 'ਸਿਕਿਓਰ ਹੈਸ਼ ਐਲਗੋਰਿਦਮ 1। ਸੁਰੱਖਿਆ ਵਰਤੋਂ ਲਈ ਡਿਪ੍ਰੀਕੇਟਿਡ ਪਰ ਲੀਗੇਸੀ ਸਿਸਟਮਾਂ ਅਤੇ ਕੁਝ ਤਸਦੀਕ ਪ੍ਰਕਿਰਿਆਵਾਂ ਵਿੱਚ ਹਵਾਲਾ ਦਿੱਤਾ ਜਾਂਦਾ ਹੈ।',
+                sha256Desc: 'SHA-2 ਪਰਿਵਾਰ ਦਾ ਹਿੱਸਾ। ਸੁਰੱਖਿਆ ਐਪਲੀਕੇਸ਼ਨਾਂ ਲਈ ਵਿਆਪਕ ਤੌਰ \'ਤੇ ਵਰਤਿਆ ਅਤੇ ਸਿਫ਼ਾਰਸ਼ ਕੀਤਾ ਜਾਂਦਾ ਹੈ। ਡਿਜੀਟਲ ਸਬੂਤ ਤਸਦੀਕ ਲਈ ਮਿਆਰੀ।',
+                sha512Desc: 'SHA-2 ਪਰਿਵਾਰ ਵਿੱਚ ਸਭ ਤੋਂ ਉੱਚੀ ਸੁਰੱਖਿਆ। ਸੰਵੇਦਨਸ਼ੀਲ ਡਿਜੀਟਲ ਸਬੂਤ ਅਤੇ ਫੋਰੈਂਸਿਕ ਐਪਲੀਕੇਸ਼ਨਾਂ ਲਈ ਵੱਧ ਤੋਂ ਵੱਧ ਸੁਰੱਖਿਆ ਪ੍ਰਦਾਨ ਕਰਦਾ ਹੈ।',
+                footerDesc: 'ਕਲਾਇੰਟ-ਸਾਈਡ ਪ੍ਰੋਸੈਸਿੰਗ ਯਕੀਨੀ ਬਣਾਉਂਦੀ ਹੈ ਕਿ ਤੁਹਾਡੀਆਂ ਫਾਈਲਾਂ ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਨੂੰ ਕਦੇ ਨਹੀਂ ਛੱਡਦੀਆਂ। ਸਾਰੀਆਂ ਹੈਸ਼ ਗਣਨਾਵਾਂ ਭਾਰਤੀ ਸਾਖਸ਼ਯ ਅਧਿਨਿਯਮ, 2023 - ਧਾਰਾ 63(4)(c) ਲੋੜਾਂ ਅਨੁਸਾਰ ਤੁਹਾਡੇ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਸਥਾਨਕ ਤੌਰ \'ਤੇ ਕੀਤੀਆਂ ਜਾਂਦੀਆਂ ਹਨ।',
+                disclaimerLink: 'ਬੇਦਾਅਵਾ',
+                aboutHashLink: 'ਹੈਸ਼ ਬਾਰੇ',
+                aboutBsaLink: 'BSA 2023 ਬਾਰੇ',
+                copyright: '© 2025 BSA ਹੈਸ਼ ਐਨਾਲਾਈਜ਼ਰ। ਸਾਰੇ ਹੱਕ ਰਾਖਵੇਂ ਹਨ।',
+                copyBtn: 'ਕਾਪੀ',
+                copiedText: 'ਕਾਪੀ ਹੋ ਗਿਆ!',
+                
                 // Part A - ਭਾਗ ੳ
                 partATitle: 'ਭਾਗ ੳ',
                 partASubtitle: 'ਭਾਰਤੀ ਸਾਖਸ਼ਯ ਅਧਿਨਿਯਮ, 2023 ਦੀ ਧਾਰਾ 63(4) ਅਧੀਨ ਸਰਟੀਫਿਕੇਟ',
@@ -1219,9 +1581,94 @@
                 
                 // Additional
                 serialNo: 'ਸੀਰੀਅਲ ਨੰ.',
-                pageOf: 'ਪੰਨਾ'
+                pageOf: 'ਪੰਨਾ',
+                
+                // Certificate Body Text - Punjabi
+                certTitle: 'ਸਰਟੀਫਿਕੇਟ',
+                certSectionRef: '(ਭਾਰਤੀ ਸਾਖਸ਼ਯ ਅਧਿਨਿਯਮ, 2023 ਦੀ ਧਾਰਾ 63(4)(c) ਅਧੀਨ)',
+                partALabel: 'ਭਾਗ-ੳ',
+                partADesc: '(ਪਾਰਟੀ ਦੁਆਰਾ ਭਰਿਆ ਜਾਣਾ ਹੈ)',
+                partBLabel: 'ਭਾਗ-ਅ',
+                partBDesc: '(ਮਾਹਰ ਦੁਆਰਾ ਭਰਿਆ ਜਾਣਾ ਹੈ)',
+                certI: 'ਮੈਂ,',
+                certSonDaughterSpouse: 'ਪੁੱਤਰ/ਧੀ/ਪਤੀ-ਪਤਨੀ',
+                certAge: 'ਉਮਰ',
+                certResidingAt: 'ਰਿਹਾਇਸ਼/ਨੌਕਰੀ ਵਾਲੀ ਥਾਂ',
+                certAffirm: 'ਇਸ ਦੁਆਰਾ ਗੰਭੀਰਤਾ ਨਾਲ ਪੁਸ਼ਟੀ ਕਰਦਾ/ਕਰਦੀ ਹਾਂ ਅਤੇ ਸੱਚਮੁੱਚ ਬਿਆਨ ਕਰਦਾ/ਕਰਦੀ ਹਾਂ ਅਤੇ ਹੇਠ ਲਿਖੇ ਅਨੁਸਾਰ ਪੇਸ਼ ਕਰਦਾ/ਕਰਦੀ ਹਾਂ:—',
+                certProducedRecord: 'ਮੈਂ ਹੇਠ ਲਿਖੇ ਡਿਵਾਈਸ/ਡਿਜੀਟਲ ਰਿਕਾਰਡ ਸਰੋਤ ਤੋਂ ਲਏ ਗਏ ਡਿਜੀਟਲ ਰਿਕਾਰਡ ਦਾ ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ/ਆਉਟਪੁੱਟ ਪੇਸ਼ ਕੀਤਾ ਹੈ (ਟਿੱਕ ਮਾਰਕ):—',
+                certProducedRecordB: 'ਪੇਸ਼ ਕੀਤਾ ਗਿਆ ਇਲੈਕਟ੍ਰਾਨਿਕ ਰਿਕਾਰਡ/ਡਿਜੀਟਲ ਰਿਕਾਰਡ ਦਾ ਆਉਟਪੁੱਟ ਹੇਠ ਲਿਖੇ ਡਿਵਾਈਸ/ਡਿਜੀਟਲ ਰਿਕਾਰਡ ਸਰੋਤ ਤੋਂ ਪ੍ਰਾਪਤ ਕੀਤਾ ਗਿਆ ਹੈ (ਟਿੱਕ ਮਾਰਕ):—',
+                certDeviceComputer: 'ਕੰਪਿਊਟਰ/ਸਟੋਰੇਜ ਮੀਡੀਆ',
+                certDeviceDVR: 'DVR',
+                certDeviceMobile: 'ਮੋਬਾਈਲ',
+                certDeviceFlash: 'ਫਲੈਸ਼ ਡਰਾਈਵ',
+                certDeviceCD: 'CD/DVD',
+                certDeviceServer: 'ਸਰਵਰ',
+                certDeviceCloud: 'ਕਲਾਊਡ',
+                certDeviceOther: 'ਹੋਰ',
+                certMakeModel: 'ਮੇਕ ਅਤੇ ਮਾਡਲ:',
+                certColor: 'ਰੰਗ:',
+                certSerialNumber: 'ਸੀਰੀਅਲ ਨੰਬਰ:',
+                certIMEI: 'IMEI/UIN/UID/MAC/ਕਲਾਊਡ ID:',
+                certDeviceInfo: '(ਜਿਵੇਂ ਲਾਗੂ ਹੋਵੇ) ਅਤੇ ਡਿਵਾਈਸ/ਡਿਜੀਟਲ ਰਿਕਾਰਡ ਬਾਰੇ ਕੋਈ ਹੋਰ ਸੰਬੰਧਿਤ ਜਾਣਕਾਰੀ, ਜੇ ਕੋਈ ਹੋਵੇ (ਨਿਰਧਾਰਿਤ ਕਰੋ):',
+                certDeviceStatement: 'ਡਿਜੀਟਲ ਡਿਵਾਈਸ ਜਾਂ ਡਿਜੀਟਲ ਰਿਕਾਰਡ ਸਰੋਤ ਨਿਯਮਤ ਗਤੀਵਿਧੀਆਂ ਕਰਨ ਦੇ ਉਦੇਸ਼ਾਂ ਲਈ ਨਿਯਮਿਤ ਤੌਰ \'ਤੇ ਜਾਣਕਾਰੀ ਬਣਾਉਣ, ਸਟੋਰ ਕਰਨ ਜਾਂ ਪ੍ਰੋਸੈਸ ਕਰਨ ਲਈ ਕਾਨੂੰਨੀ ਕੰਟਰੋਲ ਅਧੀਨ ਸੀ ਅਤੇ ਇਸ ਸਮੇਂ ਦੌਰਾਨ, ਕੰਪਿਊਟਰ ਜਾਂ ਸੰਚਾਰ ਡਿਵਾਈਸ ਸਹੀ ਢੰਗ ਨਾਲ ਕੰਮ ਕਰ ਰਿਹਾ ਸੀ ਅਤੇ ਸੰਬੰਧਿਤ ਜਾਣਕਾਰੀ ਕਾਰੋਬਾਰ ਦੇ ਆਮ ਕੋਰਸ ਦੌਰਾਨ ਕੰਪਿਊਟਰ ਵਿੱਚ ਨਿਯਮਿਤ ਤੌਰ \'ਤੇ ਫੀਡ ਕੀਤੀ ਗਈ ਸੀ।',
+                certDeviceNotWorking: 'ਜੇਕਰ ਕੰਪਿਊਟਰ/ਡਿਜੀਟਲ ਡਿਵਾਈਸ ਕਿਸੇ ਵੀ ਸਮੇਂ ਸਹੀ ਢੰਗ ਨਾਲ ਕੰਮ ਨਹੀਂ ਕਰ ਰਿਹਾ ਸੀ ਜਾਂ ਬੰਦ ਸੀ, ਤਾਂ ਇਸ ਨੇ ਇਲੈਕਟ੍ਰਾਨਿਕ/ਡਿਜੀਟਲ ਰਿਕਾਰਡ ਜਾਂ ਇਸਦੀ ਸ਼ੁੱਧਤਾ ਨੂੰ ਪ੍ਰਭਾਵਿਤ ਨਹੀਂ ਕੀਤਾ ਹੈ। ਡਿਜੀਟਲ ਡਿਵਾਈਸ ਜਾਂ ਡਿਜੀਟਲ ਰਿਕਾਰਡ ਦਾ ਸਰੋਤ ਹੈ:—',
+                certOwned: 'ਮਾਲਕੀ',
+                certMaintained: 'ਸੰਭਾਲਿਆ',
+                certManaged: 'ਪ੍ਰਬੰਧਿਤ',
+                certOperated: 'ਚਲਾਇਆ',
+                certByMe: 'ਮੇਰੇ ਦੁਆਰਾ (ਜਿਵੇਂ ਲਾਗੂ ਹੋਵੇ ਚੁਣੋ)',
+                certHashStatement: 'ਮੈਂ ਬਿਆਨ ਕਰਦਾ/ਕਰਦੀ ਹਾਂ ਕਿ ਇਲੈਕਟ੍ਰਾਨਿਕ/ਡਿਜੀਟਲ ਰਿਕਾਰਡ/ਰਿਕਾਰਡਾਂ ਦਾ ਹੈਸ਼ ਮੁੱਲ/ਮੁੱਲ ਅਨੁਸਾਰ ਹੈ',
+                certObtainedThrough: ', SHA1 ਅਤੇ SHA256 ਐਲਗੋਰਿਦਮ ਦੁਆਰਾ ਪ੍ਰਾਪਤ ਕੀਤਾ ਗਿਆ।',
+                certAttached: 'ਨੱਥੀ',
+                certDate: 'ਮਿਤੀ (DD/MM/YYYY):',
+                certTime: 'ਸਮਾਂ (IST HH:mm:ss):',
+                certPlace: 'ਥਾਂ:',
+                certName: 'ਨਾਮ:',
+                certDesignation: 'ਅਹੁਦਾ:',
+                certSignature: 'ਦਸਤਖਤ',
+                certFooter: '[ਭਾਰਤੀ ਸਾਖਸ਼ਯ ਅਧਿਨਿਯਮ, 2023 ਦੀ ਧਾਰਾ 63(4)(c) ਅਧੀਨ]',
+                certAnnexure: 'ਅਨੈਕਸਰ-I',
+                certPages: 'ਪੰਨੇ',
+                certAttachedTo: 'ਨਾਲ ਨੱਥੀ',
+                certPartACert: 'ਭਾਗ-ੳ ਸਰਟੀਫਿਕੇਟ',
+                certPartBCert: 'ਭਾਗ-ਅ ਸਰਟੀਫਿਕੇਟ',
+                certGeneratedOn: 'ਬਣਾਇਆ ਗਿਆ:',
+                certAt: 'ਵਜੇ',
+                certIST: 'IST',
+                certHashNote: 'ਹੈਸ਼ ਮੁੱਲ ਕਲਾਇੰਟ-ਸਾਈਡ ਗਣਨਾ ਕੀਤੇ ਗਏ। ਕੋਈ ਡੇਟਾ ਸਟੋਰ ਜਾਂ ਸੰਚਾਰਿਤ ਨਹੀਂ ਕੀਤਾ ਗਿਆ।',
+                certSNo: 'ਲੜੀ ਨੰ.',
+                certFileName: 'ਫਾਈਲ ਦਾ ਨਾਮ',
+                certFileType: 'ਫਾਈਲ ਕਿਸਮ',
+                certFileSize: 'ਫਾਈਲ ਆਕਾਰ',
+                certHashValues: 'ਹੈਸ਼ ਮੁੱਲ'
             },
             hi: {
+                // Site UI translations - Hindi
+                logoSubtitle: 'डिजिटल साक्ष्य टूल',
+                statusReady: 'तैयार',
+                statusProcessing: 'प्रोसेस हो रहा है...',
+                heroTitle: 'BSA 2023 - धारा 63(4)(c) हैश कैलकुलेटर',
+                heroDesc: 'भारतीय साक्ष्य अधिनियम, 2023 के अंतर्गत इलेक्ट्रॉनिक साक्ष्य के लिए क्रिप्टोग्राफ़िक हैश मान जनरेट करें। MD5, SHA-1, SHA-256, और SHA-512 एल्गोरिदम भाग A और भाग B प्रमाणपत्र जनरेशन के साथ सहायता।',
+                uploadTitle: 'हैश विश्लेषण के लिए फ़ाइलें अपलोड करें',
+                uploadDesc: 'फ़ाइलों को यहां खींचें और छोड़ें या ब्राउज़ करने के लिए क्लिक करें',
+                selectFilesBtn: 'फ़ाइलें चुनें',
+                processedFilesTitle: 'प्रोसेस की गई फ़ाइलें',
+                copyAllBtn: 'सभी कॉपी करें',
+                exportCsvBtn: 'CSV एक्सपोर्ट करें',
+                genCertBtn: 'प्रमाणपत्र बनाएं (भाग A और B)',
+                aboutHashTitle: 'हैश एल्गोरिदम के बारे में',
+                md5Desc: 'मैसेज डाइजेस्ट एल्गोरिदम 5। तेज़ लेकिन क्रिप्टोग्राफ़िक रूप से टूटा माना जाता है। अभी भी चेकसम और गैर-सुरक्षा उद्देश्यों के लिए उपयोग किया जाता है।',
+                sha1Desc: 'सिक्योर हैश एल्गोरिदम 1। सुरक्षा उपयोग के लिए डिप्रीकेटेड लेकिन लीगेसी सिस्टम और कुछ सत्यापन प्रक्रियाओं में संदर्भित।',
+                sha256Desc: 'SHA-2 परिवार का हिस्सा। सुरक्षा अनुप्रयोगों के लिए व्यापक रूप से उपयोग और अनुशंसित। डिजिटल साक्ष्य सत्यापन के लिए मानक।',
+                sha512Desc: 'SHA-2 परिवार में उच्चतम सुरक्षा। संवेदनशील डिजिटल साक्ष्य और फोरेंसिक अनुप्रयोगों के लिए अधिकतम सुरक्षा प्रदान करता है।',
+                footerDesc: 'क्लाइंट-साइड प्रोसेसिंग सुनिश्चित करती है कि आपकी फ़ाइलें आपके डिवाइस को कभी नहीं छोड़ती हैं। सभी हैश गणनाएं भारतीय साक्ष्य अधिनियम, 2023 - धारा 63(4)(c) आवश्यकताओं के अनुसार आपके ब्राउज़र में स्थानीय रूप से की जाती हैं।',
+                disclaimerLink: 'अस्वीकरण',
+                aboutHashLink: 'हैश के बारे में',
+                aboutBsaLink: 'BSA 2023 के बारे में',
+                copyright: '© 2025 BSA हैश एनालाइज़र। सर्वाधिकार सुरक्षित।',
+                copyBtn: 'कॉपी',
+                copiedText: 'कॉपी हो गया!',
+                
                 // Part A
                 partATitle: 'भाग अ',
                 partASubtitle: 'भारतीय साक्ष्य अधिनियम, 2023 की धारा 63(4) के अंतर्गत प्रमाणपत्र',
@@ -1275,14 +1722,165 @@
                 
                 // Additional
                 serialNo: 'क्रम सं.',
-                pageOf: 'पृष्ठ'
+                pageOf: 'पृष्ठ',
+                
+                // Certificate Body Text - Hindi
+                certTitle: 'प्रमाणपत्र',
+                certSectionRef: '(भारतीय साक्ष्य अधिनियम, 2023 की धारा 63(4)(c) के अंतर्गत)',
+                partALabel: 'भाग-क',
+                partADesc: '(पक्ष द्वारा भरा जाना है)',
+                partBLabel: 'भाग-ख',
+                partBDesc: '(विशेषज्ञ द्वारा भरा जाना है)',
+                certI: 'मैं,',
+                certSonDaughterSpouse: 'पुत्र/पुत्री/पति-पत्नी',
+                certAge: 'आयु',
+                certResidingAt: 'निवास/कार्यरत स्थान',
+                certAffirm: 'इसके द्वारा गंभीरता से पुष्टि करता/करती हूं और सच्चाई से बयान करता/करती हूं और निम्नानुसार प्रस्तुत करता/करती हूं:—',
+                certProducedRecord: 'मैंने निम्नलिखित डिवाइस/डिजिटल रिकॉर्ड स्रोत से लिए गए डिजिटल रिकॉर्ड का इलेक्ट्रॉनिक रिकॉर्ड/आउटपुट प्रस्तुत किया है (टिक मार्क):—',
+                certProducedRecordB: 'प्रस्तुत इलेक्ट्रॉनिक रिकॉर्ड/डिजिटल रिकॉर्ड का आउटपुट निम्नलिखित डिवाइस/डिजिटल रिकॉर्ड स्रोत से प्राप्त किया गया है (टिक मार्क):—',
+                certDeviceComputer: 'कंप्यूटर/स्टोरेज मीडिया',
+                certDeviceDVR: 'DVR',
+                certDeviceMobile: 'मोबाइल',
+                certDeviceFlash: 'फ्लैश ड्राइव',
+                certDeviceCD: 'CD/DVD',
+                certDeviceServer: 'सर्वर',
+                certDeviceCloud: 'क्लाउड',
+                certDeviceOther: 'अन्य',
+                certMakeModel: 'मेक और मॉडल:',
+                certColor: 'रंग:',
+                certSerialNumber: 'सीरियल नंबर:',
+                certIMEI: 'IMEI/UIN/UID/MAC/क्लाउड ID:',
+                certDeviceInfo: '(जैसा लागू हो) और डिवाइस/डिजिटल रिकॉर्ड के बारे में कोई अन्य प्रासंगिक जानकारी, यदि कोई हो (निर्दिष्ट करें):',
+                certDeviceStatement: 'डिजिटल डिवाइस या डिजिटल रिकॉर्ड स्रोत नियमित गतिविधियों को करने के उद्देश्यों के लिए नियमित रूप से जानकारी बनाने, संग्रहीत करने या संसाधित करने के लिए वैध नियंत्रण में था और इस अवधि के दौरान, कंप्यूटर या संचार डिवाइस ठीक से काम कर रहा था और व्यवसाय के सामान्य क्रम में कंप्यूटर में नियमित रूप से प्रासंगिक जानकारी फीड की गई थी।',
+                certDeviceNotWorking: 'यदि कंप्यूटर/डिजिटल डिवाइस किसी भी समय ठीक से काम नहीं कर रहा था या बंद था, तो इसने इलेक्ट्रॉनिक/डिजिटल रिकॉर्ड या इसकी सटीकता को प्रभावित नहीं किया है। डिजिटल डिवाइस या डिजिटल रिकॉर्ड का स्रोत है:—',
+                certOwned: 'स्वामित्व',
+                certMaintained: 'रखरखाव',
+                certManaged: 'प्रबंधित',
+                certOperated: 'संचालित',
+                certByMe: 'मेरे द्वारा (जैसा लागू हो चुनें)',
+                certHashStatement: 'मैं बयान करता/करती हूं कि इलेक्ट्रॉनिक/डिजिटल रिकॉर्ड/रिकॉर्ड्स का हैश मान/मान अनुसार है',
+                certObtainedThrough: ', SHA1 और SHA256 एल्गोरिदम द्वारा प्राप्त।',
+                certAttached: 'संलग्न',
+                certDate: 'दिनांक (DD/MM/YYYY):',
+                certTime: 'समय (IST HH:mm:ss):',
+                certPlace: 'स्थान:',
+                certName: 'नाम:',
+                certDesignation: 'पदनाम:',
+                certSignature: 'हस्ताक्षर',
+                certFooter: '[भारतीय साक्ष्य अधिनियम, 2023 की धारा 63(4)(c) के अंतर्गत]',
+                certAnnexure: 'अनुबंध-I',
+                certPages: 'पृष्ठ',
+                certAttachedTo: 'के साथ संलग्न',
+                certPartACert: 'भाग-क प्रमाणपत्र',
+                certPartBCert: 'भाग-ख प्रमाणपत्र',
+                certGeneratedOn: 'जनरेट किया गया:',
+                certAt: 'बजे',
+                certIST: 'IST',
+                certHashNote: 'हैश मान क्लाइंट-साइड गणना किए गए। कोई डेटा संग्रहीत या प्रेषित नहीं किया गया।',
+                certSNo: 'क्रम सं.',
+                certFileName: 'फ़ाइल का नाम',
+                certFileType: 'फ़ाइल प्रकार',
+                certFileSize: 'फ़ाइल आकार',
+                certHashValues: 'हैश मान'
             }
         };
+
+        // Current site language
+        let currentSiteLanguage = 'en';
+
+        // Apply site language to all UI elements
+        function applySiteLanguage(lang) {
+            const t = translations[lang];
+            currentSiteLanguage = lang;
+            
+            // Header
+            const logoSubtitle = document.getElementById('logoSubtitle');
+            const statusText = document.getElementById('statusText');
+            if (logoSubtitle) logoSubtitle.textContent = t.logoSubtitle;
+            
+            // Hero section
+            const heroTitle = document.getElementById('heroTitle');
+            const heroDesc = document.getElementById('heroDesc');
+            if (heroTitle) heroTitle.innerHTML = '<i class="fas fa-fingerprint"></i> ' + t.heroTitle;
+            if (heroDesc) heroDesc.textContent = t.heroDesc;
+            
+            // Upload section
+            const uploadTitle = document.getElementById('uploadTitle');
+            const uploadDesc = document.getElementById('uploadDesc');
+            const selectFilesBtn = document.getElementById('selectFilesBtn');
+            if (uploadTitle) uploadTitle.textContent = t.uploadTitle;
+            if (uploadDesc) uploadDesc.textContent = t.uploadDesc;
+            if (selectFilesBtn) selectFilesBtn.textContent = t.selectFilesBtn;
+            
+            // Results section
+            const processedFilesTitle = document.getElementById('processedFilesTitle');
+            const copyAllBtn = document.getElementById('copyAllBtn');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const genCertBtn = document.getElementById('genCertBtn');
+            if (processedFilesTitle) processedFilesTitle.textContent = t.processedFilesTitle;
+            if (copyAllBtn) copyAllBtn.textContent = t.copyAllBtn;
+            if (exportCsvBtn) exportCsvBtn.textContent = t.exportCsvBtn;
+            if (genCertBtn) genCertBtn.textContent = t.genCertBtn;
+            
+            // Info section
+            const aboutHashTitle = document.getElementById('aboutHashTitle');
+            const md5Desc = document.getElementById('md5Desc');
+            const sha1Desc = document.getElementById('sha1Desc');
+            const sha256Desc = document.getElementById('sha256Desc');
+            const sha512Desc = document.getElementById('sha512Desc');
+            if (aboutHashTitle) aboutHashTitle.textContent = t.aboutHashTitle;
+            if (md5Desc) md5Desc.textContent = t.md5Desc;
+            if (sha1Desc) sha1Desc.textContent = t.sha1Desc;
+            if (sha256Desc) sha256Desc.textContent = t.sha256Desc;
+            if (sha512Desc) sha512Desc.textContent = t.sha512Desc;
+            
+            // Footer
+            const footerDesc = document.getElementById('footerDesc');
+            const disclaimerLink = document.getElementById('disclaimerLink');
+            const aboutHashLink = document.getElementById('aboutHashLink');
+            const aboutBsaLink = document.getElementById('aboutBsaLink');
+            const copyright = document.getElementById('copyright');
+            if (footerDesc) footerDesc.textContent = t.footerDesc;
+            if (disclaimerLink) disclaimerLink.textContent = t.disclaimerLink;
+            if (aboutHashLink) aboutHashLink.textContent = t.aboutHashLink;
+            if (aboutBsaLink) aboutBsaLink.textContent = t.aboutBsaLink;
+            if (copyright) copyright.textContent = t.copyright;
+            
+            // Update page title
+            document.title = 'BSA Hash Analyzer | ' + t.heroTitle;
+            
+            // Also sync the certificate modal language selector
+            const certificateLangSelect = document.getElementById('languageSelect');
+            if (certificateLangSelect) certificateLangSelect.value = lang;
+        }
+
+        // Change site language and save to localStorage
+        function changeSiteLanguage() {
+            const siteLanguageSelect = document.getElementById('siteLanguage');
+            const selectedLang = siteLanguageSelect.value;
+            
+            // Save to localStorage
+            localStorage.setItem('bsaHashLang', selectedLang);
+            
+            // Apply language
+            applySiteLanguage(selectedLang);
+        }
+
+        // Load saved language from localStorage
+        function loadSavedLanguage() {
+            const savedLang = localStorage.getItem('bsaHashLang');
+            if (savedLang && translations[savedLang]) {
+                const siteLanguageSelect = document.getElementById('siteLanguage');
+                if (siteLanguageSelect) siteLanguageSelect.value = savedLang;
+                applySiteLanguage(savedLang);
+            }
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             setupDragAndDrop();
             setupFileInput();
+            loadSavedLanguage();
             updateStatus('Libraries loaded successfully!', 'success');
         });
 
@@ -1538,6 +2136,10 @@
                 showToast('Please process files first!');
                 return;
             }
+            // Sync both certificate language selectors with site language
+            syncCertificateLanguageSelectors(currentSiteLanguage);
+            currentLanguage = currentSiteLanguage;
+            
             generateCertificate();
             document.getElementById('certificateModal').classList.add('active');
         }
@@ -1546,8 +2148,36 @@
             document.getElementById('certificateModal').classList.remove('active');
         }
 
+        // Sync both top and bottom language selectors
+        function syncCertificateLanguageSelectors(lang) {
+            const langSelectTop = document.getElementById('languageSelectTop');
+            const langSelectBottom = document.getElementById('languageSelect');
+            if (langSelectTop) langSelectTop.value = lang;
+            if (langSelectBottom) langSelectBottom.value = lang;
+        }
+
+        // Handle language change from top selector
+        function updateCertificateLanguageFromTop() {
+            const newLang = document.getElementById('languageSelectTop').value;
+            syncCertificateLanguageSelectors(newLang);
+            updateLanguageEverywhere(newLang);
+        }
+
+        // Handle language change from bottom selector
         function updateCertificateLanguage() {
-            currentLanguage = document.getElementById('languageSelect').value;
+            const newLang = document.getElementById('languageSelect').value;
+            syncCertificateLanguageSelectors(newLang);
+            updateLanguageEverywhere(newLang);
+        }
+
+        // Update language across entire site
+        function updateLanguageEverywhere(lang) {
+            currentLanguage = lang;
+            // Update site language selector
+            const siteLanguageSelect = document.getElementById('siteLanguage');
+            if (siteLanguageSelect) siteLanguageSelect.value = lang;
+            localStorage.setItem('bsaHashLang', lang);
+            applySiteLanguage(lang);
             generateCertificate();
         }
 
@@ -1556,206 +2186,298 @@
             const certContent = document.getElementById('certificateContent');
             const istDateTime = getISTDateTime();
             
-            // Get system info
-            const userAgent = navigator.userAgent;
-            const platform = navigator.platform || 'Unknown';
-            const browserInfo = getBrowserInfo();
+            // Format date as DD/MM/YYYY
+            const now = new Date();
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const istTime = new Date(now.getTime() + (istOffset + now.getTimezoneOffset() * 60 * 1000));
+            const dd = String(istTime.getDate()).padStart(2, '0');
+            const mm = String(istTime.getMonth() + 1).padStart(2, '0');
+            const yyyy = istTime.getFullYear();
+            const hh = String(istTime.getHours()).padStart(2, '0');
+            const min = String(istTime.getMinutes()).padStart(2, '0');
+            const ss = String(istTime.getSeconds()).padStart(2, '0');
+            const formattedDate = `${dd}/${mm}/${yyyy}`;
+            const formattedTime = `${hh}:${min}:${ss}`;
             
-            // Generate unique certificate number
-            const certNumber = `BSA-${Date.now().toString(36).toUpperCase()}`;
+            // Build Annexure pages (10 files per page)
+            const filesPerPage = 10;
+            const totalAnnexures = Math.ceil(processedFiles.length / filesPerPage) || 1;
             
-            let filesHtmlPartA = '';
-            let filesHtmlPartB = '';
-            
-            processedFiles.forEach((file, index) => {
-                // Part A - File Details
-                filesHtmlPartA += `
-                    <div class="cert-section">
-                        <div class="cert-section-title">${t.serialNo} ${index + 1} - ${t.fileDetails}</div>
-                        <table class="cert-table">
-                            <tr>
-                                <th style="width: 35%">${t.fileName}</th>
-                                <td>${escapeHtml(file.name)}</td>
-                            </tr>
-                            <tr>
-                                <th>${t.fileSize}</th>
-                                <td>${file.size} (${file.sizeBytes} bytes)</td>
-                            </tr>
-                            <tr>
-                                <th>${t.fileType}</th>
-                                <td>${escapeHtml(file.type) || 'application/octet-stream'}</td>
-                            </tr>
-                        </table>
-                    </div>
-                `;
+            // Generate annexure pages for Part A
+            let annexurePagesA = '';
+            for (let page = 0; page < totalAnnexures; page++) {
+                const startIdx = page * filesPerPage;
+                const endIdx = Math.min(startIdx + filesPerPage, processedFiles.length);
+                const pageFiles = processedFiles.slice(startIdx, endIdx);
                 
-                // Part B - Hash Details
-                filesHtmlPartB += `
-                    <div class="cert-section">
-                        <div class="cert-section-title">${t.serialNo} ${index + 1} - ${escapeHtml(file.name)}</div>
-                        <table class="cert-table">
+                let pageRows = '';
+                pageFiles.forEach((file, idx) => {
+                    const ext = file.name.split('.').pop().toUpperCase();
+                    pageRows += `
+                        <tr>
+                            <td class="sno">${startIdx + idx + 1}</td>
+                            <td class="filename">${escapeHtml(file.name)}</td>
+                            <td class="filetype">${ext}</td>
+                            <td class="filesize">${file.size}</td>
+                            <td class="hashvalues">
+                                <strong>SHA-1:</strong> ${file.hashes.sha1}<br><br>
+                                <strong>SHA-256:</strong> ${file.hashes.sha256}
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                annexurePagesA += `
+                <div class="certificate ${page < totalAnnexures - 1 ? 'cert-page-break' : ''}">
+                    <div class="cert-annexure-title">${t.certAnnexure} - ${t.pageOf} ${page + 1} / ${totalAnnexures}</div>
+                    <div class="cert-section-ref" style="margin-bottom: 20px;">(${t.certAttachedTo} ${t.certPartACert})</div>
+                    
+                    <table class="cert-hash-table">
+                        <thead>
                             <tr>
-                                <th style="width: 35%">${t.fileName}</th>
-                                <td>${escapeHtml(file.name)}</td>
+                                <th>${t.certSNo}</th>
+                                <th>${t.certFileName}</th>
+                                <th>${t.certFileType}</th>
+                                <th>${t.certFileSize}</th>
+                                <th>${t.certHashValues}</th>
                             </tr>
-                            <tr>
-                                <th>${t.fileSize}</th>
-                                <td>${file.size} (${file.sizeBytes} bytes)</td>
-                            </tr>
-                            <tr>
-                                <th>${t.processedOn}</th>
-                                <td>${istDateTime.full}</td>
-                            </tr>
-                        </table>
-                        
-                        <div class="cert-section-title" style="margin-top: 15px;">${t.hashValues}</div>
-                        <table class="cert-table">
-                            <tr>
-                                <th style="width: 15%">${t.algorithm}</th>
-                                <th>${t.hashValue}</th>
-                            </tr>
-                            <tr>
-                                <td><strong>MD5</strong></td>
-                                <td style="font-family: 'Consolas', monospace; font-size: 0.85rem;">${file.hashes.md5}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>SHA-1</strong></td>
-                                <td style="font-family: 'Consolas', monospace; font-size: 0.85rem;">${file.hashes.sha1}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>SHA-256</strong></td>
-                                <td style="font-family: 'Consolas', monospace; font-size: 0.8rem;">${file.hashes.sha256}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>SHA-512</strong></td>
-                                <td style="font-family: 'Consolas', monospace; font-size: 0.7rem; word-break: break-all;">${file.hashes.sha512}</td>
-                            </tr>
-                        </table>
+                        </thead>
+                        <tbody>
+                            ${pageRows}
+                        </tbody>
+                    </table>
+                    
+                    <div class="cert-page-footer">
+                        ${t.certGeneratedOn} ${formattedDate} ${t.certAt} ${formattedTime} ${t.certIST} | ${t.toolName}
                     </div>
+                </div>
                 `;
-            });
+            }
+            
+            // Generate annexure pages for Part B
+            let annexurePagesB = '';
+            for (let page = 0; page < totalAnnexures; page++) {
+                const startIdx = page * filesPerPage;
+                const endIdx = Math.min(startIdx + filesPerPage, processedFiles.length);
+                const pageFiles = processedFiles.slice(startIdx, endIdx);
+                
+                let pageRows = '';
+                pageFiles.forEach((file, idx) => {
+                    const ext = file.name.split('.').pop().toUpperCase();
+                    pageRows += `
+                        <tr>
+                            <td class="sno">${startIdx + idx + 1}</td>
+                            <td class="filename">${escapeHtml(file.name)}</td>
+                            <td class="filetype">${ext}</td>
+                            <td class="filesize">${file.size}</td>
+                            <td class="hashvalues">
+                                <strong>SHA-1:</strong> ${file.hashes.sha1}<br><br>
+                                <strong>SHA-256:</strong> ${file.hashes.sha256}
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                annexurePagesB += `
+                <div class="certificate ${page < totalAnnexures - 1 ? 'cert-page-break' : ''}">
+                    <div class="cert-annexure-title">${t.certAnnexure} - ${t.pageOf} ${page + 1} / ${totalAnnexures}</div>
+                    <div class="cert-section-ref" style="margin-bottom: 20px;">(${t.certAttachedTo} ${t.certPartBCert})</div>
+                    
+                    <table class="cert-hash-table">
+                        <thead>
+                            <tr>
+                                <th>${t.certSNo}</th>
+                                <th>${t.certFileName}</th>
+                                <th>${t.certFileType}</th>
+                                <th>${t.certFileSize}</th>
+                                <th>${t.certHashValues}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pageRows}
+                        </tbody>
+                    </table>
+                    
+                    <div class="cert-page-footer">
+                        ${t.certGeneratedOn} ${formattedDate} ${t.certAt} ${formattedTime} ${t.certIST} | ${t.toolName}${page === totalAnnexures - 1 ? '<br><span style="font-size: 9px; color: #999;">' + t.certHashNote + '</span>' : ''}
+                    </div>
+                </div>
+                `;
+            }
+            
+            // Annexure text for certificates
+            const annexureText = totalAnnexures > 1 
+                ? `<strong>${t.certAnnexure}</strong> (${totalAnnexures} ${t.certPages})` 
+                : `<strong>${t.certAnnexure}</strong>`;
 
             certContent.innerHTML = `
-                <!-- PART A - Certificate under Section 63(4) of BSA 2023 -->
-                <div class="certificate" style="margin-bottom: 30px; page-break-after: always;">
-                    <div class="cert-header">
-                        <div style="font-weight: bold; color: #e94560; font-size: 1.1rem; margin-bottom: 5px;">${t.partATitle}</div>
-                        <div class="cert-title">${t.partASubtitle}</div>
-                        <div class="cert-subtitle">${t.partASubtitleAlt}</div>
-                        <div style="margin-top: 10px; font-size: 0.9rem; color: #666;">
-                            ${t.sectionRef} | Certificate No: <strong>${certNumber}-A</strong>
-                        </div>
+                <!-- PART-A - Certificate (to be filled by the Party) -->
+                <div class="certificate cert-page-break">
+                    <div class="cert-main-title">${t.certTitle}</div>
+                    <div class="cert-section-ref">${t.certSectionRef}</div>
+                    
+                    <div class="cert-part-title">${t.partALabel}</div>
+                    <div class="cert-part-subtitle">${t.partADesc}</div>
+                    
+                    <p class="cert-para" style="margin-top: 25px;">
+                        ${t.certI} <span class="cert-blank">____________________</span>, 
+                        ${t.certSonDaughterSpouse} <span class="cert-blank">____________________</span>,
+                        ${t.certAge} <span class="cert-blank">_____</span>,
+                        ${t.certResidingAt} <span class="cert-blank-long">__________________________________________________________</span>
+                    </p>
+                    
+                    <p class="cert-para">${t.certAffirm}</p>
+                    <p class="cert-para">
+                        ${t.certProducedRecord}
+                    </p>
+                    
+                    <div class="cert-checkbox-grid">
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceComputer}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceDVR}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceMobile}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceFlash}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceCD}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceServer}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceCloud}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceOther}</div>
                     </div>
                     
-                    <div class="cert-body">
-                        <!-- Electronic Record Information -->
-                        <div class="cert-section">
-                            <div class="cert-section-title">${t.electronicRecord}</div>
-                            <table class="cert-table">
-                                <tr>
-                                    <th style="width: 35%">${t.sourceDevice}</th>
-                                    <td>${platform}</td>
-                                </tr>
-                                <tr>
-                                    <th>${t.browser}</th>
-                                    <td>${browserInfo}</td>
-                                </tr>
-                                <tr>
-                                    <th>${t.processedOn}</th>
-                                    <td>${istDateTime.full}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        
-                        <!-- File Details -->
-                        ${filesHtmlPartA}
-                        
-                        <!-- Certificate Conditions -->
-                        <div class="cert-section">
-                            <div class="cert-section-title">${t.certConditions}</div>
-                            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #e94560;">
-                                <p style="margin-bottom: 10px; color: #333; line-height: 1.6;">${t.condition1}</p>
-                                <p style="margin-bottom: 10px; color: #333; line-height: 1.6;">${t.condition2}</p>
-                                <p style="margin-bottom: 10px; color: #333; line-height: 1.6;">${t.condition3}</p>
-                                <p style="color: #333; line-height: 1.6;">${t.condition4}</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Certification Statement Part A -->
-                        <div class="cert-section">
-                            <div class="cert-section-title">${t.certificationPartA}</div>
-                            <p style="color: #333; line-height: 1.8; text-align: justify; padding: 15px; background: #f0f8ff; border-radius: 8px; border: 1px solid #cce5ff;">
-                                ${t.certStatementA}
-                            </p>
-                        </div>
+                    <table class="cert-device-table">
+                        <tr>
+                            <td class="label">${t.certMakeModel}</td>
+                            <td></td>
+                            <td class="label">${t.certColor}</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td class="label">${t.certSerialNumber}</td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td class="label">${t.certIMEI}</td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </table>
+                    
+                    <p style="font-size: 11px;">
+                        ${t.certDeviceInfo}
+                        <span class="cert-form-line-long"></span>
+                    </p>
+                    
+                    <p class="cert-para">
+                        ${t.certDeviceStatement}
+                    </p>
+                    
+                    <p class="cert-para">
+                        ${t.certDeviceNotWorking}
+                        <span class="cert-checkbox" style="margin-left: 10px;"></span> ${t.certOwned}
+                        <span class="cert-checkbox" style="margin-left: 10px;"></span> ${t.certMaintained}
+                        <span class="cert-checkbox" style="margin-left: 10px;"></span> ${t.certManaged}
+                        <span class="cert-checkbox" style="margin-left: 10px;"></span> ${t.certOperated}
+                        ${t.certByMe}
+                    </p>
+                    
+                    <p class="cert-para">
+                        ${t.certHashStatement} ${annexureText}, ${t.certObtainedThrough} <strong>${t.certAttached} ${annexureText}.</strong>
+                    </p>
+                    
+                    <div class="cert-info-row">
+                        <div class="cert-info-item"><strong>${t.certDate}:</strong> ${formattedDate}</div>
+                        <div class="cert-info-item"><strong>${t.certTime}:</strong> ${formattedTime}</div>
+                        <div class="cert-info-item"><strong>${t.certPlace}:</strong> <span class="cert-form-line" style="width: 150px;"></span></div>
                     </div>
                     
-                    <div class="cert-footer">
-                        <div class="cert-signature">
-                            <div style="margin-bottom: 60px;"></div>
-                            <div class="signature-line">${t.signatureTitle}</div>
-                            <div style="margin-top: 15px; border-top: 1px dashed #999; padding-top: 8px;">${t.nameDesignation}: _____________________</div>
-                            <div style="margin-top: 10px;">${t.datePlace}: _____________________</div>
-                        </div>
-                        <div class="cert-stamp">
-                            <div class="stamp-placeholder">${t.stampText}</div>
-                            <div>${t.stampTitle}</div>
-                        </div>
+                    <div class="cert-info-row">
+                        <div class="cert-info-item"><strong>${t.certName}:</strong> <span class="cert-form-line" style="width: 200px;"></span></div>
+                        <div class="cert-info-item"><strong>${t.certDesignation}:</strong> <span class="cert-form-line" style="width: 180px;"></span></div>
+                        <div class="cert-info-item" style="margin-left: auto;"><div class="cert-sign-box" style="width: 120px;">${t.certSignature}</div></div>
                     </div>
                     
-                    <div class="cert-timestamp">
-                        <strong>${t.generatedAt}:</strong> ${istDateTime.full}<br>
-                        <strong>${t.timezone}</strong><br>
-                        <em style="font-size: 0.8rem; color: #888;">${t.partATitle} - ${t.toolName}</em>
+                    <div class="cert-page-footer">
+                        ${t.certFooter}
                     </div>
                 </div>
                 
-                <!-- PART B - Hash Value Certificate -->
-                <div class="certificate">
-                    <div class="cert-header">
-                        <div style="font-weight: bold; color: #00d9ff; font-size: 1.1rem; margin-bottom: 5px;">${t.partBTitle}</div>
-                        <div class="cert-title">${t.partBSubtitle}</div>
-                        <div class="cert-subtitle">${t.partASubtitleAlt}</div>
-                        <div style="margin-top: 10px; font-size: 0.9rem; color: #666;">
-                            ${t.sectionRef} | Certificate No: <strong>${certNumber}-B</strong>
-                        </div>
+                <!-- Annexure-I for Part A -->
+                ${annexurePagesA}
+                
+                <!-- PART-B - Certificate (to be filled by the Expert) -->
+                <div class="certificate cert-page-break cert-part-b">
+                    <div class="cert-main-title">${t.certTitle}</div>
+                    <div class="cert-section-ref">${t.certSectionRef}</div>
+                    
+                    <div class="cert-part-title">${t.partBLabel}</div>
+                    <div class="cert-part-subtitle">${t.partBDesc}</div>
+                    
+                    <p class="cert-para" style="margin-top: 25px;">
+                        ${t.certI} <span class="cert-blank">____________________</span>, 
+                        ${t.certSonDaughterSpouse} <span class="cert-blank">____________________</span>,
+                        ${t.certAge} <span class="cert-blank">_____</span>,
+                        ${t.certResidingAt} <span class="cert-blank-long">__________________________________________</span>
+                    </p>
+                    
+                    <p class="cert-para">${t.certAffirm}</p>
+                    
+                    <p class="cert-para">
+                        ${t.certProducedRecordB}
+                    </p>
+                    
+                    <div class="cert-checkbox-grid">
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceComputer}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceDVR}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceMobile}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceFlash}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceCD}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceServer}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceCloud}</div>
+                        <div class="cert-checkbox-item"><span class="cert-checkbox"></span> ${t.certDeviceOther}</div>
                     </div>
                     
-                    <div class="cert-body">
-                        <!-- Hash Values for Each File -->
-                        ${filesHtmlPartB}
-                        
-                        <!-- Certification Statement Part B -->
-                        <div class="cert-section">
-                            <div class="cert-section-title">${t.certificationPartB}</div>
-                            <p style="color: #333; line-height: 1.8; text-align: justify; padding: 15px; background: #f0fff4; border-radius: 8px; border: 1px solid #c6f6d5;">
-                                ${t.certStatementB}
-                            </p>
-                        </div>
+                    <table class="cert-device-table">
+                        <tr>
+                            <td class="label">${t.certMakeModel}:</td>
+                            <td></td>
+                            <td class="label">${t.certColor}:</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td class="label">${t.certSerialNumber}:</td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td class="label">${t.certIMEI}:</td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </table>
+                    
+                    <p class="cert-para" style="font-size: 11px;">
+                        ${t.certDeviceInfo}
+                        <span class="cert-form-line-long"></span>
+                    </p>
+                    
+                    <p class="cert-para">
+                        ${t.certHashStatement} ${annexureText}, ${t.certObtainedThrough} <strong>${t.certAttached} ${annexureText}.</strong>
+                    </p>
+                    
+                    <div class="cert-info-row">
+                        <div class="cert-info-item"><strong>${t.certDate}:</strong> ${formattedDate}</div>
+                        <div class="cert-info-item"><strong>${t.certTime}:</strong> ${formattedTime}</div>
+                        <div class="cert-info-item"><strong>${t.certPlace}:</strong> <span class="cert-form-line" style="width: 150px;"></span></div>
                     </div>
                     
-                    <div class="cert-footer">
-                        <div class="cert-signature">
-                            <div style="margin-bottom: 60px;"></div>
-                            <div class="signature-line">${t.signatureTitle}</div>
-                            <div style="margin-top: 15px; border-top: 1px dashed #999; padding-top: 8px;">${t.nameDesignation}: _____________________</div>
-                            <div style="margin-top: 10px;">${t.datePlace}: _____________________</div>
-                        </div>
-                        <div class="cert-stamp">
-                            <div class="stamp-placeholder">${t.stampText}</div>
-                            <div>${t.stampTitle}</div>
-                        </div>
+                    <div class="cert-info-row">
+                        <div class="cert-info-item"><strong>${t.certName}:</strong> <span class="cert-form-line" style="width: 200px;"></span></div>
+                        <div class="cert-info-item"><strong>${t.certDesignation}:</strong> <span class="cert-form-line" style="width: 180px;"></span></div>
+                        <div class="cert-info-item" style="margin-left: auto;"><div class="cert-sign-box" style="width: 120px;">${t.certSignature}</div></div>
                     </div>
                     
-                    <div class="cert-timestamp">
-                        <strong>${t.generatedAt}:</strong> ${istDateTime.full}<br>
-                        <strong>${t.timezone}</strong><br>
-                        <em style="font-size: 0.8rem; color: #888;">${t.partBTitle} - ${t.toolName}</em><br><br>
-                        <div style="font-size: 0.75rem; color: #999; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
-                            ${t.disclaimer}
-                        </div>
+                    <div class="cert-page-footer">
+                        ${t.certFooter}
                     </div>
                 </div>
+                
+                <!-- Annexure-I for Part B -->
+                ${annexurePagesB}
             `;
         }
         
