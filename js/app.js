@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check if hash-wasm is loaded
     if (typeof hashwasm !== 'undefined') {
-        updateStatus('Hash libraries loaded successfully!', 'success');
+        updateStatus('Ready!', 'success');
     } else {
         updateStatus('Loading hash libraries...', 'processing');
     }
