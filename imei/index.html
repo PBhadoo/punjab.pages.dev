@@ -12,8 +12,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 15, 26, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(99, 102, 241, 0.2);
+            border-top-color: var(--accent-primary, #6366f1);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: var(--text-secondary, #a0a0b0);
+        }
+        .loading-progress {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--accent-primary, #6366f1);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .verify-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text"><i class="fas fa-database"></i> Loading TAC Database...</div>
+        <div class="loading-progress" id="loadingProgress">Initializing...</div>
+    </div>
+
     <header class="header">
         <div class="header-container">
             <a href="/" class="logo" style="text-decoration: none; color: inherit;">
@@ -45,14 +102,17 @@
             <div class="input-group">
                 <h3><i class="fas fa-keyboard"></i> Enter IMEI Number</h3>
                 <div class="input-row">
-                    <input type="text" id="imeiInput" class="input-field" placeholder="Enter 15-digit IMEI number" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                    <button class="verify-btn" onclick="verifyIMEI()">
+                    <input type="text" id="imeiInput" class="input-field" placeholder="Enter 14 or 15-digit IMEI number" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" disabled>
+                    <button class="verify-btn" id="verifyBtn" onclick="verifyIMEI()" disabled>
                         <i class="fas fa-check-circle"></i> Verify
                     </button>
                 </div>
                 <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px;">
-                    <i class="fas fa-info-circle"></i> IMEI can be found by dialing *#06# on any mobile phone
+                    <i class="fas fa-info-circle"></i> IMEI can be found by dialing *#06# on any mobile phone. Enter 14 digits (without check digit) or full 15 digits.
                 </p>
+                <div id="dbStatus" style="margin-top: 15px; padding: 10px 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); border: 1px solid rgba(99, 102, 241, 0.2);">
+                    <i class="fas fa-spinner fa-spin"></i> Loading TAC database...
+                </div>
             </div>
         </section>
 
@@ -88,6 +148,9 @@
             </div>
 
             <div class="action-buttons">
+                <button class="action-btn primary" onclick="downloadReport()">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </button>
                 <button class="action-btn" onclick="copyResult()">
                     <i class="fas fa-copy"></i> Copy Result
                 </button>
@@ -134,24 +197,146 @@
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        // Known TAC prefixes for manufacturers (sample data)
-        const tacDatabase = {
-            '35': { brand: 'Various (Nokia, Samsung, etc.)', note: 'Common prefix for multiple manufacturers' },
-            '01': { brand: 'AEG', note: 'Early mobile devices' },
-            '10': { brand: 'Nokia', note: 'Legacy Nokia devices' },
-            '35332807': { brand: 'Apple', model: 'iPhone', note: 'Apple iPhone series' },
-            '35391107': { brand: 'Apple', model: 'iPhone', note: 'Apple iPhone series' },
-            '35405803': { brand: 'Apple', model: 'iPhone', note: 'Apple iPhone series' },
-            '86': { brand: 'Chinese Manufacturers', note: 'Common for devices made in China' },
-            '99000': { brand: 'Test/Virtual', note: 'Used for testing purposes' },
-            '35678904': { brand: 'Samsung', model: 'Galaxy Series', note: 'Samsung smartphones' },
-            '35294909': { brand: 'Samsung', model: 'Galaxy Series', note: 'Samsung smartphones' },
-            '35316406': { brand: 'Xiaomi', model: 'Mi/Redmi Series', note: 'Xiaomi smartphones' },
-            '86513403': { brand: 'OnePlus', model: 'OnePlus Series', note: 'OnePlus smartphones' },
-            '35480910': { brand: 'Oppo', model: 'Oppo Series', note: 'Oppo smartphones' },
-            '35851504': { brand: 'Vivo', model: 'Vivo Series', note: 'Vivo smartphones' },
-            '35900106': { brand: 'Realme', model: 'Realme Series', note: 'Realme smartphones' },
-            '35822009': { brand: 'Motorola', model: 'Moto Series', note: 'Motorola/Lenovo smartphones' },
+        // TAC Database - will be loaded from external JSON file (Osmocom TAC DB)
+        let tacDatabase = {};
+        let tacLookup = {}; // Quick lookup: TAC -> {brand, model, altNames, gsmarena}
+        let dbLoaded = false;
+        let dbStats = { brands: 0, models: 0, tacs: 0 };
+
+        // Load TAC database from JSON file
+        async function loadTACDatabase() {
+            try {
+                updateLoadingProgress('Fetching database...');
+                const response = await fetch('tacdb.json');
+                if (!response.ok) throw new Error('Failed to load TAC database');
+                
+                updateLoadingProgress('Parsing JSON data...');
+                tacDatabase = await response.json();
+                
+                updateLoadingProgress('Building search index...');
+                // Build lookup index for fast TAC searches
+                buildTACLookup();
+                dbLoaded = true;
+                
+                updateLoadingProgress('Ready!');
+                updateDbStatus();
+                hideLoadingOverlay();
+                enableInputs();
+                
+                console.log(`TAC Database loaded: ${dbStats.brands} brands, ${dbStats.models} models, ${dbStats.tacs} TACs`);
+            } catch (error) {
+                console.error('Error loading TAC database:', error);
+                updateLoadingProgress('Using fallback database...');
+                // Use fallback minimal database
+                useFallbackDatabase();
+                hideLoadingOverlay();
+                enableInputs();
+                showToast('Warning: Full TAC database failed to load. Using limited fallback data.');
+            }
+        }
+
+        // Update loading progress text
+        function updateLoadingProgress(text) {
+            const progressEl = document.getElementById('loadingProgress');
+            if (progressEl) progressEl.textContent = text;
+        }
+
+        // Hide loading overlay
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+                // Remove from DOM after animation
+                setTimeout(() => overlay.style.display = 'none', 500);
+            }
+        }
+
+        // Enable input and verify button after database loads
+        function enableInputs() {
+            const input = document.getElementById('imeiInput');
+            const btn = document.getElementById('verifyBtn');
+            if (input) {
+                input.disabled = false;
+                input.focus();
+            }
+            if (btn) btn.disabled = false;
+        }
+
+        // Build quick lookup index from the hierarchical database
+        function buildTACLookup() {
+            tacLookup = {};
+            let brandCount = 0, modelCount = 0, tacCount = 0;
+
+            if (tacDatabase.brands) {
+                for (const [brandName, brandData] of Object.entries(tacDatabase.brands)) {
+                    brandCount++;
+                    if (brandData.models && Array.isArray(brandData.models)) {
+                        for (const modelObj of brandData.models) {
+                            for (const [modelName, modelData] of Object.entries(modelObj)) {
+                                modelCount++;
+                                if (modelData.tacs && Array.isArray(modelData.tacs)) {
+                                    for (const tac of modelData.tacs) {
+                                        tacCount++;
+                                        tacLookup[tac] = {
+                                            brand: brandName,
+                                            model: modelName,
+                                            altNames: modelData.alt_names || [],
+                                            gsmarena: modelData.gsmarena || null,
+                                            brandGsmarena: brandData.gsmarena || null
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            dbStats = { brands: brandCount, models: modelCount, tacs: tacCount };
+        }
+
+        // Fallback database if JSON fails to load
+        function useFallbackDatabase() {
+            tacLookup = {
+                '35332807': { brand: 'Apple', model: 'iPhone 3G' },
+                '35391107': { brand: 'Apple', model: 'iPhone 3GS' },
+                '35405803': { brand: 'Apple', model: 'iPhone 4' },
+                '35880505': { brand: 'Apple', model: 'iPhone 5s' },
+                '35678904': { brand: 'Samsung', model: 'Galaxy S5' },
+                '35294909': { brand: 'Samsung', model: 'Galaxy S6' },
+            };
+            dbLoaded = true;
+            dbStats = { brands: 2, models: 6, tacs: 6 };
+        }
+
+        // Update database status indicator
+        function updateDbStatus() {
+            const statusEl = document.getElementById('dbStatus');
+            if (statusEl) {
+                statusEl.innerHTML = dbLoaded 
+                    ? `<i class="fas fa-database"></i> Database: ${dbStats.tacs.toLocaleString()} TACs | ${dbStats.brands.toLocaleString()} Brands | ${dbStats.models.toLocaleString()} Models`
+                    : `<i class="fas fa-spinner fa-spin"></i> Loading database...`;
+                statusEl.style.color = dbLoaded ? 'var(--success-color)' : 'var(--text-secondary)';
+            }
+        }
+
+        // RBI (Reporting Body Identifier) - first 2 digits of IMEI
+        const rbiDatabase = {
+            '01': { body: 'PTCRB', region: 'USA', fullName: 'PCS Type Certification Review Board' },
+            '10': { body: 'DECT Forum', region: 'Europe', fullName: 'Digital Enhanced Cordless Telecommunications' },
+            '30': { body: 'IFAST', region: 'Canada', fullName: 'Industry Canada' },
+            '33': { body: 'DGPT', region: 'France', fullName: 'Direction Générale des Postes et Télécommunications' },
+            '35': { body: 'BABT', region: 'UK/Global', fullName: 'British Approvals Board for Telecommunications' },
+            '44': { body: 'JATE', region: 'Japan', fullName: 'Japan Approvals Institute for Telecommunications Equipment' },
+            '45': { body: 'KCC', region: 'South Korea', fullName: 'Korea Communications Commission' },
+            '49': { body: 'CMC', region: 'Taiwan', fullName: 'Communications Certification Management' },
+            '50': { body: 'TRA', region: 'UAE', fullName: 'Telecommunications Regulatory Authority' },
+            '51': { body: 'GCF', region: 'Global', fullName: 'Global Certification Forum' },
+            '52': { body: 'LCIE', region: 'France', fullName: 'Laboratoire Central des Industries Électriques' },
+            '53': { body: 'CETECOM', region: 'Spain', fullName: 'Certification Testing Organization' },
+            '54': { body: 'Phoenix Labs', region: 'USA', fullName: 'Phoenix Test Labs' },
+            '86': { body: 'TAF', region: 'China', fullName: 'Telecommunication Accreditation Forum' },
+            '91': { body: 'MSAI', region: 'India', fullName: 'Mobile Standards Alliance of India' },
         };
 
         // Luhn algorithm validation
@@ -188,41 +373,130 @@
             return (10 - (sum % 10)) % 10;
         }
 
-        // Find manufacturer from TAC
+        // Find manufacturer from TAC using the loaded lookup
         function findManufacturer(tac) {
-            // Check for exact matches first (8 digits)
-            if (tacDatabase[tac]) {
-                return tacDatabase[tac];
+            // Check for exact 8-digit TAC match in the lookup
+            if (tacLookup[tac]) {
+                const data = tacLookup[tac];
+                return { 
+                    brand: data.brand, 
+                    model: data.model,
+                    altNames: data.altNames,
+                    note: data.altNames?.length > 0 ? `Also known as: ${data.altNames.join(', ')}` : null,
+                    gsmarena: data.gsmarena,
+                    matchType: 'exact' 
+                };
             }
-            // Check for partial matches
-            for (let i = tac.length; i >= 2; i--) {
+            // Check for decreasing length prefixes (7 to 2 digits)
+            for (let i = 7; i >= 2; i--) {
                 const prefix = tac.substring(0, i);
-                if (tacDatabase[prefix]) {
-                    return tacDatabase[prefix];
+                if (tacLookup[prefix]) {
+                    const data = tacLookup[prefix];
+                    return { 
+                        brand: data.brand, 
+                        model: data.model,
+                        altNames: data.altNames,
+                        note: data.altNames?.length > 0 ? `Also known as: ${data.altNames.join(', ')}` : null,
+                        gsmarena: data.gsmarena,
+                        matchType: 'prefix' 
+                    };
                 }
             }
             return null;
         }
 
+        // Get RBI info (Reporting Body Identifier - first 2 digits)
+        function getRBIInfo(imei) {
+            const rbiCode = imei.substring(0, 2);
+            return rbiDatabase[rbiCode] || null;
+        }
+
+        // Analyze IMEI for potential issues
+        function analyzeIMEI(imei) {
+            const issues = [];
+            const info = [];
+
+            // Check for all zeros
+            if (/^0+$/.test(imei)) {
+                issues.push('IMEI contains all zeros - Invalid device identifier');
+            }
+
+            // Check for all same digits
+            if (/^(\d)\1+$/.test(imei)) {
+                issues.push('IMEI contains repeated single digit - Potentially fake');
+            }
+
+            // Check for sequential digits
+            if (imei === '123456789012345' || imei === '012345678901234') {
+                issues.push('IMEI is a sequential pattern - Likely test/fake number');
+            }
+
+            // Check for test IMEI prefix
+            if (imei.startsWith('99000') || imei.startsWith('00000')) {
+                issues.push('This appears to be a test/virtual device IMEI');
+            }
+
+            // Check for commonly known fake patterns
+            if (imei.startsWith('123456') || imei.startsWith('000000')) {
+                issues.push('This IMEI starts with a commonly faked pattern');
+            }
+
+            return { issues, info };
+        }
+
+        // Format IMEI for display
+        function formatIMEI(imei) {
+            return `${imei.slice(0,2)}-${imei.slice(2,8)}-${imei.slice(8,14)}-${imei.slice(14)}`;
+        }
+
+        // Generate IMEISV (IMEI Software Version) format
+        function formatIMEISV(imei) {
+            return imei.slice(0, 14) + '-XX'; // XX represents software version
+        }
+
         function verifyIMEI() {
-            const imei = document.getElementById('imeiInput').value.trim();
+            let imei = document.getElementById('imeiInput').value.trim();
             
-            if (imei.length !== 15) {
-                showToast('Please enter a valid 15-digit IMEI number');
+            if (imei.length < 14 || imei.length > 15) {
+                showToast('Please enter a valid 14 or 15-digit IMEI number');
                 return;
             }
             
-            if (!/^\d{15}$/.test(imei)) {
+            if (!/^\d{14,15}$/.test(imei)) {
                 showToast('IMEI must contain only digits');
                 return;
             }
 
-            const isValid = luhnCheck(imei);
-            const tac = imei.substring(0, 8);
-            const serialNumber = imei.substring(8, 14);
-            const checkDigit = imei.substring(14);
+            // Update URL with IMEI parameter for sharing
+            const newUrl = window.location.pathname + '?imei=' + imei;
+            window.history.pushState({ imei: imei }, '', newUrl);
+
+            // Calculate expected check digit from first 14 digits
             const expectedCheckDigit = calculateCheckDigit(imei.substring(0, 14));
+            
+            // Handle 14-digit IMEI (without check digit)
+            let isPartialIMEI = false;
+            let checkDigit = '';
+            let isValid = false;
+            
+            if (imei.length === 14) {
+                isPartialIMEI = true;
+                checkDigit = expectedCheckDigit.toString();
+                // Auto-complete the IMEI with calculated check digit
+                imei = imei + checkDigit;
+                isValid = true; // Check digit is calculated, so it's valid by definition
+            } else {
+                checkDigit = imei.substring(14);
+                isValid = luhnCheck(imei);
+            }
+
+            const tac = imei.substring(0, 8);
+            const rbi = imei.substring(0, 2); // Reporting Body Identifier
+            const tacRest = imei.substring(2, 8); // Rest of TAC
+            const fac = imei.substring(8, 14); // Final Assembly Code (Serial)
             const manufacturer = findManufacturer(tac);
+            const rbiInfo = getRBIInfo(imei);
+            const analysis = analyzeIMEI(imei);
 
             document.getElementById('resultsSection').style.display = 'block';
             
@@ -230,7 +504,12 @@
             const resultTitle = document.getElementById('resultTitle');
             const resultSubtitle = document.getElementById('resultSubtitle');
 
-            if (isValid) {
+            if (isPartialIMEI) {
+                resultIcon.className = 'result-icon valid';
+                resultIcon.innerHTML = '<i class="fas fa-calculator"></i>';
+                resultTitle.textContent = 'Check Digit Calculated';
+                resultSubtitle.textContent = `Complete IMEI: ${imei} (check digit: ${checkDigit})`;
+            } else if (isValid) {
                 resultIcon.className = 'result-icon valid';
                 resultIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
                 resultTitle.textContent = 'Valid IMEI Checksum';
@@ -243,13 +522,26 @@
             }
 
             let detailsHTML = `
+                ${isPartialIMEI ? `
+                <div class="detail-item" style="grid-column: span 2; background: rgba(59, 130, 246, 0.15); padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                    <i class="fas fa-info-circle" style="color: #3b82f6;"></i> 
+                    <span style="color: var(--text-secondary);">You entered 14 digits. The check digit <strong style="color: var(--accent-primary);">${checkDigit}</strong> has been calculated using the Luhn algorithm.</span>
+                </div>` : ''}
                 <div class="detail-item">
                     <div class="detail-label">IMEI Number</div>
-                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${imei}</div>
+                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">${imei}</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Checksum Status</div>
-                    <div class="detail-value" style="color: ${isValid ? 'var(--success-color)' : '#ef4444'}">${isValid ? 'Valid' : 'Invalid'}</div>
+                    <div class="detail-label">Formatted IMEI</div>
+                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${formatIMEI(imei)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Luhn Checksum</div>
+                    <div class="detail-value" style="color: ${isValid ? 'var(--success-color)' : '#ef4444'}; font-weight: bold;">
+                        ${isValid ? '✓ VALID' : '✗ INVALID'} 
+                        ${isPartialIMEI ? '<span style="font-weight: normal; color: var(--text-secondary);">(Auto-calculated)</span>' : ''} 
+                        ${!isValid ? `<span style="font-weight: normal;">(Expected: ${expectedCheckDigit})</span>` : ''}
+                    </div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">TAC (Type Allocation Code)</div>
@@ -257,51 +549,143 @@
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Serial Number</div>
-                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${serialNumber}</div>
+                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${fac}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Check Digit</div>
+                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${checkDigit}</div>
                 </div>
             `;
 
+            // Manufacturer info section
             if (manufacturer) {
+                // Handle gsmarena link - database may contain full URL or just the slug
+                let gsmarenaLink = null;
+                if (manufacturer.gsmarena) {
+                    if (manufacturer.gsmarena.startsWith('http')) {
+                        // Full URL already in database - just ensure https
+                        gsmarenaLink = manufacturer.gsmarena.replace('http://', 'https://');
+                    } else {
+                        // Just slug, construct full URL
+                        gsmarenaLink = `https://www.gsmarena.com/${manufacturer.gsmarena}.php`;
+                    }
+                }
                 detailsHTML += `
-                    <div class="detail-item">
-                        <div class="detail-label">Manufacturer</div>
-                        <div class="detail-value">${manufacturer.brand}</div>
+                    <div class="detail-item" style="grid-column: span 2; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(16, 185, 129, 0.1)); padding: 18px; border-radius: 10px; margin-top: 12px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                        <h4 style="margin: 0 0 12px 0; color: var(--accent-primary); display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-mobile-alt"></i> Device Information
+                            ${manufacturer.matchType === 'exact' ? '<span style="background: var(--success-color); color: white; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; font-weight: normal;">Exact Match</span>' : '<span style="background: rgba(251, 191, 36, 0.8); color: #1a1a2e; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; font-weight: normal;">Partial Match</span>'}
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 4px;">Brand</div>
+                                <div style="font-weight: 600; font-size: 1rem;">${manufacturer.brand}</div>
+                            </div>
+                            ${manufacturer.model ? `
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 4px;">Model</div>
+                                <div style="font-weight: 600; font-size: 1rem;">${manufacturer.model}</div>
+                            </div>` : ''}
+                            ${manufacturer.note ? `
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; ${!manufacturer.model ? 'grid-column: span 1;' : ''}">
+                                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 4px;">Additional Info</div>
+                                <div style="font-size: 0.9rem;">${manufacturer.note}</div>
+                            </div>` : ''}
+                            ${gsmarenaLink ? `
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 4px;">Device Specs</div>
+                                <a href="${gsmarenaLink}" target="_blank" style="color: var(--accent-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fas fa-external-link-alt"></i> View on GSMArena
+                                </a>
+                            </div>` : ''}
+                        </div>
                     </div>
                 `;
-                if (manufacturer.model) {
-                    detailsHTML += `
-                        <div class="detail-item">
-                            <div class="detail-label">Model Series</div>
-                            <div class="detail-value">${manufacturer.model}</div>
-                        </div>
-                    `;
-                }
             } else {
                 detailsHTML += `
-                    <div class="detail-item">
-                        <div class="detail-label">Manufacturer</div>
-                        <div class="detail-value" style="color: var(--text-secondary)">Unknown (TAC not in database)</div>
+                    <div class="detail-item" style="grid-column: span 2; background: rgba(251, 191, 36, 0.1); padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                        <h4 style="margin: 0 0 8px 0; color: #fbbf24;"><i class="fas fa-question-circle"></i> Device Information</h4>
+                        <p style="margin: 0; color: var(--text-secondary);">
+                            Manufacturer/Model not found in local database. TAC: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">${tac}</code>
+                            <br><small>Try checking on <a href="https://www.imei.info" target="_blank" style="color: var(--accent-secondary);">imei.info</a> for complete device info.</small>
+                        </p>
                     </div>
                 `;
             }
+
+            // RBI Info section
+            if (rbiInfo) {
+                detailsHTML += `
+                    <div class="detail-item" style="grid-column: span 2; background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                        <h4 style="margin: 0 0 10px 0; color: #3b82f6;"><i class="fas fa-globe"></i> Certification Information</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px;">
+                            <div><strong>Reporting Body:</strong> ${rbiInfo.body}</div>
+                            <div><strong>Region:</strong> ${rbiInfo.region}</div>
+                            <div style="grid-column: span 2;"><strong>Full Name:</strong> ${rbiInfo.fullName}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Analysis warnings
+            if (analysis.issues.length > 0) {
+                detailsHTML += `
+                    <div class="detail-item" style="grid-column: span 2; background: rgba(239, 68, 68, 0.15); padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid rgba(239, 68, 68, 0.4);">
+                        <h4 style="margin: 0 0 10px 0; color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> Warnings</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #fca5a5;">
+                            ${analysis.issues.map(issue => `<li style="margin-bottom: 4px;">${issue}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Quick Links section
+            detailsHTML += `
+                <div class="detail-item" style="grid-column: span 2; background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <h4 style="margin: 0 0 10px 0; color: #10b981;"><i class="fas fa-external-link-alt"></i> External Verification Links</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <a href="https://www.imei.info/?imei=${imei}" target="_blank" style="background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 6px; color: var(--text-primary); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-search"></i> IMEI.info
+                        </a>
+                        <a href="https://ceir.gov.in/Home/index.jsp" target="_blank" style="background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 6px; color: var(--text-primary); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-shield-alt"></i> CEIR India (Stolen Check)
+                        </a>
+                        <a href="https://www.gsma.com/get-involved/working-groups/fraud-security-group/imei-database" target="_blank" style="background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 6px; color: var(--text-primary); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-database"></i> GSMA Database
+                        </a>
+                    </div>
+                </div>
+            `;
 
             document.getElementById('resultDetails').innerHTML = detailsHTML;
 
             // IMEI Breakdown visualization
             document.getElementById('imeiBreakdown').innerHTML = `
                 <h4 style="margin-bottom: 15px; color: var(--text-primary);"><i class="fas fa-puzzle-piece"></i> IMEI Structure Breakdown</h4>
-                <div style="display: flex; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; flex-wrap: wrap; justify-content: center;">
-                    <div style="background: rgba(99, 102, 241, 0.3); padding: 10px 15px; border-radius: 8px; border: 2px solid rgba(99, 102, 241, 0.5);">
-                        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">TAC</div>
-                        ${tac}
+                <div style="display: flex; gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;">
+                    <div style="background: rgba(139, 92, 246, 0.3); padding: 12px 16px; border-radius: 8px; border: 2px solid rgba(139, 92, 246, 0.5); text-align: center;">
+                        <div style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">RBI</div>
+                        <div>${rbi}</div>
                     </div>
-                    <div style="background: rgba(16, 185, 129, 0.3); padding: 10px 15px; border-radius: 8px; border: 2px solid rgba(16, 185, 129, 0.5);">
-                        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">Serial</div>
-                        ${serialNumber}
+                    <div style="background: rgba(59, 130, 246, 0.3); padding: 12px 16px; border-radius: 8px; border: 2px solid rgba(59, 130, 246, 0.5); text-align: center;">
+                        <div style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">TAC</div>
+                        <div>${tacRest}</div>
                     </div>
-                    <div style="background: ${isValid ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}; padding: 10px 15px; border-radius: 8px; border: 2px solid ${isValid ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'};">
-                        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">Check</div>
-                        ${checkDigit}
+                    <div style="background: rgba(16, 185, 129, 0.3); padding: 12px 16px; border-radius: 8px; border: 2px solid rgba(16, 185, 129, 0.5); text-align: center;">
+                        <div style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">Serial</div>
+                        <div>${fac}</div>
+                    </div>
+                    <div style="background: ${isValid ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}; padding: 12px 16px; border-radius: 8px; border: 2px solid ${isValid ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'}; text-align: center;">
+                        <div style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">Check</div>
+                        <div>${checkDigit}</div>
+                    </div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; font-size: 0.8rem; color: var(--text-secondary);">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                        <div><strong style="color: rgba(139, 92, 246, 0.9);">RBI</strong> = Reporting Body Identifier (Certification region)</div>
+                        <div><strong style="color: rgba(59, 130, 246, 0.9);">TAC</strong> = Type Allocation Code (Device model)</div>
+                        <div><strong style="color: rgba(16, 185, 129, 0.9);">Serial</strong> = Device Serial Number (Unique per device)</div>
+                        <div><strong style="color: ${isValid ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)'};">Check</strong> = Luhn Algorithm Check Digit</div>
                     </div>
                 </div>
             `;
@@ -314,36 +698,248 @@
             const imei = document.getElementById('imeiInput').value;
             const isValid = luhnCheck(imei);
             const tac = imei.substring(0, 8);
+            const fac = imei.substring(8, 14);
+            const checkDigit = imei.substring(14);
             const manufacturer = findManufacturer(tac);
+            const rbiInfo = getRBIInfo(imei);
             
-            let text = `IMEI Verification Report\n`;
-            text += `========================\n`;
-            text += `IMEI: ${imei}\n`;
-            text += `Checksum: ${isValid ? 'Valid' : 'Invalid'}\n`;
-            text += `TAC: ${tac}\n`;
-            text += `Manufacturer: ${manufacturer ? manufacturer.brand : 'Unknown'}\n`;
-            text += `\nGenerated by Punjab Investigation Tools`;
+            let text = `╔══════════════════════════════════════════╗\n`;
+            text += `║      IMEI VERIFICATION REPORT            ║\n`;
+            text += `╠══════════════════════════════════════════╣\n`;
+            text += `║ IMEI: ${imei}                  ║\n`;
+            text += `║ Formatted: ${formatIMEI(imei)}          ║\n`;
+            text += `╠══════════════════════════════════════════╣\n`;
+            text += `║ Checksum: ${isValid ? '✓ VALID' : '✗ INVALID'}                         ║\n`;
+            text += `╠══════════════════════════════════════════╣\n`;
+            text += `║ STRUCTURE BREAKDOWN:                     ║\n`;
+            text += `║ • TAC: ${tac} (Type Allocation Code)    ║\n`;
+            text += `║ • Serial: ${fac}                        ║\n`;
+            text += `║ • Check Digit: ${checkDigit}                        ║\n`;
+            text += `╠══════════════════════════════════════════╣\n`;
+            text += `║ DEVICE INFO:                             ║\n`;
+            text += `║ • Brand: ${manufacturer ? manufacturer.brand : 'Unknown'}${' '.repeat(Math.max(0, 30 - (manufacturer ? manufacturer.brand.length : 7)))}║\n`;
+            if (manufacturer?.model) {
+                text += `║ • Model: ${manufacturer.model}${' '.repeat(Math.max(0, 30 - manufacturer.model.length))}║\n`;
+            }
+            if (rbiInfo) {
+                text += `║ • Region: ${rbiInfo.region} (${rbiInfo.body})${' '.repeat(Math.max(0, 22 - rbiInfo.region.length - rbiInfo.body.length))}║\n`;
+            }
+            text += `╠══════════════════════════════════════════╣\n`;
+            text += `║ Generated: ${new Date().toLocaleString()}    ║\n`;
+            text += `║ Punjab Investigation Tools               ║\n`;
+            text += `╚══════════════════════════════════════════╝\n`;
             
             navigator.clipboard.writeText(text);
-            showToast('Result copied to clipboard');
+            showToast('Report copied to clipboard');
+        }
+
+        // Download PDF Report
+        async function downloadReport() {
+            const resultsSection = document.getElementById('resultsSection');
+            if (!resultsSection || resultsSection.style.display === 'none') {
+                showToast('Please verify an IMEI first');
+                return;
+            }
+
+            showToast('Generating PDF report...');
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const margin = 10;
+
+                // Create a temporary container for PDF content
+                const pdfContent = document.createElement('div');
+                pdfContent.style.cssText = 'position: absolute; left: -9999px; top: 0; width: 800px; background: #ffffff; padding: 30px; font-family: Arial, sans-serif; color: #000000;';
+                
+                const imei = document.getElementById('imeiInput').value.trim();
+                const resultTitle = document.getElementById('resultTitle').textContent;
+                const resultSubtitle = document.getElementById('resultSubtitle').textContent;
+                
+                pdfContent.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #6366f1; padding-bottom: 20px; background: #ffffff;">
+                        <h1 style="color: #1a1a2e; margin: 0; font-size: 24px;">Punjab Investigation Tools</h1>
+                        <h2 style="color: #6366f1; margin: 10px 0 5px 0; font-size: 20px;">IMEI Verification Report</h2>
+                        <p style="color: #555555; margin: 0; font-size: 12px;">Generated: ${new Date().toLocaleString()}</p>
+                    </div>
+                    
+                    <div style="background: ${resultTitle.includes('Valid') || resultTitle.includes('Calculated') ? '#d1fae5' : '#fee2e2'}; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                        <h3 style="margin: 0 0 5px 0; color: ${resultTitle.includes('Valid') || resultTitle.includes('Calculated') ? '#065f46' : '#991b1b'};">${resultTitle}</h3>
+                        <p style="margin: 0; color: #333333; font-size: 14px;">${resultSubtitle}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; background: #ffffff;">
+                        <h4 style="color: #1a1a2e; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 15px;">IMEI Details</h4>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000; background: #ffffff;">
+                            <tr style="background: #f9fafb;">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; width: 40%; color: #000000;">IMEI Number</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-family: monospace; color: #000000;">${imei.length === 14 ? imei + calculateCheckDigit(imei) : imei}</td>
+                            </tr>
+                            <tr style="background: #ffffff;">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; color: #000000;">TAC (Type Allocation Code)</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-family: monospace; color: #000000;">${imei.substring(0, 8)}</td>
+                            </tr>
+                            <tr style="background: #f9fafb;">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; color: #000000;">Serial Number</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-family: monospace; color: #000000;">${imei.substring(8, 14)}</td>
+                            </tr>
+                            <tr style="background: #ffffff;">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; color: #000000;">Check Digit</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-family: monospace; color: #000000;">${imei.length >= 15 ? imei.substring(14) : calculateCheckDigit(imei)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    ${(() => {
+                        const tac = imei.substring(0, 8);
+                        const manufacturer = findManufacturer(tac);
+                        const rbiInfo = getRBIInfo(imei);
+                        let html = '';
+                        
+                        if (manufacturer) {
+                            html += `
+                            <div style="margin-bottom: 20px; background: #ffffff;">
+                                <h4 style="color: #1a1a2e; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 15px;">Device Information</h4>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000; background: #ffffff;">
+                                    <tr style="background: #f9fafb;">
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; width: 40%; color: #000000;">Brand</td>
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #000000;">${manufacturer.brand}</td>
+                                    </tr>
+                                    ${manufacturer.model ? `
+                                    <tr style="background: #ffffff;">
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; color: #000000;">Model</td>
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #000000;">${manufacturer.model}</td>
+                                    </tr>` : ''}
+                                    ${manufacturer.note ? `
+                                    <tr style="background: #f9fafb;">
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; color: #000000;">Additional Info</td>
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #000000;">${manufacturer.note}</td>
+                                    </tr>` : ''}
+                                </table>
+                            </div>`;
+                        }
+                        
+                        if (rbiInfo) {
+                            html += `
+                            <div style="margin-bottom: 20px; background: #ffffff;">
+                                <h4 style="color: #1a1a2e; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 15px;">Certification Information</h4>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000; background: #ffffff;">
+                                    <tr style="background: #f9fafb;">
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; width: 40%; color: #000000;">Reporting Body</td>
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #000000;">${rbiInfo.body}</td>
+                                    </tr>
+                                    <tr style="background: #ffffff;">
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; color: #000000;">Region</td>
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #000000;">${rbiInfo.region}</td>
+                                    </tr>
+                                    <tr style="background: #f9fafb;">
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold; color: #000000;">Full Name</td>
+                                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #000000;">${rbiInfo.fullName}</td>
+                                    </tr>
+                                </table>
+                            </div>`;
+                        }
+                        
+                        return html;
+                    })()}
+                    
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; background: #ffffff;">
+                        <p style="color: #555555; font-size: 11px; margin: 0;">This report is generated for investigative purposes only.</p>
+                        <p style="color: #555555; font-size: 11px; margin: 5px 0 0 0;">For stolen device verification, please check CEIR Portal: ceir.gov.in</p>
+                        <p style="color: #777777; font-size: 10px; margin: 10px 0 0 0;">Punjab Investigation Tools • IMEI Verification Report</p>
+                    </div>
+                `;
+                
+                document.body.appendChild(pdfContent);
+                
+                // Capture as canvas
+                const canvas = await html2canvas(pdfContent, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    width: 800,
+                    windowWidth: 800
+                });
+                
+                document.body.removeChild(pdfContent);
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const imgWidth = pageWidth - (margin * 2);
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Handle multi-page if needed
+                let heightLeft = imgHeight;
+                let position = margin;
+                const pageContentHeight = pageHeight - (margin * 2);
+                
+                // Add first page
+                pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+                heightLeft -= pageContentHeight;
+                
+                // Add additional pages if needed
+                while (heightLeft > 0) {
+                    pdf.addPage();
+                    position = margin - (imgHeight - heightLeft);
+                    pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+                    heightLeft -= pageContentHeight;
+                }
+                
+                // Generate filename
+                const now = new Date();
+                const dateStr = now.getFullYear().toString() +
+                               (now.getMonth() + 1).toString().padStart(2, '0') +
+                               now.getDate().toString().padStart(2, '0') + '-' +
+                               now.getHours().toString().padStart(2, '0') +
+                               now.getMinutes().toString().padStart(2, '0');
+                const filename = `IMEI-Report-${imei.substring(0,8)}-${dateStr}.pdf`;
+                
+                pdf.save(filename);
+                showToast('PDF report downloaded successfully!');
+                
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                showToast('Error generating PDF. Please try again.');
+            }
         }
 
         function resetForm() {
             document.getElementById('imeiInput').value = '';
             document.getElementById('resultsSection').style.display = 'none';
             document.getElementById('imeiInput').focus();
+            // Clear URL parameter
+            window.history.pushState({}, '', window.location.pathname);
         }
 
         function showToast(message) {
             const toast = document.getElementById('toast');
             document.getElementById('toastMessage').textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 3000);
         }
 
         // Allow Enter key to verify
         document.getElementById('imeiInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') verifyIMEI();
+        });
+
+        // Check URL for IMEI parameter and auto-verify
+        function checkUrlForIMEI() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const imeiParam = urlParams.get('imei');
+            if (imeiParam && /^\d{14,15}$/.test(imeiParam)) {
+                document.getElementById('imeiInput').value = imeiParam;
+                verifyIMEI();
+            }
+        }
+
+        // Initialize: Load TAC database on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadTACDatabase();
+            // After database is loaded, check URL for IMEI
+            checkUrlForIMEI();
         });
     </script>
 </body>
