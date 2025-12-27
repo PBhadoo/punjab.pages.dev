@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aadhaar Validator | Punjab Investigation Tools</title>
-    <meta name="description" content="Validate Aadhaar number format and checksum integrity.">
+    <title>Aadhaar Verification | Punjab Investigation Tools</title>
+    <meta name="description" content="Verify Aadhaar number existence and get details from UIDAI database.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <header class="header">
@@ -22,7 +23,7 @@
                 </div>
                 <div class="logo-text">
                     <span class="logo-title">Punjab Investigation Tools</span>
-                    <span class="logo-subtitle">Aadhaar Validator</span>
+                    <span class="logo-subtitle">Aadhaar Verification</span>
                 </div>
             </a>
             <div class="header-actions">
@@ -36,24 +37,106 @@
     <main class="main-content">
         <section class="hero-section">
             <div class="hero-content">
-                <h1><i class="fas fa-id-card"></i> Aadhaar Validator</h1>
-                <p>Validate Aadhaar number format and checksum using Verhoeff algorithm</p>
+                <h1><i class="fas fa-id-card"></i> Aadhaar Verification</h1>
+                <p>Verify Aadhaar existence and retrieve details from UIDAI database</p>
             </div>
         </section>
+
+        <!-- Server Status -->
+        <div class="server-status" id="serverStatus">
+            <i class="fas fa-circle-notch fa-spin"></i> Checking server connection...
+        </div>
 
         <section class="input-section">
             <div class="input-container">
                 <label for="aadhaarInput">Enter Aadhaar Number</label>
                 <div class="input-wrapper">
                     <input type="text" id="aadhaarInput" placeholder="XXXX XXXX XXXX" maxlength="14" autocomplete="off">
-                    <button class="verify-btn" onclick="validateAadhaar()">
-                        <i class="fas fa-check-circle"></i> Validate
+                    <button class="verify-btn" onclick="startVerification()" id="verifyBtn">
+                        <i class="fas fa-search"></i> Verify
                     </button>
                 </div>
-                <p class="input-hint">Enter 12-digit Aadhaar number (spaces will be ignored)</p>
+                <p class="input-hint">Enter 12-digit Aadhaar number to verify from UIDAI database</p>
             </div>
         </section>
 
+        <!-- Captcha Section -->
+        <section class="captcha-section" id="captchaSection" style="display: none;">
+            <div class="captcha-card">
+                <h4><i class="fas fa-shield-alt"></i> Security Verification</h4>
+                <p>Enter the captcha shown below to proceed with verification</p>
+                
+                <div class="captcha-container">
+                    <div class="captcha-image-wrapper">
+                        <img id="captchaImage" src="" alt="Captcha">
+                        <button class="refresh-captcha" onclick="refreshCaptcha()" title="Refresh Captcha">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="audio-captcha" id="audioCaptcha" style="display: none;">
+                        <audio id="captchaAudio" controls></audio>
+                        <button class="audio-btn" onclick="toggleAudioCaptcha()">
+                            <i class="fas fa-volume-up"></i> Audio Captcha
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="captcha-input-wrapper">
+                    <input type="text" id="captchaInput" placeholder="Enter captcha" maxlength="10" autocomplete="off">
+                    <button class="verify-btn" onclick="submitVerification()" id="submitBtn">
+                        <i class="fas fa-check"></i> Submit
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="loading-spinner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p id="loadingText">Verifying with UIDAI...</p>
+            </div>
+        </div>
+
+        <!-- UIDAI Verification Results -->
+        <section class="results-section" id="uidaiResultsSection" style="display: none;">
+            <div class="result-card uidai-result">
+                <div class="result-header">
+                    <div class="result-icon" id="uidaiResultIcon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="result-title">
+                        <h3 id="uidaiResultTitle">Aadhaar Exists</h3>
+                        <p id="uidaiResultSubtitle">Verified from UIDAI Database</p>
+                    </div>
+                    <div class="uidai-badge">
+                        <i class="fas fa-certificate"></i> UIDAI Verified
+                    </div>
+                </div>
+
+                <div class="aadhaar-display" id="verifiedAadhaarDisplay">
+                    <!-- Verified Aadhaar will be shown here -->
+                </div>
+
+                <div class="uidai-details" id="uidaiDetails">
+                    <!-- UIDAI response details will be populated here -->
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="downloadPDFReport()">
+                    <i class="fas fa-file-pdf"></i> Download Report
+                </button>
+                <button class="action-btn" onclick="copyUidaiResult()">
+                    <i class="fas fa-copy"></i> Copy Result
+                </button>
+                <button class="action-btn" onclick="resetVerifier()">
+                    <i class="fas fa-redo"></i> Verify Another
+                </button>
+            </div>
+        </section>
+
+        <!-- Local Validation Results -->
         <section class="results-section" id="resultsSection" style="display: none;">
             <div class="result-card">
                 <div class="result-header">
@@ -61,8 +144,8 @@
                         <i class="fas fa-id-card"></i>
                     </div>
                     <div class="result-title">
-                        <h3 id="resultTitle">Validation Result</h3>
-                        <p id="resultSubtitle">Aadhaar Number Check</p>
+                        <h3 id="resultTitle">Format Validation</h3>
+                        <p id="resultSubtitle">Verhoeff Checksum Check</p>
                     </div>
                 </div>
 
@@ -77,7 +160,7 @@
 
             <div class="info-box" id="validInfo" style="display: none;">
                 <h4><i class="fas fa-circle-check"></i> Checksum Valid</h4>
-                <p>The Aadhaar number passes the Verhoeff checksum algorithm. This means the number <strong>has a valid format</strong>, but does NOT guarantee that it is an actual issued Aadhaar number.</p>
+                <p>The Aadhaar number passes the Verhoeff checksum algorithm. This means the number <strong>has a valid format</strong>.</p>
             </div>
 
             <div class="warning-box" id="invalidInfo" style="display: none;">
@@ -85,61 +168,68 @@
                 <p>This number fails the Verhoeff checksum validation. It is either incorrectly entered or a fabricated number.</p>
             </div>
 
-            <div class="action-card">
-                <h4><i class="fas fa-external-link-alt"></i> Verify on Official UIDAI Portal</h4>
-                <p>To check if this Aadhaar number is actually issued and active, verify on the official UIDAI website:</p>
-                <a href="https://myaadhaar.uidai.gov.in/check-aadhaar-validity/en" target="_blank" class="verify-btn" style="display: inline-flex; margin-top: 15px; text-decoration: none;">
-                    <i class="fas fa-external-link-alt"></i> Check on myaadhaar.uidai.gov.in
-                </a>
-            </div>
-
             <div class="action-buttons">
                 <button class="action-btn" onclick="copyResult()">
                     <i class="fas fa-copy"></i> Copy Result
                 </button>
-                <button class="action-btn" onclick="resetValidator()">
+                <button class="action-btn" onclick="resetVerifier()">
                     <i class="fas fa-redo"></i> Check Another
                 </button>
             </div>
         </section>
 
         <section class="info-section">
-            <h3><i class="fas fa-info-circle"></i> About Aadhaar Validation</h3>
+            <h3><i class="fas fa-info-circle"></i> About Aadhaar Verification</h3>
             <div class="info-grid">
                 <div class="info-card">
-                    <div class="info-icon"><i class="fas fa-barcode"></i></div>
-                    <h4>Verhoeff Algorithm</h4>
-                    <p>Aadhaar uses the Verhoeff checksum algorithm which can detect all single-digit errors and all adjacent transposition errors.</p>
+                    <div class="info-icon"><i class="fas fa-database"></i></div>
+                    <h4>UIDAI Database</h4>
+                    <p>This tool verifies Aadhaar numbers directly from the official UIDAI database to confirm if the number exists and is active.</p>
                 </div>
                 <div class="info-card">
-                    <div class="info-icon"><i class="fas fa-calculator"></i></div>
-                    <h4>Format Check</h4>
-                    <p>This tool validates the mathematical integrity of the 12-digit number, not whether it's actually issued by UIDAI.</p>
+                    <div class="info-icon"><i class="fas fa-user-check"></i></div>
+                    <h4>Details Retrieved</h4>
+                    <p>Get state, age band, gender, and masked mobile number associated with the Aadhaar without revealing sensitive information.</p>
                 </div>
                 <div class="info-card">
-                    <div class="info-icon"><i class="fas fa-user-shield"></i></div>
-                    <h4>Privacy Protected</h4>
-                    <p>All validation happens locally in your browser. No Aadhaar numbers are transmitted or stored anywhere.</p>
+                    <div class="info-icon"><i class="fas fa-cloud"></i></div>
+                    <h4>Serverless API</h4>
+                    <p>Powered by Cloudflare Pages Functions for fast, reliable, and secure verification without any server setup required.</p>
                 </div>
             </div>
         </section>
 
         <section class="info-section">
-            <h3><i class="fas fa-landmark"></i> Legal Framework</h3>
-            <div class="info-card" style="max-width: 100%;">
-                <p style="line-height: 1.8;">
-                    <strong>Aadhaar (Targeted Delivery of Financial and Other Subsidies, Benefits and Services) Act, 2016</strong><br><br>
-                    Aadhaar is a 12-digit unique identification number issued by UIDAI to residents of India. Under Section 29 of the Aadhaar Act, 
-                    Aadhaar numbers should be used only for the purposes authorized under the Act. For investigation purposes, proper legal 
-                    authorization from competent authority is required to obtain Aadhaar-linked information from UIDAI.
-                </p>
+            <h3><i class="fas fa-shield-alt"></i> How It Works</h3>
+            <div class="setup-card">
+                <div class="setup-step">
+                    <span class="step-number">1</span>
+                    <div class="step-content">
+                        <h4>Enter Aadhaar Number</h4>
+                        <p>Input the 12-digit Aadhaar number you want to verify</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <span class="step-number">2</span>
+                    <div class="step-content">
+                        <h4>Complete Captcha</h4>
+                        <p>Solve the security captcha from UIDAI to prevent abuse</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <span class="step-number">3</span>
+                    <div class="step-content">
+                        <h4>View Results</h4>
+                        <p>Get verification status, state, age band, gender, and masked mobile number</p>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
 
     <footer class="footer">
         <div class="footer-content">
-            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No Aadhaar data is transmitted or stored.</p>
+            <p><i class="fas fa-shield-check"></i> Verification through official UIDAI API. Only masked information is retrieved.</p>
             <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
         </div>
     </footer>
@@ -150,6 +240,28 @@
     </div>
 
     <style>
+        .server-status {
+            text-align: center;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .server-status.connected {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .server-status.disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .server-status.checking {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
         .input-container {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -191,6 +303,214 @@
             color: var(--text-secondary);
             text-align: center;
         }
+        
+        /* Captcha Styles */
+        .captcha-section {
+            margin-top: 20px;
+        }
+        .captcha-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .captcha-card h4 {
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+        }
+        .captcha-card > p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        .captcha-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .captcha-image-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .captcha-image-wrapper img {
+            max-width: 250px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid var(--card-border);
+            background: white;
+        }
+        .refresh-captcha {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent-blue);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .refresh-captcha:hover {
+            transform: rotate(180deg);
+            background: var(--accent-purple);
+        }
+        .captcha-input-wrapper {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .captcha-input-wrapper input {
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            letter-spacing: 3px;
+            border: 2px solid var(--card-border);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-primary);
+            width: 180px;
+        }
+        .audio-btn {
+            padding: 10px 15px;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .audio-btn:hover {
+            background: var(--accent-blue);
+            color: white;
+        }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .loading-spinner {
+            text-align: center;
+            color: white;
+        }
+        .loading-spinner i {
+            font-size: 3rem;
+            color: var(--accent-blue);
+            margin-bottom: 20px;
+        }
+        .loading-spinner p {
+            font-size: 1.1rem;
+        }
+        
+        /* UIDAI Result Styles */
+        .uidai-result {
+            border: 2px solid var(--success-color);
+        }
+        .uidai-badge {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .uidai-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .uidai-detail-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .uidai-detail-item .detail-icon {
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+        }
+        .uidai-detail-item .detail-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .uidai-detail-item .detail-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .status-exists {
+            color: var(--success-color) !important;
+        }
+        .status-not-exists {
+            color: #ef4444 !important;
+        }
+        
+        /* Setup Card */
+        .setup-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+        }
+        .setup-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .setup-step:last-child {
+            border-bottom: none;
+        }
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .step-content h4 {
+            margin-bottom: 5px;
+            color: var(--text-primary);
+        }
+        .step-content code {
+            display: inline-block;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--accent-blue);
+        }
+        
         .aadhaar-display {
             text-align: center;
             padding: 30px;
@@ -246,6 +566,10 @@
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
+        // API Configuration - Using Cloudflare Pages Functions
+        const API_BASE = '';
+        let serverConnected = true; // Cloudflare Functions are always available
+
         // Verhoeff algorithm tables
         const d = [
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -275,6 +599,17 @@
 
         let currentAadhaar = '';
         let isValid = false;
+        let captchaData = null;
+        let uidaiResult = null;
+
+        // Initialize status on load
+        initializeStatus();
+
+        function initializeStatus() {
+            const statusEl = document.getElementById('serverStatus');
+            statusEl.className = 'server-status connected';
+            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> UIDAI Verification Ready - Powered by Cloudflare';
+        }
 
         // Format input as user types
         document.getElementById('aadhaarInput').addEventListener('input', function(e) {
@@ -291,7 +626,11 @@
         });
 
         document.getElementById('aadhaarInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') validateAadhaar();
+            if (e.key === 'Enter') startVerification();
+        });
+
+        document.getElementById('captchaInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitVerification();
         });
 
         function verhoeffValidate(num) {
@@ -303,7 +642,7 @@
             return c === 0;
         }
 
-        function validateAadhaar() {
+        async function startVerification() {
             const input = document.getElementById('aadhaarInput').value;
             currentAadhaar = input.replace(/\D/g, '');
             
@@ -315,16 +654,225 @@
             // Check for invalid starting digit (0 or 1)
             if (currentAadhaar[0] === '0' || currentAadhaar[0] === '1') {
                 isValid = false;
-                displayResults(false, 'Aadhaar numbers cannot start with 0 or 1');
+                displayLocalResults(false, 'Aadhaar numbers cannot start with 0 or 1');
                 return;
             }
 
             // Validate using Verhoeff algorithm
             isValid = verhoeffValidate(currentAadhaar);
-            displayResults(isValid);
+            
+            if (!isValid) {
+                displayLocalResults(false);
+                return;
+            }
+
+            // If server is connected, proceed with UIDAI verification
+            if (serverConnected) {
+                await fetchCaptcha();
+            } else {
+                displayLocalResults(true);
+                showToast('Server offline - showing local validation only');
+            }
         }
 
-        function displayResults(valid, customError = null) {
+        async function fetchCaptcha() {
+            showLoading('Fetching captcha...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/aadhaar/captcha`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.captchaBase64String) {
+                    captchaData = data;
+                    showCaptcha(data);
+                } else {
+                    throw new Error(data.message || 'Failed to get captcha');
+                }
+            } catch (e) {
+                hideLoading();
+                showToast('Failed to fetch captcha: ' + e.message);
+                displayLocalResults(true);
+            }
+        }
+
+        function showCaptcha(data) {
+            hideLoading();
+            
+            document.getElementById('captchaSection').style.display = 'block';
+            document.getElementById('captchaImage').src = `data:image/png;base64,${data.captchaBase64String}`;
+            
+            if (data.audioCaptchaBase64String) {
+                document.getElementById('audioCaptcha').style.display = 'flex';
+                document.getElementById('captchaAudio').src = `data:audio/wav;base64,${data.audioCaptchaBase64String}`;
+            }
+            
+            document.getElementById('captchaInput').value = '';
+            document.getElementById('captchaInput').focus();
+            
+            document.getElementById('captchaSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function refreshCaptcha() {
+            await fetchCaptcha();
+        }
+
+        function toggleAudioCaptcha() {
+            const audio = document.getElementById('captchaAudio');
+            audio.play();
+        }
+
+        async function submitVerification() {
+            const captchaValue = document.getElementById('captchaInput').value.trim();
+            
+            if (!captchaValue) {
+                showToast('Please enter the captcha');
+                return;
+            }
+            
+            if (!captchaData) {
+                showToast('Captcha data missing. Please refresh captcha.');
+                return;
+            }
+            
+            showLoading('Verifying with UIDAI...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/aadhaar/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        uid: currentAadhaar,
+                        captcha: captchaValue,
+                        captchaTxnId: captchaData.captchaTxnId,
+                        transactionId: captchaData.transactionId
+                    })
+                });
+                
+                const data = await response.json();
+                hideLoading();
+                
+                if (data.status === 'Success' || data.aadhaarStatusCode) {
+                    uidaiResult = data;
+                    displayUidaiResults(data);
+                } else {
+                    // Captcha might be wrong or expired
+                    showToast(data.statusMessage || data.message || 'Verification failed. Try again.');
+                    await fetchCaptcha();
+                }
+            } catch (e) {
+                hideLoading();
+                showToast('Verification failed: ' + e.message);
+            }
+        }
+
+        function displayUidaiResults(data) {
+            document.getElementById('captchaSection').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('uidaiResultsSection').style.display = 'block';
+            
+            const exists = data.aadhaarStatusCode === '1';
+            
+            const resultIcon = document.getElementById('uidaiResultIcon');
+            const resultTitle = document.getElementById('uidaiResultTitle');
+            const resultSubtitle = document.getElementById('uidaiResultSubtitle');
+            
+            if (exists) {
+                resultIcon.innerHTML = '<i class="fas fa-user-check"></i>';
+                resultIcon.className = 'result-icon valid';
+                resultTitle.textContent = 'Aadhaar Exists';
+                resultTitle.className = 'status-exists';
+                resultSubtitle.textContent = data.statusMessage || 'Verified from UIDAI Database';
+            } else {
+                resultIcon.innerHTML = '<i class="fas fa-user-xmark"></i>';
+                resultIcon.className = 'result-icon invalid';
+                resultTitle.textContent = 'Aadhaar Not Found';
+                resultTitle.className = 'status-not-exists';
+                resultSubtitle.textContent = data.statusMessage || 'Not found in UIDAI Database';
+            }
+            
+            // Display formatted Aadhaar
+            let displayHtml = '<div class="aadhaar-number">';
+            for (let i = 0; i < currentAadhaar.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    displayHtml += '<span class="space"></span>';
+                }
+                displayHtml += `<span class="digit">${currentAadhaar[i]}</span>`;
+            }
+            displayHtml += '</div>';
+            document.getElementById('verifiedAadhaarDisplay').innerHTML = displayHtml;
+            
+            // Display UIDAI details
+            let detailsHtml = '';
+            
+            if (exists) {
+                detailsHtml += `
+                    <div class="uidai-detail-item">
+                        <div class="detail-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value status-exists">Active</div>
+                    </div>
+                `;
+                
+                if (data.address) {
+                    detailsHtml += `
+                        <div class="uidai-detail-item">
+                            <div class="detail-icon"><i class="fas fa-map-marker-alt"></i></div>
+                            <div class="detail-label">State</div>
+                            <div class="detail-value">${data.address}</div>
+                        </div>
+                    `;
+                }
+                
+                if (data.ageBand) {
+                    detailsHtml += `
+                        <div class="uidai-detail-item">
+                            <div class="detail-icon"><i class="fas fa-birthday-cake"></i></div>
+                            <div class="detail-label">Age Band</div>
+                            <div class="detail-value">${data.ageBand}</div>
+                        </div>
+                    `;
+                }
+                
+                if (data.gender) {
+                    detailsHtml += `
+                        <div class="uidai-detail-item">
+                            <div class="detail-icon"><i class="fas fa-venus-mars"></i></div>
+                            <div class="detail-label">Gender</div>
+                            <div class="detail-value">${data.gender}</div>
+                        </div>
+                    `;
+                }
+                
+                if (data.maskedMobileNumber) {
+                    detailsHtml += `
+                        <div class="uidai-detail-item">
+                            <div class="detail-icon"><i class="fas fa-mobile-alt"></i></div>
+                            <div class="detail-label">Masked Mobile</div>
+                            <div class="detail-value">${data.maskedMobileNumber}</div>
+                        </div>
+                    `;
+                }
+            } else {
+                detailsHtml += `
+                    <div class="uidai-detail-item" style="grid-column: 1 / -1;">
+                        <div class="detail-icon"><i class="fas fa-times-circle"></i></div>
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value status-not-exists">Not Found in UIDAI Database</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('uidaiDetails').innerHTML = detailsHtml;
+            document.getElementById('uidaiResultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function displayLocalResults(valid, customError = null) {
+            document.getElementById('captchaSection').style.display = 'none';
+            document.getElementById('uidaiResultsSection').style.display = 'none';
             document.getElementById('resultsSection').style.display = 'block';
 
             const resultIcon = document.getElementById('resultIcon');
@@ -368,10 +916,6 @@
                         <div class="detail-value mono">${formatAadhaar(currentAadhaar)}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Digit Count</div>
-                        <div class="detail-value">${currentAadhaar.length} digits</div>
-                    </div>
-                    <div class="detail-item">
                         <div class="detail-label">Checksum Algorithm</div>
                         <div class="detail-value">Verhoeff</div>
                     </div>
@@ -380,14 +924,6 @@
                         <div class="detail-value" style="color: ${valid ? 'var(--success-color)' : '#ef4444'}">
                             ${valid ? 'Yes ✓' : 'No ✗'}
                         </div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">First Digit</div>
-                        <div class="detail-value">${currentAadhaar[0]} ${['0', '1'].includes(currentAadhaar[0]) ? '(Invalid - cannot be 0 or 1)' : '(Valid)'}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Checksum Digit</div>
-                        <div class="detail-value">${currentAadhaar[11]}</div>
                     </div>
                 </div>
             `;
@@ -399,15 +935,126 @@
             return num.replace(/(.{4})/g, '$1 ').trim();
         }
 
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function downloadPDFReport() {
+            if (!uidaiResult) {
+                showToast('No verification result to download');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFillColor(30, 41, 59);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Aadhaar Verification Report', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Punjab Investigation Tools - UIDAI Verification', 105, 30, { align: 'center' });
+            
+            // Report details
+            doc.setTextColor(0, 0, 0);
+            let y = 55;
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Verification Details', 20, y);
+            y += 10;
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            
+            const exists = uidaiResult.aadhaarStatusCode === '1';
+            
+            const details = [
+                ['Aadhaar Number', formatAadhaar(currentAadhaar)],
+                ['Verification Status', exists ? 'EXISTS (Active)' : 'NOT FOUND'],
+                ['Status Message', uidaiResult.statusMessage || 'N/A'],
+                ['State/UT', uidaiResult.address || 'N/A'],
+                ['Age Band', uidaiResult.ageBand || 'N/A'],
+                ['Gender', uidaiResult.gender || 'N/A'],
+                ['Masked Mobile', uidaiResult.maskedMobileNumber || 'N/A'],
+                ['Verified On', new Date().toLocaleString()],
+            ];
+            
+            details.forEach(([label, value]) => {
+                doc.setFont('helvetica', 'bold');
+                doc.text(label + ':', 20, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(String(value), 80, y);
+                y += 8;
+            });
+            
+            // Disclaimer
+            y += 10;
+            doc.setFillColor(255, 243, 205);
+            doc.rect(15, y - 5, 180, 25, 'F');
+            doc.setFontSize(8);
+            doc.setTextColor(133, 100, 4);
+            doc.text('DISCLAIMER: This verification is performed through UIDAI public API. The information', 20, y + 3);
+            doc.text('retrieved is limited to what is publicly available and should be used for official', 20, y + 9);
+            doc.text('investigation purposes only as per applicable laws and regulations.', 20, y + 15);
+            
+            // Footer
+            doc.setTextColor(128, 128, 128);
+            doc.setFontSize(8);
+            doc.text('Generated by Punjab Investigation Tools', 105, 280, { align: 'center' });
+            doc.text('www.intelsysindia.in', 105, 285, { align: 'center' });
+            
+            doc.save(`aadhaar_verification_${currentAadhaar}_${Date.now()}.pdf`);
+            showToast('PDF report downloaded');
+        }
+
+        function copyUidaiResult() {
+            if (!uidaiResult) {
+                showToast('No result to copy');
+                return;
+            }
+            
+            const exists = uidaiResult.aadhaarStatusCode === '1';
+            
+            let text = `AADHAAR VERIFICATION REPORT\n`;
+            text += `${'='.repeat(40)}\n\n`;
+            text += `Aadhaar Number: ${formatAadhaar(currentAadhaar)}\n`;
+            text += `Status: ${exists ? 'EXISTS (Active)' : 'NOT FOUND'}\n`;
+            text += `Message: ${uidaiResult.statusMessage || 'N/A'}\n\n`;
+            
+            if (exists) {
+                text += `DETAILS:\n`;
+                text += `---------\n`;
+                text += `State/UT: ${uidaiResult.address || 'N/A'}\n`;
+                text += `Age Band: ${uidaiResult.ageBand || 'N/A'}\n`;
+                text += `Gender: ${uidaiResult.gender || 'N/A'}\n`;
+                text += `Masked Mobile: ${uidaiResult.maskedMobileNumber || 'N/A'}\n\n`;
+            }
+            
+            text += `Verified: ${new Date().toLocaleString()}\n`;
+            text += `Source: UIDAI via Punjab Investigation Tools\n`;
+            
+            navigator.clipboard.writeText(text);
+            showToast('Result copied to clipboard');
+        }
+
         function copyResult() {
             let text = `Aadhaar Validation Report\n`;
             text += `=========================\n\n`;
             text += `Aadhaar Number: ${formatAadhaar(currentAadhaar)}\n`;
             text += `Format Valid: ${isValid ? 'Yes' : 'No'}\n`;
             text += `Checksum Algorithm: Verhoeff\n\n`;
-            text += `Note: This only validates the mathematical format.\n`;
-            text += `To verify if this Aadhaar is actually issued, visit:\n`;
-            text += `https://myaadhaar.uidai.gov.in/check-aadhaar-validity/en\n\n`;
             text += `Checked at: ${new Date().toLocaleString()}\n`;
             text += `Generated by Punjab Investigation Tools`;
             
@@ -415,11 +1062,16 @@
             showToast('Result copied to clipboard');
         }
 
-        function resetValidator() {
+        function resetVerifier() {
             currentAadhaar = '';
             isValid = false;
+            captchaData = null;
+            uidaiResult = null;
             document.getElementById('aadhaarInput').value = '';
+            document.getElementById('captchaInput').value = '';
+            document.getElementById('captchaSection').style.display = 'none';
             document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('uidaiResultsSection').style.display = 'none';
             document.getElementById('aadhaarInput').focus();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
