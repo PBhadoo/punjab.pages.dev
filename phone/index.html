@@ -101,9 +101,24 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- BSNL Live Check Section -->
+                <div id="bsnlLiveCheck" style="margin-top: 20px; display: none;">
+                    <div style="padding: 20px; background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 152, 0, 0.15) 100%); border: 1px solid rgba(255, 193, 7, 0.4); border-radius: 12px;">
+                        <h4 style="margin-bottom: 15px; color: var(--text-primary);">
+                            <i class="fas fa-broadcast-tower"></i> BSNL Live Status Check
+                        </h4>
+                        <div id="bsnlCheckContent">
+                            <div style="text-align: center; padding: 20px;">
+                                <div class="loading-spinner" style="width: 30px; height: 30px; margin: 0 auto 10px;"></div>
+                                <p style="color: var(--text-secondary);">Checking BSNL network status...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="warning-box">
+            <div id="mnpWarningBox" class="warning-box">
                 <h4><i class="fas fa-triangle-exclamation"></i> Important: Mobile Number Portability (MNP)</h4>
                 <ul style="margin-left: 20px; margin-top: 10px;">
                     <li><strong>Numbers can be ported</strong> - The operator shown is based on original allocation and may not reflect current operator</li>
@@ -422,8 +437,9 @@
             return 'other';
         }
 
-        // Global variable to store Jio API result for PDF/copy
+        // Global variables to store API results for PDF/copy
         let lastJioResult = null;
+        let lastBsnlResult = null;
 
         async function lookupPhone() {
             const input = document.getElementById('phoneInput').value.trim();
@@ -440,9 +456,24 @@
                 return;
             }
 
-            // Reset Jio result
+            // Reset API results
             lastJioResult = null;
+            lastBsnlResult = null;
             document.getElementById('resultsSection').style.display = 'block';
+            
+            // Reset warning box to default
+            document.getElementById('mnpWarningBox').innerHTML = `
+                <h4><i class="fas fa-triangle-exclamation"></i> Important: Mobile Number Portability (MNP)</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Numbers can be ported</strong> - The operator shown is based on original allocation and may not reflect current operator</li>
+                    <li>In India, MNP allows users to switch operators while keeping their number</li>
+                    <li>For accurate current operator information, official carrier verification is required</li>
+                    <li>Circle/region information is based on original number allocation</li>
+                    <li>Virtual numbers and VoIP services may show different information</li>
+                </ul>
+            `;
+            document.getElementById('mnpWarningBox').style.borderColor = '';
+            document.getElementById('mnpWarningBox').style.background = '';
             
             const resultIcon = document.getElementById('resultIcon');
             const resultTitle = document.getElementById('resultTitle');
@@ -625,6 +656,20 @@
                                 <i class="fas fa-info-circle"></i> This is live data from Jio network. The number is <strong>currently active</strong> on Jio.
                             </div>
                         `;
+                        
+                        // Update warning box to show confirmed Jio
+                        document.getElementById('mnpWarningBox').innerHTML = `
+                            <h4 style="color: #10b981;"><i class="fas fa-check-circle"></i> Verified: Jio Network Confirmed</h4>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li><strong>Live verification successful</strong> - This number is CONFIRMED to be currently active on Reliance Jio network</li>
+                                <li>Billing Type: <strong>${jioData.billingType || 'Unknown'}</strong></li>
+                                ${jioData.isPrimeMember !== undefined ? `<li>Prime Member: <strong>${jioData.isPrimeMember ? 'Yes' : 'No'}</strong></li>` : ''}
+                                <li>The original operator from database may differ due to MNP (porting to Jio)</li>
+                                <li>Circle/region information is still based on original allocation</li>
+                            </ul>
+                        `;
+                        document.getElementById('mnpWarningBox').style.borderColor = '#10b981';
+                        document.getElementById('mnpWarningBox').style.background = 'rgba(16, 185, 129, 0.1)';
                     } else {
                         jioCheckContent.innerHTML = `
                             <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(107, 114, 128, 0.2); border-radius: 8px; border: 1px solid rgba(107, 114, 128, 0.4);">
@@ -650,6 +695,107 @@
                 }
             } else {
                 jioLiveSection.style.display = 'none';
+            }
+            
+            // BSNL Live Check for Indian mobile numbers
+            const bsnlLiveSection = document.getElementById('bsnlLiveCheck');
+            const bsnlCheckContent = document.getElementById('bsnlCheckContent');
+            
+            if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && parsed.nationalNumber.match(/^[6-9]/)) {
+                bsnlLiveSection.style.display = 'block';
+                bsnlCheckContent.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div class="loading-spinner" style="width: 30px; height: 30px; margin: 0 auto 10px;"></div>
+                        <p style="color: var(--text-secondary);">Checking BSNL network status...</p>
+                    </div>
+                `;
+                
+                // Call BSNL API
+                try {
+                    const bsnlResponse = await fetch(`/bsnlapi/${parsed.nationalNumber}`);
+                    const bsnlData = await bsnlResponse.json();
+                    lastBsnlResult = bsnlData;
+                    
+                    if (bsnlData.isBsnl) {
+                        let plansHTML = '';
+                        if (bsnlData.topPlans && bsnlData.topPlans.length > 0) {
+                            plansHTML = `
+                                <div style="margin-top: 15px;">
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;"><i class="fas fa-tag"></i> Top Recharge Plans:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                        ${bsnlData.topPlans.slice(0, 4).map(plan => `
+                                            <div style="padding: 8px 12px; background: rgba(255, 193, 7, 0.2); border-radius: 6px; font-size: 0.8rem;">
+                                                <strong>₹${plan.amount}</strong> - ${plan.validity}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        bsnlCheckContent.innerHTML = `
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px;">
+                                <div style="text-align: center; padding: 15px; background: rgba(16, 185, 129, 0.2); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                                    <i class="fas fa-check-circle" style="font-size: 1.5rem; color: #10b981; margin-bottom: 8px;"></i>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Network Status</div>
+                                    <div style="font-weight: 600; color: #10b981;">Active BSNL User</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: rgba(255, 193, 7, 0.2); border-radius: 8px; border: 1px solid rgba(255, 193, 7, 0.4);">
+                                    <i class="fas fa-map-marker-alt" style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 8px;"></i>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Circle</div>
+                                    <div style="font-weight: 600; color: #f59e0b;">${bsnlData.circle || 'Unknown'}</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: rgba(99, 102, 241, 0.2); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.4);">
+                                    <i class="fas fa-mobile-alt" style="font-size: 1.5rem; color: #6366f1; margin-bottom: 8px;"></i>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Type</div>
+                                    <div style="font-weight: 600; color: #6366f1;">Prepaid</div>
+                                </div>
+                            </div>
+                            ${plansHTML}
+                            <div style="margin-top: 15px; padding: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; text-align: center; font-size: 0.8rem; color: var(--text-secondary);">
+                                <i class="fas fa-info-circle"></i> This is live data from BSNL network. The number is <strong>currently active</strong> on BSNL.
+                            </div>
+                        `;
+                        
+                        // Update warning box to show confirmed BSNL (only if Jio not already confirmed)
+                        if (!lastJioResult || !lastJioResult.isJio) {
+                            document.getElementById('mnpWarningBox').innerHTML = `
+                                <h4 style="color: #f59e0b;"><i class="fas fa-check-circle"></i> Verified: BSNL Network Confirmed</h4>
+                                <ul style="margin-left: 20px; margin-top: 10px;">
+                                    <li><strong>Live verification successful</strong> - This number is CONFIRMED to be currently active on BSNL network</li>
+                                    <li>Circle: <strong>${bsnlData.circle || 'Unknown'}</strong></li>
+                                    <li>The original operator from database may differ due to MNP (porting to BSNL)</li>
+                                    <li>Circle/region information is from BSNL live data</li>
+                                </ul>
+                            `;
+                            document.getElementById('mnpWarningBox').style.borderColor = '#f59e0b';
+                            document.getElementById('mnpWarningBox').style.background = 'rgba(245, 158, 11, 0.1)';
+                        }
+                    } else {
+                        bsnlCheckContent.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(107, 114, 128, 0.2); border-radius: 8px; border: 1px solid rgba(107, 114, 128, 0.4);">
+                                <i class="fas fa-times-circle" style="font-size: 2rem; color: #6b7280;"></i>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">Not a BSNL Number</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">This number is not currently active on BSNL network</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('BSNL API error:', error);
+                    bsnlCheckContent.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #ef4444;"></i>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary);">Could not check BSNL status</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">API unavailable or network error. Try again later.</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                bsnlLiveSection.style.display = 'none';
             }
             
             document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
@@ -685,11 +831,19 @@
                     }
                 }
             }
+            if (lastBsnlResult) {
+                text += `\n--- BSNL Live Status ---\n`;
+                text += `Is BSNL User: ${lastBsnlResult.isBsnl ? 'Yes' : 'No'}\n`;
+                if (lastBsnlResult.isBsnl) {
+                    text += `Circle: ${lastBsnlResult.circle || 'Unknown'}\n`;
+                    text += `Type: Prepaid\n`;
+                }
+            }
             text += `\nNote: Operator info may not reflect current operator due to MNP\n`;
             text += `\n--------------------------\n`;
             text += `Generated by Punjab Investigation Tools\n`;
             text += `https://punjab.pages.dev\n`;
-            text += `Database: ${dbEntryCount.toLocaleString()} Indian mobile records`;
+            text += `Database: ${dbEntryCount.toLocaleString()} Indian mobile prefix records`;
             
             navigator.clipboard.writeText(text);
             showToast('Result copied to clipboard');
@@ -775,22 +929,58 @@
                 }
             }
             
+            // BSNL Live Status
+            if (lastBsnlResult) {
+                y += 5;
+                doc.setFont(undefined, 'bold');
+                doc.text('BSNL Live Network Status', 20, y);
+                y += 10;
+                doc.setFont(undefined, 'normal');
+                
+                addLine('Is BSNL User', lastBsnlResult.isBsnl ? 'Yes' : 'No');
+                if (lastBsnlResult.isBsnl) {
+                    addLine('Circle', lastBsnlResult.circle || 'Unknown');
+                    addLine('Type', 'Prepaid');
+                }
+            }
+            
             y += 10;
             
-            // Warning box
-            doc.setFillColor(255, 243, 205);
-            doc.rect(15, y, 180, 30, 'F');
-            doc.setTextColor(133, 77, 14);
-            doc.setFontSize(10);
-            doc.text('Important Notice:', 20, y + 10);
-            doc.setFontSize(9);
-            doc.text('The operator shown is based on original allocation. Due to Mobile Number', 20, y + 18);
-            doc.text('Portability (MNP), the current operator may be different.', 20, y + 24);
+            // Warning/Info box
+            if (lastJioResult && lastJioResult.isJio) {
+                // Confirmed Jio - show green box
+                doc.setFillColor(209, 250, 229);
+                doc.rect(15, y, 180, 25, 'F');
+                doc.setTextColor(6, 95, 70);
+                doc.setFontSize(10);
+                doc.text('Verified Jio Number:', 20, y + 10);
+                doc.setFontSize(9);
+                doc.text('This number is CONFIRMED to be currently active on Jio network (Live API check).', 20, y + 18);
+            } else if (lastBsnlResult && lastBsnlResult.isBsnl) {
+                // Confirmed BSNL - show yellow-green box
+                doc.setFillColor(254, 249, 195);
+                doc.rect(15, y, 180, 25, 'F');
+                doc.setTextColor(133, 77, 14);
+                doc.setFontSize(10);
+                doc.text('Verified BSNL Number:', 20, y + 10);
+                doc.setFontSize(9);
+                doc.text('This number is CONFIRMED to be currently active on BSNL network (Live API check).', 20, y + 18);
+            } else {
+                // Not confirmed - show yellow warning
+                doc.setFillColor(255, 243, 205);
+                doc.rect(15, y, 180, 30, 'F');
+                doc.setTextColor(133, 77, 14);
+                doc.setFontSize(10);
+                doc.text('Important Notice:', 20, y + 10);
+                doc.setFontSize(9);
+                doc.text('The operator shown is based on original allocation. Due to Mobile Number', 20, y + 18);
+                doc.text('Portability (MNP), the current operator may be different.', 20, y + 24);
+            }
             
             // Footer
             doc.setTextColor(128, 128, 128);
             doc.setFontSize(9);
-            doc.text(`Database: ${dbEntryCount.toLocaleString()} Indian mobile records | Generated by Punjab Investigation Tools`, 20, 275);
+            doc.text(`Database: ${dbEntryCount.toLocaleString()} Indian mobile prefix records | Generated by Punjab Investigation Tools`, 20, 275);
             doc.setTextColor(59, 130, 246);
             doc.textWithLink('https://punjab.pages.dev', 20, 282, { url: 'https://punjab.pages.dev' });
             
