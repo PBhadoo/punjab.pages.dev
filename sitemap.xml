@@ -96,6 +96,22 @@
         <priority>0.8</priority>
     </url>
     
+    <!-- OCR Tool -->
+    <url>
+        <loc>https://punjab.pages.dev/ocr/</loc>
+        <lastmod>2025-12-27</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Steganography Tool -->
+    <url>
+        <loc>https://punjab.pages.dev/steganography/</loc>
+        <lastmod>2025-12-27</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
     <!-- Legal Pages -->
     <url>
         <loc>https://punjab.pages.dev/privacy.html</loc>
