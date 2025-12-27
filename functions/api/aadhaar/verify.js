@@ -11,13 +11,15 @@ export async function onRequestPost(context) {
         
         const uid = (body.uid || '').replace(/\s/g, '');
         const captcha = body.captcha || '';
-        const captchaTxnId = body.captchaTxnId || '';
-        const transactionId = body.transactionId || '';
+        const captchaTxnId = body.captchaTxnId || '';  // Short ID from UIDAI captcha response
+        
+        // Generate a new UUID for this verification request (like official site does)
+        const transactionId = crypto.randomUUID();
 
-        if (!uid || !captcha || !captchaTxnId || !transactionId) {
+        if (!uid || !captcha || !captchaTxnId) {
             return new Response(JSON.stringify({
                 status: 'Error',
-                message: 'Missing required fields: uid, captcha, captchaTxnId, transactionId'
+                message: 'Missing required fields: uid, captcha, captchaTxnId'
             }), {
                 status: 400,
                 headers: {
@@ -37,7 +39,7 @@ export async function onRequestPost(context) {
             'Referer': 'https://myaadhaar.uidai.gov.in/',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'appid': 'MYAADHAAR',
-            'x-request-id': captchaTxnId,  // Use the captchaTxnId from UIDAI captcha response
+            'x-request-id': transactionId,  // New UUID for this request
         };
 
         const response = await fetch(
@@ -47,9 +49,9 @@ export async function onRequestPost(context) {
                 headers: headers,
                 body: JSON.stringify({
                     uid: uid,
-                    captchaTxnId: captchaTxnId,
+                    captchaTxnId: captchaTxnId,  // Short ID from captcha
                     captcha: captcha,
-                    transactionId: captchaTxnId,  // Use same ID - this is UIDAI's transaction ID
+                    transactionId: transactionId,  // New UUID
                     captchaLogic: 'V3'
                 })
             }
