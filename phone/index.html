@@ -1027,12 +1027,43 @@
                     </div>
                 `;
                 
-                // Call Vi API
-                try {
-                    const viResponse = await fetch(`/viapi/${parsed.nationalNumber}?t=${Date.now()}`);
-                    const viData = await viResponse.json();
-                    lastViResult = viData;
-                    
+                // Call Vi API with retry logic
+                const maxRetries = 3;
+                let viData = null;
+                let lastError = null;
+                
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        if (attempt > 1) {
+                            viCheckContent.innerHTML = `
+                                <div style="text-align: center; padding: 20px;">
+                                    <div class="loading-spinner" style="width: 30px; height: 30px; margin: 0 auto 10px;"></div>
+                                    <p style="color: var(--text-secondary);">Checking Vi network status... (Attempt ${attempt}/${maxRetries})</p>
+                                </div>
+                            `;
+                            // Small delay between retries
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                        
+                        const viResponse = await fetch(`/viapi/${parsed.nationalNumber}?t=${Date.now()}`);
+                        const responseData = await viResponse.json();
+                        
+                        // Check if it's an actual success response (not an API failure)
+                        if (viResponse.ok && responseData && !responseData.error) {
+                            viData = responseData;
+                            lastViResult = viData;
+                            break; // Success, exit retry loop
+                        } else {
+                            lastError = new Error(responseData.error || 'API returned error');
+                        }
+                    } catch (error) {
+                        console.warn(`Vi API attempt ${attempt} failed:`, error);
+                        lastError = error;
+                    }
+                }
+                
+                // Process the result
+                if (viData) {
                     if (viData.isVi) {
                         const statusColor = viData.custStatus === 'NOTSUSPENDED' ? '#10b981' : '#f59e0b';
                         const statusText = viData.custStatus === 'NOTSUSPENDED' ? 'Active' : (viData.custStatus || 'Unknown');
@@ -1101,14 +1132,15 @@
                             </div>
                         `;
                     }
-                } catch (error) {
-                    console.error('Vi API error:', error);
+                } else {
+                    // All retries failed
+                    console.error('Vi API error after all retries:', lastError);
                     viCheckContent.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
                             <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #ef4444;"></i>
                             <div>
                                 <div style="font-weight: 600; color: var(--text-primary);">Could not check Vi status</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">API unavailable or network error. Try again later.</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">API unavailable after ${maxRetries} attempts. Try again later.</div>
                             </div>
                         </div>
                     `;
