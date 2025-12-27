@@ -567,7 +567,7 @@
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
         // API Configuration - Using Cloudflare Pages Functions
-        const API_BASE = '';
+        const API_BASE = 'https://punjab.pages.dev';
         let serverConnected = true; // Cloudflare Functions are always available
 
         // Verhoeff algorithm tables
@@ -676,7 +676,7 @@
         }
 
         async function fetchCaptcha() {
-            showLoading('Fetching captcha...');
+            showLoading('Fetching captcha from UIDAI...');
             
             try {
                 const response = await fetch(`${API_BASE}/api/aadhaar/captcha`, {
@@ -684,16 +684,38 @@
                     headers: { 'Content-Type': 'application/json' }
                 });
                 
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
-                if (data.captchaBase64String) {
-                    captchaData = data;
-                    showCaptcha(data);
+                // Handle both response formats (imageBase64 or captchaBase64String)
+                const captchaImage = data.imageBase64 || data.captchaBase64String;
+                const captchaAudio = data.audioBase64 || data.audioCaptchaBase64String;
+                
+                if (captchaImage) {
+                    captchaData = {
+                        captchaBase64String: captchaImage,
+                        audioCaptchaBase64String: captchaAudio,
+                        captchaTxnId: data.captchaTxnId || data.transactionId,
+                        transactionId: data.transactionId
+                    };
+                    showCaptcha(captchaData);
+                } else if (data.status === 'Error') {
+                    throw new Error(data.message || 'UIDAI API error');
                 } else {
-                    throw new Error(data.message || 'Failed to get captcha');
+                    throw new Error('Invalid response from server');
                 }
             } catch (e) {
                 hideLoading();
+                console.error('Captcha fetch error:', e);
+                
+                // Show error message with more context
+                const statusEl = document.getElementById('serverStatus');
+                statusEl.className = 'server-status disconnected';
+                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> API Error: ${e.message}. Make sure site is deployed to Cloudflare Pages.`;
+                
                 showToast('Failed to fetch captcha: ' + e.message);
                 displayLocalResults(true);
             }
@@ -703,7 +725,7 @@
             hideLoading();
             
             document.getElementById('captchaSection').style.display = 'block';
-            document.getElementById('captchaImage').src = `data:image/png;base64,${data.captchaBase64String}`;
+            document.getElementById('captchaImage').src = `data:image/jpeg;base64,${data.captchaBase64String}`;
             
             if (data.audioCaptchaBase64String) {
                 document.getElementById('audioCaptcha').style.display = 'flex';
