@@ -182,7 +182,8 @@ async function checkViNumber(phoneNumber) {
 
 export async function onRequest(context) {
     const { params, request } = context;
-    const number = params.number;
+    // [[number]] catch-all route returns an array, get the first element
+    const number = Array.isArray(params.number) ? params.number[0] : params.number;
     
     // CORS headers
     const corsHeaders = {
