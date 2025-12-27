@@ -116,6 +116,21 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Airtel Live Check Section -->
+                <div id="airtelLiveCheck" style="margin-top: 20px; display: none;">
+                    <div style="padding: 20px; background: linear-gradient(135deg, rgba(237, 28, 36, 0.15) 0%, rgba(180, 0, 0, 0.15) 100%); border: 1px solid rgba(237, 28, 36, 0.4); border-radius: 12px;">
+                        <h4 style="margin-bottom: 15px; color: var(--text-primary);">
+                            <i class="fas fa-signal"></i> Airtel Live Status Check
+                        </h4>
+                        <div id="airtelCheckContent">
+                            <div style="text-align: center; padding: 20px;">
+                                <div class="loading-spinner" style="width: 30px; height: 30px; margin: 0 auto 10px;"></div>
+                                <p style="color: var(--text-secondary);">Checking Airtel network status...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="mnpWarningBox" class="warning-box">
@@ -455,6 +470,7 @@
         // Global variables to store API results for PDF/copy
         let lastJioResult = null;
         let lastBsnlResult = null;
+        let lastAirtelResult = null;
 
         async function lookupPhone() {
             const input = document.getElementById('phoneInput').value.trim();
@@ -868,45 +884,143 @@
                 bsnlLiveSection.style.display = 'none';
             }
             
-            // If neither Jio nor BSNL is confirmed, show Airtel/Vi probability
+            // Skip Airtel check if Jio or BSNL is already confirmed
+            if ((lastJioResult && lastJioResult.isJio) || (lastBsnlResult && lastBsnlResult.isBsnl)) {
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+            
+            // Airtel Live Check for Indian mobile numbers
+            const airtelLiveSection = document.getElementById('airtelLiveCheck');
+            const airtelCheckContent = document.getElementById('airtelCheckContent');
+            
+            if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && parsed.nationalNumber.match(/^[6-9]/)) {
+                airtelLiveSection.style.display = 'block';
+                airtelCheckContent.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div class="loading-spinner" style="width: 30px; height: 30px; margin: 0 auto 10px;"></div>
+                        <p style="color: var(--text-secondary);">Checking Airtel network status...</p>
+                    </div>
+                `;
+                
+                // Call Airtel API
+                try {
+                    const airtelResponse = await fetch(`/airtelapi/${parsed.nationalNumber}`);
+                    const airtelData = await airtelResponse.json();
+                    lastAirtelResult = airtelData;
+                    
+                    if (airtelData.isAirtel) {
+                        const statusColor = airtelData.status === 'ACTIV' ? '#10b981' : '#f59e0b';
+                        const statusIcon = airtelData.status === 'ACTIV' ? 'fa-check-circle' : 'fa-clock';
+                        const statusText = airtelData.status === 'ACTIV' ? 'Active' : (airtelData.status || 'Unknown');
+                        
+                        airtelCheckContent.innerHTML = `
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px;">
+                                <div style="text-align: center; padding: 15px; background: rgba(16, 185, 129, 0.2); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                                    <i class="fas fa-check-circle" style="font-size: 1.5rem; color: #10b981; margin-bottom: 8px;"></i>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Network Status</div>
+                                    <div style="font-weight: 600; color: #10b981;">Active Airtel User</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: rgba(237, 28, 36, 0.2); border-radius: 8px; border: 1px solid rgba(237, 28, 36, 0.4);">
+                                    <i class="fas fa-map-marker-alt" style="font-size: 1.5rem; color: #ed1c24; margin-bottom: 8px;"></i>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Circle</div>
+                                    <div style="font-weight: 600; color: #ed1c24;">${airtelData.circleName || 'Circle ' + airtelData.circleId || 'Unknown'}</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: rgba(99, 102, 241, 0.2); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.4);">
+                                    <i class="fas ${statusIcon}" style="font-size: 1.5rem; color: ${statusColor}; margin-bottom: 8px;"></i>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Status</div>
+                                    <div style="font-weight: 600; color: ${statusColor};">${statusText}</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 15px; padding: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; text-align: center; font-size: 0.8rem; color: var(--text-secondary);">
+                                <i class="fas fa-info-circle"></i> This is live data from Airtel network. The number is <strong>currently active</strong> on Airtel.
+                            </div>
+                        `;
+                        
+                        // Show current operator as Airtel
+                        const currentOpRow = document.getElementById('currentOperatorRow');
+                        if (currentOpRow) {
+                            currentOpRow.style.display = 'grid';
+                            document.getElementById('currentOperatorValue').innerHTML = `
+                                <span class="operator-logo airtel" style="background: linear-gradient(135deg, #ed1c24, #b40000);">
+                                    <i class="fas fa-check-circle"></i> Airtel (Verified)
+                                </span>
+                            `;
+                        }
+                        
+                        // Hide Jio and BSNL sections since Airtel is confirmed
+                        document.getElementById('jioLiveCheck').style.display = 'none';
+                        document.getElementById('bsnlLiveCheck').style.display = 'none';
+                        
+                        // Update warning box to show confirmed Airtel
+                        document.getElementById('mnpWarningBox').innerHTML = `
+                            <h4 style="color: #ed1c24;"><i class="fas fa-check-circle"></i> Verified: Airtel Network Confirmed</h4>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li><strong>Live verification successful</strong> - This number is CONFIRMED to be currently active on Airtel network</li>
+                                <li>Circle: <strong>${airtelData.circleName || 'Unknown'}</strong></li>
+                                <li>Status: <strong>${statusText}</strong></li>
+                                <li>The original operator from database may differ due to MNP (porting to Airtel)</li>
+                                <li>Circle/region information is from Airtel live data</li>
+                            </ul>
+                        `;
+                        document.getElementById('mnpWarningBox').style.borderColor = '#ed1c24';
+                        document.getElementById('mnpWarningBox').style.background = 'rgba(237, 28, 36, 0.1)';
+                    } else {
+                        airtelCheckContent.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(107, 114, 128, 0.2); border-radius: 8px; border: 1px solid rgba(107, 114, 128, 0.4);">
+                                <i class="fas fa-times-circle" style="font-size: 2rem; color: #6b7280;"></i>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">Not an Airtel Number</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">This number is not currently active on Airtel network</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Airtel API error:', error);
+                    airtelCheckContent.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #ef4444;"></i>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary);">Could not check Airtel status</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">API unavailable or network error. Try again later.</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                airtelLiveSection.style.display = 'none';
+            }
+            
+            // If neither Jio, BSNL nor Airtel is confirmed, show Vi probability
             if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && 
-                (!lastJioResult || !lastJioResult.isJio) && (!lastBsnlResult || !lastBsnlResult.isBsnl)) {
+                (!lastJioResult || !lastJioResult.isJio) && (!lastBsnlResult || !lastBsnlResult.isBsnl) && (!lastAirtelResult || !lastAirtelResult.isAirtel)) {
                 
                 const currentOpRow = document.getElementById('currentOperatorRow');
                 if (currentOpRow) {
                     currentOpRow.style.display = 'grid';
                     
-                    // Check if original operator is Airtel or Vi
+                    // Check if original operator is Vi
                     const originalOp = operatorInfo ? operatorInfo.operator.toLowerCase() : '';
-                    const isOriginalAirtel = originalOp.includes('airtel');
                     const isOriginalVi = originalOp.includes('vi') || originalOp.includes('vodafone') || originalOp.includes('idea');
                     
-                    if (isOriginalAirtel) {
-                        document.getElementById('currentOperatorValue').innerHTML = `
-                            <span class="operator-logo airtel">
-                                <i class="fas fa-signal"></i> Likely Airtel
-                            </span>
-                            <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 8px;">(Original allocation matches)</span>
-                        `;
-                    } else if (isOriginalVi) {
+                    if (isOriginalVi) {
                         document.getElementById('currentOperatorValue').innerHTML = `
                             <span class="operator-logo vi">
                                 <i class="fas fa-signal"></i> Likely Vi
                             </span>
-                            <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 8px;">(Original allocation matches)</span>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 8px;">(Original allocation matches, not Jio/BSNL/Airtel)</span>
                         `;
                     } else {
-                        // Not in DB or original was Jio/BSNL but not confirmed - could be Airtel or Vi
+                        // Not in DB or original was Jio/BSNL/Airtel but not confirmed - could be Vi or other
                         document.getElementById('currentOperatorValue').innerHTML = `
                             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                                <span class="operator-logo airtel" style="opacity: 0.8;">
-                                    <i class="fas fa-question-circle"></i> Airtel
-                                </span>
-                                <span style="color: var(--text-secondary);">or</span>
                                 <span class="operator-logo vi" style="opacity: 0.8;">
                                     <i class="fas fa-question-circle"></i> Vi
                                 </span>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary);">(Probable - Not Jio/BSNL)</span>
+                                <span style="color: var(--text-secondary);">or</span>
+                                <span style="color: var(--text-secondary);">Other/MVNO</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">(Not Jio/BSNL/Airtel)</span>
                             </div>
                         `;
                     }
@@ -950,15 +1064,18 @@
                 text += `\n--- BSNL Live Status ---\n`;
                 text += `Circle: ${lastBsnlResult.circle || 'Unknown'}\n`;
                 text += `Type: Prepaid\n`;
+            } else if (lastAirtelResult && lastAirtelResult.isAirtel) {
+                text += `Current Operator: Airtel (Verified)\n`;
+                text += `\n--- Airtel Live Status ---\n`;
+                text += `Circle: ${lastAirtelResult.circleName || 'Unknown'}\n`;
+                text += `Status: ${lastAirtelResult.status || 'Unknown'}\n`;
             } else if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
-                // Not Jio or BSNL - likely Airtel or Vi
+                // Not Jio, BSNL or Airtel - likely Vi
                 const originalOp = operatorData ? operatorData.operator.toLowerCase() : '';
-                if (originalOp.includes('airtel')) {
-                    text += `Current Operator: Likely Airtel (Original allocation matches)\n`;
-                } else if (originalOp.includes('vi') || originalOp.includes('vodafone') || originalOp.includes('idea')) {
-                    text += `Current Operator: Likely Vi (Original allocation matches)\n`;
+                if (originalOp.includes('vi') || originalOp.includes('vodafone') || originalOp.includes('idea')) {
+                    text += `Current Operator: Likely Vi (Original allocation matches, not Jio/BSNL/Airtel)\n`;
                 } else {
-                    text += `Current Operator: Likely Airtel or Vi (Not Jio/BSNL)\n`;
+                    text += `Current Operator: Likely Vi or Other/MVNO (Not Jio/BSNL/Airtel)\n`;
                 }
             }
             
@@ -1053,18 +1170,19 @@
                     addLine('Current Operator', 'BSNL (Verified)');
                     addLine('BSNL Circle', lastBsnlResult.circle || 'Unknown');
                     addLine('Type', 'Prepaid');
+                } else if (lastAirtelResult && lastAirtelResult.isAirtel) {
+                    addLine('Current Operator', 'Airtel (Verified)');
+                    addLine('Airtel Circle', lastAirtelResult.circleName || 'Unknown');
+                    addLine('Status', lastAirtelResult.status || 'Unknown');
                 } else {
-                    // Not Jio or BSNL - likely Airtel or Vi
+                    // Not Jio, BSNL or Airtel - likely Vi
                     const originalOp = operatorData ? operatorData.operator.toLowerCase() : '';
-                    if (originalOp.includes('airtel')) {
-                        addLine('Current Operator', 'Likely Airtel');
-                        addLine('Confidence', 'High (Original allocation matches)');
-                    } else if (originalOp.includes('vi') || originalOp.includes('vodafone') || originalOp.includes('idea')) {
+                    if (originalOp.includes('vi') || originalOp.includes('vodafone') || originalOp.includes('idea')) {
                         addLine('Current Operator', 'Likely Vi');
-                        addLine('Confidence', 'High (Original allocation matches)');
+                        addLine('Confidence', 'High (Original allocation, not Jio/BSNL/Airtel)');
                     } else {
-                        addLine('Current Operator', 'Likely Airtel or Vi');
-                        addLine('Confidence', 'Medium (Not Jio/BSNL)');
+                        addLine('Current Operator', 'Likely Vi or Other/MVNO');
+                        addLine('Confidence', 'Medium (Not Jio/BSNL/Airtel)');
                     }
                 }
             }
@@ -1090,6 +1208,15 @@
                 doc.text('Verified BSNL Number:', 20, y + 10);
                 doc.setFontSize(9);
                 doc.text('This number is CONFIRMED to be currently active on BSNL network (Live API check).', 20, y + 18);
+            } else if (lastAirtelResult && lastAirtelResult.isAirtel) {
+                // Confirmed Airtel - show red box
+                doc.setFillColor(254, 226, 226);
+                doc.rect(15, y, 180, 25, 'F');
+                doc.setTextColor(153, 27, 27);
+                doc.setFontSize(10);
+                doc.text('Verified Airtel Number:', 20, y + 10);
+                doc.setFontSize(9);
+                doc.text('This number is CONFIRMED to be currently active on Airtel network (Live API check).', 20, y + 18);
             } else if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
                 // Indian number not Jio/BSNL - likely Airtel or Vi
                 doc.setFillColor(219, 234, 254);
@@ -1126,6 +1253,10 @@
             document.getElementById('phoneInput').value = '';
             document.getElementById('resultsSection').style.display = 'none';
             document.getElementById('phoneInput').focus();
+            // Reset API results
+            lastJioResult = null;
+            lastBsnlResult = null;
+            lastAirtelResult = null;
         }
 
         function showToast(message) {
