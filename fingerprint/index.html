@@ -80,7 +80,7 @@
                 </div>
             </div>
 
-            <div class="analyze-actions" style="text-align: center; margin-top: 20px;">
+            <div class="analyze-actions" style="text-align: center; margin-top: 20px; margin-bottom: 40px;">
                 <button class="verify-btn" onclick="analyzeFingerprint()" id="analyzeBtn" disabled>
                     <i class="fas fa-search-plus"></i> Analyze Fingerprint
                 </button>
@@ -669,7 +669,7 @@
         }
 
         function performDermatoglyphicAnalysis(img) {
-            const size = 256;
+            const size = 300; // Increased resolution for better accuracy
             const canvas = document.createElement('canvas');
             canvas.width = size;
             canvas.height = size;
@@ -679,32 +679,59 @@
             const imageData = ctx.getImageData(0, 0, size, size);
             const gray = toGrayscale(imageData);
             
-            // 1. Enhance the image
-            const enhanced = enhanceFingerprint(gray, size);
+            // 1. Advanced preprocessing with histogram equalization
+            const normalized = normalizeImage(gray, size);
             
-            // 2. Detect ridges using Gabor-like filtering
-            const ridgeData = detectRidges(enhanced, size);
+            // 2. Segment foreground (fingerprint area) from background
+            const segmentMask = segmentFingerprint(normalized, size);
             
-            // 3. Detect minutiae points
-            const minutiae = detectMinutiae(ridgeData, size);
+            // 3. Estimate local ridge orientation field
+            const orientationField = estimateOrientationField(normalized, size);
             
-            // 4. Classify pattern type
-            const pattern = classifyPattern(ridgeData, size);
+            // 4. Estimate local ridge frequency
+            const frequencyField = estimateFrequencyField(normalized, orientationField, size);
             
-            // 5. Find singular points (core and delta)
-            const singularPoints = findSingularPoints(ridgeData, size);
+            // 5. Apply Gabor filter enhancement
+            const enhanced = gaborEnhance(normalized, orientationField, frequencyField, size);
             
-            // 6. Calculate quality score
-            const quality = assessQuality(gray, ridgeData, size);
+            // 6. Binarize the enhanced image
+            const binarized = binarizeImage(enhanced, size);
             
-            // 7. Count ridges
-            const ridgeCount = countRidges(ridgeData, singularPoints, size);
+            // 7. Thin the ridges (skeletonization)
+            const skeleton = thinRidges(binarized, size);
+            
+            // 8. Ridge data compilation
+            const ridgeData = {
+                enhanced: enhanced,
+                binary: skeleton,
+                orientation: orientationField,
+                frequency: frequencyField,
+                segmentMask: segmentMask
+            };
+            
+            // 9. Detect minutiae with quality scoring
+            const minutiae = detectMinutiaeAdvanced(ridgeData, size);
+            
+            // 10. Classify pattern using multiple features
+            const pattern = classifyPatternAdvanced(ridgeData, minutiae, size);
+            
+            // 11. Find singular points with improved algorithm
+            const singularPoints = findSingularPointsAdvanced(orientationField, segmentMask, size);
+            
+            // 12. Calculate comprehensive quality score
+            const quality = assessQualityAdvanced(gray, ridgeData, minutiae, size);
+            
+            // 13. Count ridges with improved accuracy
+            const ridgeCount = countRidgesAdvanced(ridgeData, singularPoints, size);
+            
+            // 14. Calculate ridge characteristics
+            const ridgeCharacteristics = analyzeRidgeCharacteristics(ridgeData, size);
             
             // Draw enhanced image
             drawEnhanced(enhanced, size);
             
-            // Draw minutiae map
-            drawMinutiaeMap(ridgeData, minutiae, singularPoints, size);
+            // Draw minutiae map with more detail
+            drawMinutiaeMapAdvanced(ridgeData, minutiae, singularPoints, size);
             
             return {
                 pattern,
@@ -712,9 +739,259 @@
                 singularPoints,
                 quality,
                 ridgeCount,
+                ridgeCharacteristics,
+                orientationField: summarizeOrientationField(orientationField, size),
                 imageSize: { width: img.width, height: img.height },
+                analysisSize: size,
                 timestamp: new Date().toISOString()
             };
+        }
+
+        // ==================== ADVANCED IMAGE PREPROCESSING ====================
+        
+        function normalizeImage(gray, size) {
+            // Histogram equalization for contrast enhancement
+            const histogram = new Array(256).fill(0);
+            for (let i = 0; i < gray.length; i++) {
+                histogram[Math.floor(gray[i])]++;
+            }
+            
+            // Calculate CDF
+            const cdf = new Array(256);
+            cdf[0] = histogram[0];
+            for (let i = 1; i < 256; i++) {
+                cdf[i] = cdf[i-1] + histogram[i];
+            }
+            
+            // Normalize CDF
+            const cdfMin = cdf.find(v => v > 0);
+            const total = gray.length;
+            const lut = new Array(256);
+            for (let i = 0; i < 256; i++) {
+                lut[i] = Math.round(((cdf[i] - cdfMin) / (total - cdfMin)) * 255);
+            }
+            
+            // Apply equalization
+            const normalized = new Float32Array(gray.length);
+            for (let i = 0; i < gray.length; i++) {
+                normalized[i] = lut[Math.floor(gray[i])];
+            }
+            
+            // Local contrast enhancement (CLAHE-like)
+            return localContrastEnhance(normalized, size);
+        }
+        
+        function localContrastEnhance(gray, size) {
+            const tileSize = 32;
+            const result = new Float32Array(gray.length);
+            
+            for (let ty = 0; ty < size; ty += tileSize) {
+                for (let tx = 0; tx < size; tx += tileSize) {
+                    // Get tile bounds
+                    const endY = Math.min(ty + tileSize, size);
+                    const endX = Math.min(tx + tileSize, size);
+                    
+                    // Calculate local histogram
+                    let min = 255, max = 0;
+                    for (let y = ty; y < endY; y++) {
+                        for (let x = tx; x < endX; x++) {
+                            const val = gray[y * size + x];
+                            if (val < min) min = val;
+                            if (val > max) max = val;
+                        }
+                    }
+                    
+                    // Normalize tile
+                    const range = max - min || 1;
+                    for (let y = ty; y < endY; y++) {
+                        for (let x = tx; x < endX; x++) {
+                            const idx = y * size + x;
+                            result[idx] = ((gray[idx] - min) / range) * 255;
+                        }
+                    }
+                }
+            }
+            
+            return result;
+        }
+        
+        function segmentFingerprint(gray, size) {
+            // Segment fingerprint from background using variance threshold
+            const blockSize = 16;
+            const mask = new Uint8Array(size * size);
+            const varianceThreshold = 100;
+            
+            for (let by = 0; by < size; by += blockSize) {
+                for (let bx = 0; bx < size; bx += blockSize) {
+                    const endY = Math.min(by + blockSize, size);
+                    const endX = Math.min(bx + blockSize, size);
+                    
+                    // Calculate mean
+                    let sum = 0, count = 0;
+                    for (let y = by; y < endY; y++) {
+                        for (let x = bx; x < endX; x++) {
+                            sum += gray[y * size + x];
+                            count++;
+                        }
+                    }
+                    const mean = sum / count;
+                    
+                    // Calculate variance
+                    let variance = 0;
+                    for (let y = by; y < endY; y++) {
+                        for (let x = bx; x < endX; x++) {
+                            variance += (gray[y * size + x] - mean) ** 2;
+                        }
+                    }
+                    variance /= count;
+                    
+                    // Mark foreground if variance is high enough
+                    const isForeground = variance > varianceThreshold ? 1 : 0;
+                    for (let y = by; y < endY; y++) {
+                        for (let x = bx; x < endX; x++) {
+                            mask[y * size + x] = isForeground;
+                        }
+                    }
+                }
+            }
+            
+            return mask;
+        }
+        
+        function estimateOrientationField(gray, size) {
+            // Gradient-based orientation estimation
+            const blockSize = 16;
+            const orientation = new Float32Array(size * size);
+            
+            // Calculate gradients
+            const gx = new Float32Array(size * size);
+            const gy = new Float32Array(size * size);
+            
+            for (let y = 1; y < size - 1; y++) {
+                for (let x = 1; x < size - 1; x++) {
+                    const idx = y * size + x;
+                    // Sobel operator
+                    gx[idx] = -gray[(y-1)*size+(x-1)] - 2*gray[y*size+(x-1)] - gray[(y+1)*size+(x-1)]
+                            + gray[(y-1)*size+(x+1)] + 2*gray[y*size+(x+1)] + gray[(y+1)*size+(x+1)];
+                    gy[idx] = -gray[(y-1)*size+(x-1)] - 2*gray[(y-1)*size+x] - gray[(y-1)*size+(x+1)]
+                            + gray[(y+1)*size+(x-1)] + 2*gray[(y+1)*size+x] + gray[(y+1)*size+(x+1)];
+                }
+            }
+            
+            // Block-wise orientation using least mean square
+            for (let by = 0; by < size; by += blockSize) {
+                for (let bx = 0; bx < size; bx += blockSize) {
+                    let vx = 0, vy = 0;
+                    
+                    for (let y = by; y < Math.min(by + blockSize, size); y++) {
+                        for (let x = bx; x < Math.min(bx + blockSize, size); x++) {
+                            const idx = y * size + x;
+                            vx += 2 * gx[idx] * gy[idx];
+                            vy += gx[idx] * gx[idx] - gy[idx] * gy[idx];
+                        }
+                    }
+                    
+                    const angle = 0.5 * Math.atan2(vx, vy);
+                    
+                    // Assign orientation to all pixels in block
+                    for (let y = by; y < Math.min(by + blockSize, size); y++) {
+                        for (let x = bx; x < Math.min(bx + blockSize, size); x++) {
+                            orientation[y * size + x] = angle;
+                        }
+                    }
+                }
+            }
+            
+            // Smooth orientation field
+            return smoothOrientationField(orientation, size);
+        }
+        
+        function smoothOrientationField(orientation, size) {
+            // Low-pass filter on orientation using complex representation
+            const smoothed = new Float32Array(size * size);
+            const kernelSize = 5;
+            const half = Math.floor(kernelSize / 2);
+            
+            for (let y = half; y < size - half; y++) {
+                for (let x = half; x < size - half; x++) {
+                    let sumCos = 0, sumSin = 0;
+                    
+                    for (let ky = -half; ky <= half; ky++) {
+                        for (let kx = -half; kx <= half; kx++) {
+                            const idx = (y + ky) * size + (x + kx);
+                            const theta = orientation[idx] * 2;
+                            sumCos += Math.cos(theta);
+                            sumSin += Math.sin(theta);
+                        }
+                    }
+                    
+                    smoothed[y * size + x] = 0.5 * Math.atan2(sumSin, sumCos);
+                }
+            }
+            
+            return smoothed;
+        }
+        
+        function estimateFrequencyField(gray, orientation, size) {
+            // Estimate ridge frequency using oriented window analysis
+            const frequency = new Float32Array(size * size);
+            const blockSize = 32;
+            const defaultFreq = 0.1; // Default ridge frequency
+            
+            for (let by = 0; by < size; by += blockSize) {
+                for (let bx = 0; bx < size; bx += blockSize) {
+                    const centerX = bx + blockSize / 2;
+                    const centerY = by + blockSize / 2;
+                    
+                    if (centerX >= size || centerY >= size) continue;
+                    
+                    const theta = orientation[Math.floor(centerY) * size + Math.floor(centerX)];
+                    
+                    // Project pixels along perpendicular to ridge direction
+                    const projection = [];
+                    const perpAngle = theta + Math.PI / 2;
+                    const cosP = Math.cos(perpAngle);
+                    const sinP = Math.sin(perpAngle);
+                    
+                    for (let i = -16; i <= 16; i++) {
+                        const px = Math.round(centerX + i * cosP);
+                        const py = Math.round(centerY + i * sinP);
+                        
+                        if (px >= 0 && px < size && py >= 0 && py < size) {
+                            projection.push(gray[py * size + px]);
+                        }
+                    }
+                    
+                    // Find peaks in projection to estimate frequency
+                    const peaks = findPeaks(projection);
+                    let freq = defaultFreq;
+                    
+                    if (peaks.length >= 2) {
+                        const avgDist = peaks.reduce((sum, p, i, arr) => 
+                            i > 0 ? sum + (p - arr[i-1]) : sum, 0) / (peaks.length - 1);
+                        if (avgDist > 0) freq = 1 / avgDist;
+                    }
+                    
+                    // Assign frequency to block
+                    for (let y = by; y < Math.min(by + blockSize, size); y++) {
+                        for (let x = bx; x < Math.min(bx + blockSize, size); x++) {
+                            frequency[y * size + x] = freq;
+                        }
+                    }
+                }
+            }
+            
+            return frequency;
+        }
+        
+        function findPeaks(arr) {
+            const peaks = [];
+            for (let i = 1; i < arr.length - 1; i++) {
+                if (arr[i] > arr[i-1] && arr[i] > arr[i+1]) {
+                    peaks.push(i);
+                }
+            }
+            return peaks;
         }
 
         function toGrayscale(imageData) {
@@ -726,6 +1003,198 @@
                 gray[i] = 0.299 * r + 0.587 * g + 0.114 * b;
             }
             return gray;
+        }
+
+        // ==================== GABOR FILTER ENHANCEMENT ====================
+        
+        function gaborEnhance(gray, orientation, frequency, size) {
+            // Apply Gabor filter bank for ridge enhancement
+            const enhanced = new Float32Array(size * size);
+            const sigma = 4.0; // Gaussian envelope
+            const ksize = 11;
+            const half = Math.floor(ksize / 2);
+            
+            for (let y = half; y < size - half; y++) {
+                for (let x = half; x < size - half; x++) {
+                    const idx = y * size + x;
+                    const theta = orientation[idx];
+                    const freq = frequency[idx];
+                    
+                    if (freq <= 0) {
+                        enhanced[idx] = gray[idx];
+                        continue;
+                    }
+                    
+                    // Apply Gabor kernel
+                    let sum = 0;
+                    const cosT = Math.cos(theta);
+                    const sinT = Math.sin(theta);
+                    
+                    for (let v = -half; v <= half; v++) {
+                        for (let u = -half; u <= half; u++) {
+                            // Rotate coordinates
+                            const xTheta = u * cosT + v * sinT;
+                            const yTheta = -u * sinT + v * cosT;
+                            
+                            // Gabor filter equation
+                            const gaussian = Math.exp(-0.5 * ((xTheta * xTheta + yTheta * yTheta) / (sigma * sigma)));
+                            const sinusoidal = Math.cos(2 * Math.PI * freq * xTheta);
+                            const kernel = gaussian * sinusoidal;
+                            
+                            const ny = y + v;
+                            const nx = x + u;
+                            sum += gray[ny * size + nx] * kernel;
+                        }
+                    }
+                    
+                    enhanced[idx] = sum;
+                }
+            }
+            
+            // Normalize enhanced image
+            return normalizeArray(enhanced);
+        }
+        
+        function normalizeArray(arr) {
+            let min = Infinity, max = -Infinity;
+            for (let i = 0; i < arr.length; i++) {
+                if (arr[i] < min) min = arr[i];
+                if (arr[i] > max) max = arr[i];
+            }
+            
+            const result = new Float32Array(arr.length);
+            const range = max - min || 1;
+            for (let i = 0; i < arr.length; i++) {
+                result[i] = ((arr[i] - min) / range) * 255;
+            }
+            return result;
+        }
+        
+        function binarizeImage(gray, size) {
+            // Adaptive binarization using local mean
+            const binary = new Float32Array(size * size);
+            const blockSize = 16;
+            const constant = 5;
+            
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    // Calculate local mean
+                    let sum = 0, count = 0;
+                    const halfBlock = Math.floor(blockSize / 2);
+                    
+                    for (let dy = -halfBlock; dy <= halfBlock; dy++) {
+                        for (let dx = -halfBlock; dx <= halfBlock; dx++) {
+                            const ny = Math.max(0, Math.min(size - 1, y + dy));
+                            const nx = Math.max(0, Math.min(size - 1, x + dx));
+                            sum += gray[ny * size + nx];
+                            count++;
+                        }
+                    }
+                    
+                    const mean = sum / count;
+                    const idx = y * size + x;
+                    binary[idx] = gray[idx] < mean - constant ? 0 : 255;
+                }
+            }
+            
+            return binary;
+        }
+        
+        function thinRidges(binary, size) {
+            // Zhang-Suen thinning algorithm for skeletonization
+            const skeleton = new Uint8Array(size * size);
+            for (let i = 0; i < binary.length; i++) {
+                skeleton[i] = binary[i] < 128 ? 1 : 0;
+            }
+            
+            let changed = true;
+            let iteration = 0;
+            const maxIterations = 50;
+            
+            while (changed && iteration < maxIterations) {
+                changed = false;
+                const toRemove = [];
+                
+                // Step 1
+                for (let y = 1; y < size - 1; y++) {
+                    for (let x = 1; x < size - 1; x++) {
+                        if (skeleton[y * size + x] === 0) continue;
+                        
+                        const p2 = skeleton[(y-1) * size + x];
+                        const p3 = skeleton[(y-1) * size + (x+1)];
+                        const p4 = skeleton[y * size + (x+1)];
+                        const p5 = skeleton[(y+1) * size + (x+1)];
+                        const p6 = skeleton[(y+1) * size + x];
+                        const p7 = skeleton[(y+1) * size + (x-1)];
+                        const p8 = skeleton[y * size + (x-1)];
+                        const p9 = skeleton[(y-1) * size + (x-1)];
+                        
+                        const B = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+                        if (B < 2 || B > 6) continue;
+                        
+                        // Count transitions 0->1
+                        const A = (p2===0 && p3===1?1:0) + (p3===0 && p4===1?1:0) +
+                                  (p4===0 && p5===1?1:0) + (p5===0 && p6===1?1:0) +
+                                  (p6===0 && p7===1?1:0) + (p7===0 && p8===1?1:0) +
+                                  (p8===0 && p9===1?1:0) + (p9===0 && p2===1?1:0);
+                        if (A !== 1) continue;
+                        
+                        if (p2 * p4 * p6 === 0 && p4 * p6 * p8 === 0) {
+                            toRemove.push(y * size + x);
+                        }
+                    }
+                }
+                
+                for (const idx of toRemove) {
+                    skeleton[idx] = 0;
+                    changed = true;
+                }
+                
+                // Step 2
+                toRemove.length = 0;
+                for (let y = 1; y < size - 1; y++) {
+                    for (let x = 1; x < size - 1; x++) {
+                        if (skeleton[y * size + x] === 0) continue;
+                        
+                        const p2 = skeleton[(y-1) * size + x];
+                        const p3 = skeleton[(y-1) * size + (x+1)];
+                        const p4 = skeleton[y * size + (x+1)];
+                        const p5 = skeleton[(y+1) * size + (x+1)];
+                        const p6 = skeleton[(y+1) * size + x];
+                        const p7 = skeleton[(y+1) * size + (x-1)];
+                        const p8 = skeleton[y * size + (x-1)];
+                        const p9 = skeleton[(y-1) * size + (x-1)];
+                        
+                        const B = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+                        if (B < 2 || B > 6) continue;
+                        
+                        const A = (p2===0 && p3===1?1:0) + (p3===0 && p4===1?1:0) +
+                                  (p4===0 && p5===1?1:0) + (p5===0 && p6===1?1:0) +
+                                  (p6===0 && p7===1?1:0) + (p7===0 && p8===1?1:0) +
+                                  (p8===0 && p9===1?1:0) + (p9===0 && p2===1?1:0);
+                        if (A !== 1) continue;
+                        
+                        if (p2 * p4 * p8 === 0 && p2 * p6 * p8 === 0) {
+                            toRemove.push(y * size + x);
+                        }
+                    }
+                }
+                
+                for (const idx of toRemove) {
+                    skeleton[idx] = 0;
+                    changed = true;
+                }
+                
+                iteration++;
+            }
+            
+            // Convert back to 0-255 format
+            const result = new Float32Array(size * size);
+            for (let i = 0; i < skeleton.length; i++) {
+                result[i] = skeleton[i] === 1 ? 0 : 255;
+            }
+            
+            return result;
         }
 
         function enhanceFingerprint(gray, size) {
@@ -935,6 +1404,239 @@
             return dots.slice(0, 10); // Limit dots
         }
 
+        // ==================== ADVANCED MINUTIAE DETECTION ====================
+        
+        function detectMinutiaeAdvanced(ridgeData, size) {
+            const minutiae = {
+                ridgeEndings: [],
+                bifurcations: [],
+                crossings: [],
+                dots: [],
+                total: 0,
+                qualityScores: {}
+            };
+            
+            const binary = ridgeData.binary;
+            const orientation = ridgeData.orientation;
+            const segmentMask = ridgeData.segmentMask;
+            const margin = 20;
+            
+            // Enhanced Crossing Number method with quality scoring
+            for (let y = margin; y < size - margin; y++) {
+                for (let x = margin; x < size - margin; x++) {
+                    const idx = y * size + x;
+                    
+                    // Skip background
+                    if (segmentMask && segmentMask[idx] === 0) continue;
+                    
+                    if (binary[idx] < 128) { // Ridge pixel (skeleton)
+                        // Get 8 neighbors in clockwise order (P2-P9)
+                        const neighbors = [
+                            binary[(y-1)*size + x] < 128 ? 1 : 0,        // P2
+                            binary[(y-1)*size + (x+1)] < 128 ? 1 : 0,    // P3
+                            binary[y*size + (x+1)] < 128 ? 1 : 0,        // P4
+                            binary[(y+1)*size + (x+1)] < 128 ? 1 : 0,    // P5
+                            binary[(y+1)*size + x] < 128 ? 1 : 0,        // P6
+                            binary[(y+1)*size + (x-1)] < 128 ? 1 : 0,    // P7
+                            binary[y*size + (x-1)] < 128 ? 1 : 0,        // P8
+                            binary[(y-1)*size + (x-1)] < 128 ? 1 : 0     // P9
+                        ];
+                        
+                        // Calculate crossing number
+                        let cn = 0;
+                        for (let i = 0; i < 8; i++) {
+                            cn += Math.abs(neighbors[i] - neighbors[(i + 1) % 8]);
+                        }
+                        cn = cn / 2;
+                        
+                        // Calculate minutia quality score
+                        const qualityScore = calculateMinutiaeQuality(binary, orientation, x, y, size);
+                        
+                        // Only accept high-quality minutiae
+                        if (qualityScore < 0.3) continue;
+                        
+                        // Calculate ridge direction at minutia
+                        const ridgeDir = orientation[idx];
+                        
+                        // Classify minutiae
+                        if (cn === 1) {
+                            minutiae.ridgeEndings.push({
+                                x, y, 
+                                type: 'ending',
+                                direction: ridgeDir,
+                                quality: qualityScore
+                            });
+                        } else if (cn === 3) {
+                            minutiae.bifurcations.push({
+                                x, y,
+                                type: 'bifurcation',
+                                direction: ridgeDir,
+                                quality: qualityScore
+                            });
+                        } else if (cn === 4) {
+                            minutiae.crossings.push({
+                                x, y,
+                                type: 'crossing',
+                                direction: ridgeDir,
+                                quality: qualityScore
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Remove spurious minutiae
+            const minDistance = 10;
+            minutiae.ridgeEndings = filterAndSortByQuality(minutiae.ridgeEndings, minDistance);
+            minutiae.bifurcations = filterAndSortByQuality(minutiae.bifurcations, minDistance);
+            
+            // Detect short ridges (dots/islands)
+            minutiae.dots = detectDotsAdvanced(binary, segmentMask, size, margin);
+            
+            // Limit to most reliable minutiae (typically 20-40 for good prints)
+            minutiae.ridgeEndings = minutiae.ridgeEndings.slice(0, 30);
+            minutiae.bifurcations = minutiae.bifurcations.slice(0, 30);
+            
+            minutiae.total = minutiae.ridgeEndings.length + minutiae.bifurcations.length + 
+                             minutiae.crossings.length + minutiae.dots.length;
+            
+            // Calculate overall minutiae quality
+            const allMinutiae = [...minutiae.ridgeEndings, ...minutiae.bifurcations];
+            minutiae.qualityScores = {
+                average: allMinutiae.length > 0 ? 
+                    allMinutiae.reduce((s, m) => s + m.quality, 0) / allMinutiae.length : 0,
+                high: allMinutiae.filter(m => m.quality > 0.7).length,
+                medium: allMinutiae.filter(m => m.quality > 0.4 && m.quality <= 0.7).length,
+                low: allMinutiae.filter(m => m.quality <= 0.4).length
+            };
+            
+            return minutiae;
+        }
+        
+        function calculateMinutiaeQuality(binary, orientation, x, y, size) {
+            // Multi-factor quality assessment for minutiae
+            let quality = 1.0;
+            const radius = 8;
+            
+            // 1. Ridge continuity check (skeleton should be clean)
+            let ridgePixels = 0;
+            let backgroundPixels = 0;
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+                        if (binary[ny * size + nx] < 128) {
+                            ridgePixels++;
+                        } else {
+                            backgroundPixels++;
+                        }
+                    }
+                }
+            }
+            
+            // Penalize if too many or too few ridge pixels locally
+            const ridgeRatio = ridgePixels / (ridgePixels + backgroundPixels);
+            if (ridgeRatio < 0.1 || ridgeRatio > 0.5) {
+                quality *= 0.5;
+            }
+            
+            // 2. Orientation consistency check
+            const centerOrientation = orientation[y * size + x];
+            let orientationVariance = 0;
+            let orientationCount = 0;
+            
+            for (let dy = -radius; dy <= radius; dy += 2) {
+                for (let dx = -radius; dx <= radius; dx += 2) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+                        const localOri = orientation[ny * size + nx];
+                        let diff = Math.abs(localOri - centerOrientation);
+                        if (diff > Math.PI / 2) diff = Math.PI - diff;
+                        orientationVariance += diff;
+                        orientationCount++;
+                    }
+                }
+            }
+            
+            // Higher variance near minutiae is expected, but too high suggests noise
+            const avgVariance = orientationVariance / orientationCount;
+            if (avgVariance > 0.8) {
+                quality *= 0.6;
+            } else if (avgVariance < 0.2) {
+                quality *= 0.8; // Minutiae should have some orientation change
+            }
+            
+            // 3. Distance from boundary
+            const distFromEdge = Math.min(x, y, size - x, size - y);
+            if (distFromEdge < 30) {
+                quality *= (distFromEdge / 30);
+            }
+            
+            return Math.max(0, Math.min(1, quality));
+        }
+        
+        function filterAndSortByQuality(points, minDistance) {
+            // Sort by quality (highest first)
+            const sorted = [...points].sort((a, b) => b.quality - a.quality);
+            
+            const filtered = [];
+            for (const p of sorted) {
+                let tooClose = false;
+                for (const f of filtered) {
+                    const dist = Math.sqrt((p.x - f.x) ** 2 + (p.y - f.y) ** 2);
+                    if (dist < minDistance) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+                if (!tooClose) filtered.push(p);
+            }
+            return filtered;
+        }
+        
+        function detectDotsAdvanced(binary, segmentMask, size, margin) {
+            const dots = [];
+            
+            for (let y = margin; y < size - margin; y += 3) {
+                for (let x = margin; x < size - margin; x += 3) {
+                    if (segmentMask && segmentMask[y * size + x] === 0) continue;
+                    
+                    if (binary[y * size + x] < 128) {
+                        // Check for isolated small ridge segment
+                        let ridgePixels = 0;
+                        let connectedToMain = false;
+                        
+                        for (let dy = -3; dy <= 3; dy++) {
+                            for (let dx = -3; dx <= 3; dx++) {
+                                const idx = (y+dy) * size + (x+dx);
+                                if (binary[idx] < 128) ridgePixels++;
+                            }
+                        }
+                        
+                        // Check outer ring for connectivity
+                        for (let dy = -5; dy <= 5; dy++) {
+                            for (let dx = -5; dx <= 5; dx++) {
+                                if (Math.abs(dy) === 5 || Math.abs(dx) === 5) {
+                                    if (binary[(y+dy) * size + (x+dx)] < 128) {
+                                        connectedToMain = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (connectedToMain) break;
+                        }
+                        
+                        if (ridgePixels > 2 && ridgePixels < 10 && !connectedToMain) {
+                            dots.push({ x, y, type: 'dot', quality: 0.5 });
+                        }
+                    }
+                }
+            }
+            return dots.slice(0, 15);
+        }
+
         function classifyPattern(ridgeData, size) {
             const orientation = ridgeData.orientation;
             const center = Math.floor(size / 2);
@@ -1017,6 +1719,483 @@
                     scores: { loop: loopScore, whorl: whorlScore, arch: archScore }
                 };
             }
+        }
+
+        // ==================== ADVANCED PATTERN CLASSIFICATION ====================
+        
+        function classifyPatternAdvanced(ridgeData, minutiae, size) {
+            const orientation = ridgeData.orientation;
+            const segmentMask = ridgeData.segmentMask;
+            const center = Math.floor(size / 2);
+            const radius = Math.floor(size / 4);
+            
+            // Calculate multiple features for classification
+            const features = {
+                orientationVariance: 0,
+                curvature: 0,
+                symmetry: 0,
+                coreCount: 0,
+                deltaCount: 0,
+                minutiaeDistribution: { left: 0, right: 0, center: 0 }
+            };
+            
+            // 1. Analyze orientation field variance in regions
+            const regionScores = analyzeOrientationRegions(orientation, segmentMask, size);
+            features.orientationVariance = regionScores.variance;
+            features.curvature = regionScores.curvature;
+            
+            // 2. Calculate flow symmetry
+            features.symmetry = calculateFlowSymmetry(orientation, segmentMask, size);
+            
+            // 3. Detect singular points for classification
+            const singularDetect = detectSingularForClassification(orientation, segmentMask, size);
+            features.coreCount = singularDetect.cores;
+            features.deltaCount = singularDetect.deltas;
+            
+            // 4. Analyze minutiae spatial distribution
+            if (minutiae.ridgeEndings && minutiae.bifurcations) {
+                const allMin = [...minutiae.ridgeEndings, ...minutiae.bifurcations];
+                for (const m of allMin) {
+                    if (m.x < center - radius/2) {
+                        features.minutiaeDistribution.left++;
+                    } else if (m.x > center + radius/2) {
+                        features.minutiaeDistribution.right++;
+                    } else {
+                        features.minutiaeDistribution.center++;
+                    }
+                }
+            }
+            
+            // 5. Calculate pattern scores using weighted features
+            let scores = {
+                arch: 0,
+                tentedArch: 0,
+                ulnarLoop: 0,
+                radialLoop: 0,
+                plainWhorl: 0,
+                centralPocketLoop: 0,
+                doubleLoop: 0,
+                accidental: 0
+            };
+            
+            // Arch indicators: low variance, no singular points, smooth flow
+            scores.arch = (1 - features.orientationVariance) * 0.4 + 
+                         (features.coreCount === 0 ? 0.3 : 0) +
+                         (features.deltaCount === 0 ? 0.3 : 0);
+            
+            // Tented Arch: moderate curvature, single core-like point
+            scores.tentedArch = features.curvature * 0.5 + 
+                               (features.coreCount === 1 ? 0.3 : 0) +
+                               (1 - features.orientationVariance) * 0.2;
+            
+            // Loop indicators: one core, one delta, asymmetric flow
+            const loopBase = (features.coreCount === 1 ? 0.3 : 0) +
+                            (features.deltaCount === 1 ? 0.3 : 0) +
+                            (1 - features.symmetry) * 0.4;
+            
+            // Ulnar vs Radial based on flow direction
+            if (regionScores.flowDirection > 0) {
+                scores.ulnarLoop = loopBase * 1.1;
+                scores.radialLoop = loopBase * 0.5;
+            } else {
+                scores.radialLoop = loopBase * 1.1;
+                scores.ulnarLoop = loopBase * 0.5;
+            }
+            
+            // Whorl indicators: high variance, multiple cores/deltas, symmetric
+            scores.plainWhorl = features.orientationVariance * 0.3 +
+                               (features.coreCount >= 2 ? 0.3 : features.coreCount * 0.1) +
+                               (features.deltaCount >= 2 ? 0.2 : 0) +
+                               features.symmetry * 0.2;
+            
+            scores.centralPocketLoop = features.curvature * 0.3 +
+                                       (features.coreCount >= 1 ? 0.2 : 0) +
+                                       (features.deltaCount === 2 ? 0.3 : 0) +
+                                       features.symmetry * 0.2;
+            
+            scores.doubleLoop = (features.coreCount >= 2 ? 0.4 : 0) +
+                               (features.deltaCount >= 2 ? 0.3 : 0) +
+                               features.orientationVariance * 0.3;
+            
+            scores.accidental = features.orientationVariance * 0.5 +
+                               (features.coreCount >= 3 ? 0.3 : 0) +
+                               (features.deltaCount >= 3 ? 0.2 : 0);
+            
+            // Normalize scores
+            const maxScore = Math.max(...Object.values(scores));
+            if (maxScore > 0) {
+                for (const key in scores) {
+                    scores[key] /= maxScore;
+                }
+            }
+            
+            // Determine best pattern
+            const patternTypes = [
+                { key: 'arch', type: 'Arch', subtype: 'Plain Arch', category: 'Arch' },
+                { key: 'tentedArch', type: 'Arch', subtype: 'Tented Arch', category: 'Arch' },
+                { key: 'ulnarLoop', type: 'Loop', subtype: 'Ulnar Loop', category: 'Loop' },
+                { key: 'radialLoop', type: 'Loop', subtype: 'Radial Loop', category: 'Loop' },
+                { key: 'plainWhorl', type: 'Whorl', subtype: 'Plain Whorl', category: 'Whorl' },
+                { key: 'centralPocketLoop', type: 'Whorl', subtype: 'Central Pocket Loop', category: 'Whorl' },
+                { key: 'doubleLoop', type: 'Whorl', subtype: 'Double Loop', category: 'Whorl' },
+                { key: 'accidental', type: 'Whorl', subtype: 'Accidental', category: 'Whorl' }
+            ];
+            
+            let best = patternTypes[0];
+            for (const pt of patternTypes) {
+                if (scores[pt.key] > scores[best.key]) {
+                    best = pt;
+                }
+            }
+            
+            // Calculate category confidence
+            const categoryScores = {
+                loop: Math.max(scores.ulnarLoop, scores.radialLoop),
+                whorl: Math.max(scores.plainWhorl, scores.centralPocketLoop, scores.doubleLoop, scores.accidental),
+                arch: Math.max(scores.arch, scores.tentedArch)
+            };
+            
+            return {
+                type: best.type,
+                subtype: best.subtype,
+                confidence: scores[best.key],
+                scores: categoryScores,
+                detailedScores: scores,
+                features: features
+            };
+        }
+        
+        function analyzeOrientationRegions(orientation, segmentMask, size) {
+            const center = Math.floor(size / 2);
+            const radius = Math.floor(size / 4);
+            const angles = [];
+            let curvatureSum = 0;
+            let curvatureCount = 0;
+            let flowDirection = 0;
+            
+            // Sample orientations in center region
+            for (let y = center - radius; y < center + radius; y += 3) {
+                for (let x = center - radius; x < center + radius; x += 3) {
+                    const idx = y * size + x;
+                    if (segmentMask && segmentMask[idx] === 0) continue;
+                    
+                    angles.push(orientation[idx]);
+                    
+                    // Calculate local curvature (rate of orientation change)
+                    if (x > center - radius + 3 && y > center - radius + 3) {
+                        const dx = orientation[idx] - orientation[y * size + (x - 3)];
+                        const dy = orientation[idx] - orientation[(y - 3) * size + x];
+                        curvatureSum += Math.sqrt(dx * dx + dy * dy);
+                        curvatureCount++;
+                    }
+                    
+                    // Flow direction (for loop classification)
+                    if (x < center) {
+                        flowDirection += orientation[idx];
+                    } else {
+                        flowDirection -= orientation[idx];
+                    }
+                }
+            }
+            
+            if (angles.length === 0) {
+                return { variance: 0.5, curvature: 0.5, flowDirection: 0 };
+            }
+            
+            // Calculate circular variance of orientations
+            let sinSum = 0, cosSum = 0;
+            for (const a of angles) {
+                sinSum += Math.sin(2 * a);
+                cosSum += Math.cos(2 * a);
+            }
+            const R = Math.sqrt(sinSum * sinSum + cosSum * cosSum) / angles.length;
+            const variance = 1 - R; // 0 = all same direction, 1 = uniform distribution
+            
+            const curvature = curvatureCount > 0 ? 
+                Math.min(1, curvatureSum / curvatureCount / 0.5) : 0.5;
+            
+            return { variance, curvature, flowDirection };
+        }
+        
+        function calculateFlowSymmetry(orientation, segmentMask, size) {
+            const center = Math.floor(size / 2);
+            const radius = Math.floor(size / 4);
+            let symmetryScore = 0;
+            let count = 0;
+            
+            for (let y = center - radius; y < center + radius; y += 4) {
+                for (let x = 0; x < radius; x += 4) {
+                    const leftIdx = y * size + (center - x);
+                    const rightIdx = y * size + (center + x);
+                    
+                    if (segmentMask && (segmentMask[leftIdx] === 0 || segmentMask[rightIdx] === 0)) continue;
+                    
+                    // Compare orientations (accounting for mirroring)
+                    const leftAngle = orientation[leftIdx];
+                    const rightAngle = Math.PI - orientation[rightIdx];
+                    
+                    let diff = Math.abs(leftAngle - rightAngle);
+                    if (diff > Math.PI / 2) diff = Math.PI - diff;
+                    
+                    symmetryScore += 1 - (diff / (Math.PI / 2));
+                    count++;
+                }
+            }
+            
+            return count > 0 ? symmetryScore / count : 0.5;
+        }
+        
+        function detectSingularForClassification(orientation, segmentMask, size) {
+            let cores = 0, deltas = 0;
+            const blockSize = 12;
+            const margin = 25;
+            
+            for (let by = margin; by < size - margin; by += blockSize) {
+                for (let bx = margin; bx < size - margin; bx += blockSize) {
+                    if (segmentMask && segmentMask[by * size + bx] === 0) continue;
+                    
+                    // Poincaré index calculation
+                    const path = [
+                        [0, -1], [1, -1], [1, 0], [1, 1],
+                        [0, 1], [-1, 1], [-1, 0], [-1, -1]
+                    ];
+                    
+                    let sum = 0;
+                    for (let i = 0; i < path.length; i++) {
+                        const [dx1, dy1] = path[i];
+                        const [dx2, dy2] = path[(i + 1) % path.length];
+                        
+                        const idx1 = (by + dy1 * 4) * size + (bx + dx1 * 4);
+                        const idx2 = (by + dy2 * 4) * size + (bx + dx2 * 4);
+                        
+                        if (idx1 < 0 || idx1 >= size * size || idx2 < 0 || idx2 >= size * size) continue;
+                        
+                        let diff = orientation[idx2] - orientation[idx1];
+                        while (diff > Math.PI / 2) diff -= Math.PI;
+                        while (diff < -Math.PI / 2) diff += Math.PI;
+                        sum += diff;
+                    }
+                    
+                    if (Math.abs(sum - Math.PI) < 0.6) cores++;
+                    else if (Math.abs(sum + Math.PI) < 0.6) deltas++;
+                }
+            }
+            
+            return { cores: Math.min(cores, 4), deltas: Math.min(deltas, 4) };
+        }
+
+        // ==================== ADVANCED SINGULAR POINTS DETECTION ====================
+        
+        function findSingularPointsAdvanced(orientationField, segmentMask, size) {
+            const points = { 
+                cores: [], 
+                deltas: [],
+                type: 'unknown'
+            };
+            
+            const center = Math.floor(size / 2);
+            const blockSize = 10;
+            const margin = 25;
+            
+            // Multi-resolution Poincaré index method
+            const resolutions = [8, 12, 16];
+            const candidates = { cores: [], deltas: [] };
+            
+            for (const radius of resolutions) {
+                for (let by = margin; by < size - margin; by += blockSize) {
+                    for (let bx = margin; bx < size - margin; bx += blockSize) {
+                        // Skip background region
+                        if (segmentMask && segmentMask[by * size + bx] === 0) continue;
+                        
+                        // Calculate Poincaré index around this point
+                        const pIndex = calculatePoincareIndex(orientationField, bx, by, radius, size);
+                        
+                        // Core detection (PI ≈ +π or +180°)
+                        if (Math.abs(pIndex - Math.PI) < 0.4) {
+                            const quality = assessSingularPointQuality(orientationField, segmentMask, bx, by, size);
+                            candidates.cores.push({ x: bx, y: by, quality, pIndex });
+                        }
+                        // Delta detection (PI ≈ -π or -180°)
+                        else if (Math.abs(pIndex + Math.PI) < 0.4) {
+                            const quality = assessSingularPointQuality(orientationField, segmentMask, bx, by, size);
+                            candidates.deltas.push({ x: bx, y: by, quality, pIndex });
+                        }
+                    }
+                }
+            }
+            
+            // Cluster nearby candidates and select best
+            points.cores = clusterAndSelectBest(candidates.cores, 20);
+            points.deltas = clusterAndSelectBest(candidates.deltas, 20);
+            
+            // Determine pattern type based on singular points
+            if (points.cores.length === 0 && points.deltas.length === 0) {
+                points.type = 'arch';
+            } else if (points.cores.length === 1 && points.deltas.length === 1) {
+                points.type = 'loop';
+            } else if (points.cores.length >= 2 || points.deltas.length >= 2) {
+                points.type = 'whorl';
+            } else {
+                points.type = 'uncertain';
+            }
+            
+            // If no points found, provide estimates based on image analysis
+            if (points.cores.length === 0) {
+                // Estimate core position from orientation convergence
+                const estimated = estimateCorePosition(orientationField, segmentMask, size);
+                if (estimated) {
+                    points.cores.push({ x: estimated.x, y: estimated.y, quality: 0.3, estimated: true });
+                } else {
+                    points.cores.push({ x: center, y: center - 15, quality: 0.2, estimated: true });
+                }
+            }
+            
+            if (points.deltas.length === 0 && points.type !== 'arch') {
+                points.deltas.push({ x: center - 25, y: center + 35, quality: 0.2, estimated: true });
+            }
+            
+            return points;
+        }
+        
+        function calculatePoincareIndex(orientation, cx, cy, radius, size) {
+            // Calculate Poincaré index using 8-point path around center
+            const pathPoints = 16; // More points for accuracy
+            let sum = 0;
+            
+            const angles = [];
+            for (let i = 0; i < pathPoints; i++) {
+                const angle = (2 * Math.PI * i) / pathPoints;
+                const px = Math.round(cx + radius * Math.cos(angle));
+                const py = Math.round(cy + radius * Math.sin(angle));
+                
+                if (px >= 0 && px < size && py >= 0 && py < size) {
+                    angles.push(orientation[py * size + px]);
+                }
+            }
+            
+            if (angles.length < pathPoints / 2) return 0;
+            
+            for (let i = 0; i < angles.length; i++) {
+                let diff = angles[(i + 1) % angles.length] - angles[i];
+                
+                // Normalize difference to [-π/2, π/2] for doubled angle representation
+                while (diff > Math.PI / 2) diff -= Math.PI;
+                while (diff < -Math.PI / 2) diff += Math.PI;
+                
+                sum += diff;
+            }
+            
+            return sum;
+        }
+        
+        function assessSingularPointQuality(orientation, segmentMask, x, y, size) {
+            let quality = 1.0;
+            const radius = 15;
+            
+            // Check if surrounded by valid fingerprint region
+            let validPixels = 0;
+            let totalPixels = 0;
+            for (let dy = -radius; dy <= radius; dy += 3) {
+                for (let dx = -radius; dx <= radius; dx += 3) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+                        totalPixels++;
+                        if (!segmentMask || segmentMask[ny * size + nx] > 0) {
+                            validPixels++;
+                        }
+                    }
+                }
+            }
+            quality *= (validPixels / totalPixels);
+            
+            // Distance from center bonus
+            const center = size / 2;
+            const distFromCenter = Math.sqrt((x - center) ** 2 + (y - center) ** 2);
+            const maxDist = size / 2;
+            if (distFromCenter < maxDist * 0.7) {
+                quality *= 1.0;
+            } else {
+                quality *= (maxDist - distFromCenter) / maxDist;
+            }
+            
+            return Math.max(0, Math.min(1, quality));
+        }
+        
+        function clusterAndSelectBest(points, minDistance) {
+            if (points.length === 0) return [];
+            
+            // Sort by quality
+            const sorted = [...points].sort((a, b) => b.quality - a.quality);
+            
+            const clusters = [];
+            for (const p of sorted) {
+                let addedToCluster = false;
+                for (const cluster of clusters) {
+                    const dist = Math.sqrt((p.x - cluster.x) ** 2 + (p.y - cluster.y) ** 2);
+                    if (dist < minDistance) {
+                        // Update cluster center if this point is better
+                        if (p.quality > cluster.quality) {
+                            cluster.x = p.x;
+                            cluster.y = p.y;
+                            cluster.quality = p.quality;
+                        }
+                        addedToCluster = true;
+                        break;
+                    }
+                }
+                if (!addedToCluster) {
+                    clusters.push({ x: p.x, y: p.y, quality: p.quality });
+                }
+            }
+            
+            // Return top clusters
+            return clusters.slice(0, 4).filter(c => c.quality > 0.2);
+        }
+        
+        function estimateCorePosition(orientation, segmentMask, size) {
+            // Find point with maximum orientation curvature
+            const center = Math.floor(size / 2);
+            const searchRadius = Math.floor(size / 4);
+            
+            let maxCurvature = 0;
+            let maxPos = null;
+            
+            for (let y = center - searchRadius; y < center + searchRadius; y += 5) {
+                for (let x = center - searchRadius; x < center + searchRadius; x += 5) {
+                    if (segmentMask && segmentMask[y * size + x] === 0) continue;
+                    
+                    // Calculate local orientation curvature
+                    let curvature = 0;
+                    let count = 0;
+                    const radius = 8;
+                    
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (Math.PI * i) / 4;
+                        const px = Math.round(x + radius * Math.cos(angle));
+                        const py = Math.round(y + radius * Math.sin(angle));
+                        const px2 = Math.round(x + radius * Math.cos(angle + Math.PI));
+                        const py2 = Math.round(y + radius * Math.sin(angle + Math.PI));
+                        
+                        if (px >= 0 && px < size && py >= 0 && py < size &&
+                            px2 >= 0 && px2 < size && py2 >= 0 && py2 < size) {
+                            const diff = Math.abs(orientation[py * size + px] - orientation[py2 * size + px2]);
+                            curvature += diff;
+                            count++;
+                        }
+                    }
+                    
+                    if (count > 0) {
+                        curvature /= count;
+                        if (curvature > maxCurvature) {
+                            maxCurvature = curvature;
+                            maxPos = { x, y };
+                        }
+                    }
+                }
+            }
+            
+            return maxPos;
         }
 
         function findSingularPoints(ridgeData, size) {
@@ -1116,6 +2295,480 @@
             
             const totalPixels = (radius * 2) ** 2;
             return (ridgePixels / totalPixels * 100).toFixed(1);
+        }
+
+        // ==================== ADVANCED QUALITY ASSESSMENT ====================
+        
+        function assessQualityAdvanced(gray, ridgeData, minutiae, size) {
+            const metrics = {
+                contrast: 0,
+                clarity: 0,
+                uniformity: 0,
+                ridgeContinuity: 0,
+                orientationConsistency: 0,
+                minutiaeQuality: 0,
+                foregroundRatio: 0
+            };
+            
+            // 1. Contrast Analysis (local and global)
+            let globalMin = 255, globalMax = 0;
+            const blockSize = 32;
+            let localContrastSum = 0;
+            let blockCount = 0;
+            
+            for (let by = 0; by < size; by += blockSize) {
+                for (let bx = 0; bx < size; bx += blockSize) {
+                    let blockMin = 255, blockMax = 0;
+                    for (let y = by; y < Math.min(by + blockSize, size); y++) {
+                        for (let x = bx; x < Math.min(bx + blockSize, size); x++) {
+                            const val = gray[y * size + x];
+                            if (val < blockMin) blockMin = val;
+                            if (val > blockMax) blockMax = val;
+                            if (val < globalMin) globalMin = val;
+                            if (val > globalMax) globalMax = val;
+                        }
+                    }
+                    localContrastSum += (blockMax - blockMin);
+                    blockCount++;
+                }
+            }
+            
+            const globalContrast = (globalMax - globalMin) / 255;
+            const localContrast = localContrastSum / blockCount / 255;
+            metrics.contrast = (globalContrast * 0.4 + localContrast * 0.6) * 100;
+            
+            // 2. Ridge Clarity (Gabor response strength)
+            if (ridgeData.enhanced) {
+                let claritySum = 0;
+                let clarityCount = 0;
+                const segmentMask = ridgeData.segmentMask;
+                
+                for (let i = 0; i < ridgeData.enhanced.length; i++) {
+                    if (!segmentMask || segmentMask[i] > 0) {
+                        claritySum += Math.abs(ridgeData.enhanced[i] - 128);
+                        clarityCount++;
+                    }
+                }
+                metrics.clarity = clarityCount > 0 ? 
+                    Math.min(100, (claritySum / clarityCount) * 2) : 50;
+            } else {
+                metrics.clarity = 50;
+            }
+            
+            // 3. Orientation Field Consistency
+            if (ridgeData.orientation) {
+                let consistencySum = 0;
+                let consistencyCount = 0;
+                const windowSize = 8;
+                
+                for (let y = windowSize; y < size - windowSize; y += windowSize) {
+                    for (let x = windowSize; x < size - windowSize; x += windowSize) {
+                        if (ridgeData.segmentMask && ridgeData.segmentMask[y * size + x] === 0) continue;
+                        
+                        const centerOri = ridgeData.orientation[y * size + x];
+                        let localVariance = 0;
+                        let localCount = 0;
+                        
+                        for (let dy = -windowSize; dy <= windowSize; dy += 2) {
+                            for (let dx = -windowSize; dx <= windowSize; dx += 2) {
+                                const ni = (y + dy) * size + (x + dx);
+                                if (ni >= 0 && ni < size * size) {
+                                    let diff = Math.abs(ridgeData.orientation[ni] - centerOri);
+                                    if (diff > Math.PI / 2) diff = Math.PI - diff;
+                                    localVariance += diff;
+                                    localCount++;
+                                }
+                            }
+                        }
+                        
+                        if (localCount > 0) {
+                            consistencySum += 1 - (localVariance / localCount / (Math.PI / 2));
+                            consistencyCount++;
+                        }
+                    }
+                }
+                
+                metrics.orientationConsistency = consistencyCount > 0 ?
+                    (consistencySum / consistencyCount) * 100 : 50;
+            } else {
+                metrics.orientationConsistency = 50;
+            }
+            
+            // 4. Ridge Continuity (from skeleton analysis)
+            if (ridgeData.binary) {
+                let continuousRidges = 0;
+                let brokenRidges = 0;
+                
+                // Sample horizontal scan lines
+                for (let y = 30; y < size - 30; y += 10) {
+                    let ridgeLength = 0;
+                    let inRidge = false;
+                    
+                    for (let x = 30; x < size - 30; x++) {
+                        const isRidge = ridgeData.binary[y * size + x] < 128;
+                        if (isRidge) {
+                            if (!inRidge) inRidge = true;
+                            ridgeLength++;
+                        } else {
+                            if (inRidge) {
+                                if (ridgeLength > 5) continuousRidges++;
+                                else if (ridgeLength > 0) brokenRidges++;
+                                ridgeLength = 0;
+                                inRidge = false;
+                            }
+                        }
+                    }
+                }
+                
+                const totalRidges = continuousRidges + brokenRidges;
+                metrics.ridgeContinuity = totalRidges > 0 ?
+                    (continuousRidges / totalRidges) * 100 : 50;
+            } else {
+                metrics.ridgeContinuity = 50;
+            }
+            
+            // 5. Minutiae Quality
+            if (minutiae && minutiae.qualityScores) {
+                const qs = minutiae.qualityScores;
+                metrics.minutiaeQuality = qs.average * 100;
+            } else {
+                metrics.minutiaeQuality = 50;
+            }
+            
+            // 6. Foreground Ratio (valid fingerprint area)
+            if (ridgeData.segmentMask) {
+                const foreground = ridgeData.segmentMask.filter(v => v > 0).length;
+                metrics.foregroundRatio = (foreground / ridgeData.segmentMask.length) * 100;
+            } else {
+                metrics.foregroundRatio = 70;
+            }
+            
+            // 7. Uniformity (noise level)
+            let noiseSum = 0;
+            const center = Math.floor(size / 2);
+            const radius = Math.floor(size / 3);
+            let noiseCount = 0;
+            
+            for (let y = center - radius; y < center + radius; y++) {
+                for (let x = center - radius; x < center + radius; x++) {
+                    const idx = y * size + x;
+                    // Simple noise estimation from local variance
+                    let localSum = 0, localSq = 0, lc = 0;
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const ni = (y + dy) * size + (x + dx);
+                            if (ni >= 0 && ni < gray.length) {
+                                localSum += gray[ni];
+                                localSq += gray[ni] * gray[ni];
+                                lc++;
+                            }
+                        }
+                    }
+                    const mean = localSum / lc;
+                    const variance = (localSq / lc) - (mean * mean);
+                    noiseSum += Math.sqrt(variance);
+                    noiseCount++;
+                }
+            }
+            
+            const avgNoise = noiseCount > 0 ? noiseSum / noiseCount : 30;
+            metrics.uniformity = Math.max(0, 100 - avgNoise * 2);
+            
+            // Calculate overall quality score (weighted average)
+            const weights = {
+                contrast: 0.15,
+                clarity: 0.20,
+                orientationConsistency: 0.20,
+                ridgeContinuity: 0.15,
+                minutiaeQuality: 0.15,
+                foregroundRatio: 0.10,
+                uniformity: 0.05
+            };
+            
+            let overall = 0;
+            for (const key in weights) {
+                overall += metrics[key] * weights[key];
+            }
+            
+            // Grade assignment
+            let grade;
+            if (overall >= 80) grade = 'Excellent';
+            else if (overall >= 65) grade = 'Good';
+            else if (overall >= 50) grade = 'Fair';
+            else if (overall >= 35) grade = 'Poor';
+            else grade = 'Very Poor';
+            
+            // NFIQ-like score (1=best, 5=worst)
+            let nfiqScore;
+            if (overall >= 80) nfiqScore = 1;
+            else if (overall >= 65) nfiqScore = 2;
+            else if (overall >= 50) nfiqScore = 3;
+            else if (overall >= 35) nfiqScore = 4;
+            else nfiqScore = 5;
+            
+            return {
+                overall: overall.toFixed(1),
+                grade,
+                nfiqScore,
+                metrics: {
+                    contrast: metrics.contrast.toFixed(1),
+                    clarity: metrics.clarity.toFixed(1),
+                    orientationConsistency: metrics.orientationConsistency.toFixed(1),
+                    ridgeContinuity: metrics.ridgeContinuity.toFixed(1),
+                    minutiaeQuality: metrics.minutiaeQuality.toFixed(1),
+                    foregroundRatio: metrics.foregroundRatio.toFixed(1),
+                    uniformity: metrics.uniformity.toFixed(1)
+                }
+            };
+        }
+
+        // ==================== ADVANCED RIDGE COUNTING ====================
+        
+        function countRidgesAdvanced(ridgeData, singularPoints, size) {
+            const binary = ridgeData.binary;
+            const result = {
+                coreToDeltas: [],
+                primaryCount: 0,
+                density: 0,
+                averageWidth: 0
+            };
+            
+            // Count ridges along multiple lines from core to delta
+            for (let coreIdx = 0; coreIdx < Math.min(singularPoints.cores.length, 2); coreIdx++) {
+                const core = singularPoints.cores[coreIdx];
+                for (let deltaIdx = 0; deltaIdx < Math.min(singularPoints.deltas.length, 2); deltaIdx++) {
+                    const delta = singularPoints.deltas[deltaIdx];
+                    const count = countRidgesAlongLine(binary, core.x, core.y, delta.x, delta.y, size);
+                    result.coreToDeltas.push({
+                        from: `core${coreIdx + 1}`,
+                        to: `delta${deltaIdx + 1}`,
+                        count
+                    });
+                }
+            }
+            
+            // Primary ridge count (most reliable core-delta pair)
+            result.primaryCount = result.coreToDeltas.length > 0 ?
+                result.coreToDeltas[0].count : estimateRidgeCount(binary, size);
+            
+            // Calculate ridge density
+            result.density = parseFloat(calculateRidgeDensity(binary, size));
+            
+            // Estimate average ridge width
+            result.averageWidth = estimateRidgeWidth(binary, size);
+            
+            return result;
+        }
+        
+        function countRidgesAlongLine(binary, x1, y1, x2, y2, size) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const steps = Math.max(Math.abs(dx), Math.abs(dy)) * 2;
+            
+            let ridgeCount = 0;
+            let lastVal = null;
+            let transitionHistory = [];
+            
+            for (let i = 0; i <= steps; i++) {
+                const x = Math.round(x1 + (dx * i) / steps);
+                const y = Math.round(y1 + (dy * i) / steps);
+                
+                if (x < 0 || x >= size || y < 0 || y >= size) continue;
+                
+                const val = binary[y * size + x] < 128;
+                
+                if (lastVal !== null && val !== lastVal && val) {
+                    // Entering ridge - record position
+                    transitionHistory.push({ i, type: 'enter' });
+                }
+                if (lastVal !== null && val !== lastVal && !val) {
+                    // Leaving ridge
+                    transitionHistory.push({ i, type: 'leave' });
+                }
+                lastVal = val;
+            }
+            
+            // Count valid ridges (enter followed by leave, with reasonable width)
+            for (let i = 0; i < transitionHistory.length - 1; i++) {
+                if (transitionHistory[i].type === 'enter' && 
+                    transitionHistory[i + 1].type === 'leave') {
+                    const width = transitionHistory[i + 1].i - transitionHistory[i].i;
+                    if (width >= 2 && width <= 20) { // Filter noise
+                        ridgeCount++;
+                    }
+                }
+            }
+            
+            return ridgeCount;
+        }
+        
+        function estimateRidgeCount(binary, size) {
+            // Fallback: estimate from center horizontal line
+            const y = Math.floor(size / 2);
+            let count = 0;
+            let inRidge = false;
+            
+            for (let x = 30; x < size - 30; x++) {
+                const isRidge = binary[y * size + x] < 128;
+                if (isRidge && !inRidge) {
+                    count++;
+                    inRidge = true;
+                } else if (!isRidge) {
+                    inRidge = false;
+                }
+            }
+            
+            return Math.min(count, 25);
+        }
+        
+        function estimateRidgeWidth(binary, size) {
+            // Sample ridge widths across the fingerprint
+            const widths = [];
+            const center = Math.floor(size / 2);
+            
+            for (let angle = 0; angle < Math.PI; angle += Math.PI / 8) {
+                const dx = Math.cos(angle);
+                const dy = Math.sin(angle);
+                let inRidge = false;
+                let ridgeStart = 0;
+                
+                for (let r = 0; r < size / 3; r++) {
+                    const x = Math.round(center + dx * r);
+                    const y = Math.round(center + dy * r);
+                    
+                    if (x < 0 || x >= size || y < 0 || y >= size) break;
+                    
+                    const isRidge = binary[y * size + x] < 128;
+                    if (isRidge && !inRidge) {
+                        ridgeStart = r;
+                        inRidge = true;
+                    } else if (!isRidge && inRidge) {
+                        widths.push(r - ridgeStart);
+                        inRidge = false;
+                    }
+                }
+            }
+            
+            if (widths.length === 0) return 3.0;
+            
+            // Return median width
+            widths.sort((a, b) => a - b);
+            return widths[Math.floor(widths.length / 2)];
+        }
+
+        // ==================== RIDGE CHARACTERISTICS ANALYSIS ====================
+        
+        function analyzeRidgeCharacteristics(ridgeData, size) {
+            const binary = ridgeData.binary;
+            const orientation = ridgeData.orientation;
+            
+            const characteristics = {
+                avgSpacing: 0,
+                avgWidth: 0,
+                curvature: 'unknown',
+                flowPattern: 'unknown',
+                ridgeQuality: 0
+            };
+            
+            // Calculate average ridge spacing using autocorrelation-like method
+            const spacings = [];
+            const center = Math.floor(size / 2);
+            
+            for (let y = center - 40; y < center + 40; y += 10) {
+                let lastRidgeX = -1;
+                for (let x = 30; x < size - 30; x++) {
+                    if (binary[y * size + x] < 128 && 
+                        (x === 30 || binary[y * size + (x-1)] >= 128)) {
+                        if (lastRidgeX > 0) {
+                            spacings.push(x - lastRidgeX);
+                        }
+                        lastRidgeX = x;
+                    }
+                }
+            }
+            
+            if (spacings.length > 0) {
+                spacings.sort((a, b) => a - b);
+                characteristics.avgSpacing = spacings[Math.floor(spacings.length / 2)];
+            } else {
+                characteristics.avgSpacing = 8;
+            }
+            
+            // Calculate average ridge width
+            characteristics.avgWidth = estimateRidgeWidth(binary, size);
+            
+            // Analyze curvature from orientation field
+            const curvatures = [];
+            for (let y = 40; y < size - 40; y += 10) {
+                for (let x = 40; x < size - 40; x += 10) {
+                    if (ridgeData.segmentMask && ridgeData.segmentMask[y * size + x] === 0) continue;
+                    
+                    // Calculate local curvature
+                    const o1 = orientation[(y - 5) * size + x];
+                    const o2 = orientation[(y + 5) * size + x];
+                    const o3 = orientation[y * size + (x - 5)];
+                    const o4 = orientation[y * size + (x + 5)];
+                    
+                    const curv = Math.abs(o1 - o2) + Math.abs(o3 - o4);
+                    curvatures.push(curv);
+                }
+            }
+            
+            if (curvatures.length > 0) {
+                const avgCurv = curvatures.reduce((a, b) => a + b, 0) / curvatures.length;
+                if (avgCurv < 0.2) characteristics.curvature = 'Low (straight ridges)';
+                else if (avgCurv < 0.5) characteristics.curvature = 'Moderate';
+                else characteristics.curvature = 'High (curved ridges)';
+            }
+            
+            // Determine flow pattern
+            const flowDirs = [];
+            for (let y = center - 30; y < center + 30; y += 5) {
+                for (let x = center - 30; x < center + 30; x += 5) {
+                    flowDirs.push(orientation[y * size + x]);
+                }
+            }
+            
+            if (flowDirs.length > 0) {
+                const variance = calculateAngleVariance(flowDirs);
+                if (variance < 0.3) characteristics.flowPattern = 'Uniform flow';
+                else if (variance < 0.6) characteristics.flowPattern = 'Divergent flow';
+                else characteristics.flowPattern = 'Complex/Whorl-like flow';
+            }
+            
+            // Ridge quality estimation
+            let goodRidges = 0;
+            let totalChecked = 0;
+            
+            for (let y = 40; y < size - 40; y += 15) {
+                let ridgeLength = 0;
+                for (let x = 40; x < size - 40; x++) {
+                    if (binary[y * size + x] < 128) {
+                        ridgeLength++;
+                    } else if (ridgeLength > 0) {
+                        if (ridgeLength >= 5) goodRidges++;
+                        totalChecked++;
+                        ridgeLength = 0;
+                    }
+                }
+            }
+            
+            characteristics.ridgeQuality = totalChecked > 0 ?
+                Math.round((goodRidges / totalChecked) * 100) : 50;
+            
+            return characteristics;
+        }
+        
+        function calculateAngleVariance(angles) {
+            if (angles.length === 0) return 0;
+            
+            let sinSum = 0, cosSum = 0;
+            for (const a of angles) {
+                sinSum += Math.sin(2 * a);
+                cosSum += Math.cos(2 * a);
+            }
+            const R = Math.sqrt(sinSum * sinSum + cosSum * cosSum) / angles.length;
+            return 1 - R;
         }
 
         function assessQuality(gray, ridgeData, size) {
@@ -1252,6 +2905,267 @@
             ctx.fillStyle = '#f59e0b';
             ctx.fillText('◆ Delta', 200, 240);
         }
+
+        // ==================== ADVANCED MINUTIAE VISUALIZATION ====================
+        
+        function drawMinutiaeMapAdvanced(ridgeData, minutiae, singularPoints, size) {
+            const canvas = document.getElementById('minutiaeCanvas');
+            canvas.width = 250;
+            canvas.height = 250;
+            const ctx = canvas.getContext('2d');
+            
+            const scale = 250 / size;
+            
+            // Draw enhanced background with segmentation overlay
+            const imageData = ctx.createImageData(size, size);
+            for (let i = 0; i < ridgeData.binary.length; i++) {
+                const val = ridgeData.binary[i];
+                const inForeground = !ridgeData.segmentMask || ridgeData.segmentMask[i] > 0;
+                
+                if (inForeground) {
+                    // Fingerprint region - slight blue tint
+                    imageData.data[i * 4] = val * 0.25;
+                    imageData.data[i * 4 + 1] = val * 0.28;
+                    imageData.data[i * 4 + 2] = val * 0.35;
+                } else {
+                    // Background - darker
+                    imageData.data[i * 4] = val * 0.15;
+                    imageData.data[i * 4 + 1] = val * 0.15;
+                    imageData.data[i * 4 + 2] = val * 0.15;
+                }
+                imageData.data[i * 4 + 3] = 255;
+            }
+            
+            const temp = document.createElement('canvas');
+            temp.width = size;
+            temp.height = size;
+            temp.getContext('2d').putImageData(imageData, 0, 0);
+            ctx.drawImage(temp, 0, 0, 250, 250);
+            
+            // Draw ridge endings with quality-based styling
+            minutiae.ridgeEndings.forEach(p => {
+                const alpha = 0.5 + (p.quality || 0.5) * 0.5;
+                const radius = 3 + (p.quality || 0.5) * 2;
+                
+                ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = 1;
+                
+                ctx.beginPath();
+                ctx.arc(p.x * scale, p.y * scale, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                // Draw direction indicator if available
+                if (p.direction !== undefined) {
+                    ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x * scale, p.y * scale);
+                    ctx.lineTo(
+                        p.x * scale + Math.cos(p.direction) * 10,
+                        p.y * scale + Math.sin(p.direction) * 10
+                    );
+                    ctx.stroke();
+                }
+            });
+            
+            // Draw bifurcations with quality-based styling
+            minutiae.bifurcations.forEach(p => {
+                const alpha = 0.5 + (p.quality || 0.5) * 0.5;
+                const halfSize = 3 + (p.quality || 0.5) * 2;
+                
+                ctx.fillStyle = `rgba(16, 185, 129, ${alpha})`;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = 1;
+                
+                ctx.beginPath();
+                ctx.moveTo(p.x * scale, p.y * scale - halfSize * 1.2);
+                ctx.lineTo(p.x * scale - halfSize, p.y * scale + halfSize * 0.6);
+                ctx.lineTo(p.x * scale + halfSize, p.y * scale + halfSize * 0.6);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // Draw direction indicator
+                if (p.direction !== undefined) {
+                    ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x * scale, p.y * scale);
+                    ctx.lineTo(
+                        p.x * scale + Math.cos(p.direction) * 10,
+                        p.y * scale + Math.sin(p.direction) * 10
+                    );
+                    ctx.stroke();
+                }
+            });
+            
+            // Draw dots/islands (if any)
+            if (minutiae.dots) {
+                ctx.fillStyle = 'rgba(168, 85, 247, 0.7)';
+                minutiae.dots.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x * scale, p.y * scale, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+            
+            // Draw cores with enhanced styling
+            singularPoints.cores.forEach((p, idx) => {
+                const alpha = p.estimated ? 0.5 : 0.9;
+                const size = p.estimated ? 8 : 10;
+                
+                // Outer glow
+                ctx.shadowColor = 'rgba(59, 130, 246, 0.8)';
+                ctx.shadowBlur = 8;
+                
+                ctx.fillStyle = `rgba(59, 130, 246, ${alpha})`;
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                
+                ctx.fillRect(p.x * scale - size/2, p.y * scale - size/2, size, size);
+                ctx.strokeRect(p.x * scale - size/2, p.y * scale - size/2, size, size);
+                
+                ctx.shadowBlur = 0;
+                
+                // Label
+                if (singularPoints.cores.length > 1) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 8px Inter';
+                    ctx.fillText(`C${idx + 1}`, p.x * scale + 7, p.y * scale - 3);
+                }
+            });
+            
+            // Draw deltas with enhanced styling
+            singularPoints.deltas.forEach((p, idx) => {
+                const alpha = p.estimated ? 0.5 : 0.9;
+                const halfSize = p.estimated ? 5 : 7;
+                
+                // Outer glow
+                ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
+                ctx.shadowBlur = 8;
+                
+                ctx.fillStyle = `rgba(245, 158, 11, ${alpha})`;
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(p.x * scale, p.y * scale - halfSize);
+                ctx.lineTo(p.x * scale + halfSize, p.y * scale);
+                ctx.lineTo(p.x * scale, p.y * scale + halfSize);
+                ctx.lineTo(p.x * scale - halfSize, p.y * scale);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.shadowBlur = 0;
+                
+                // Label
+                if (singularPoints.deltas.length > 1) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 8px Inter';
+                    ctx.fillText(`D${idx + 1}`, p.x * scale + 8, p.y * scale - 3);
+                }
+            });
+            
+            // Draw ridge count line (from first core to first delta)
+            if (singularPoints.cores.length > 0 && singularPoints.deltas.length > 0) {
+                const core = singularPoints.cores[0];
+                const delta = singularPoints.deltas[0];
+                
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                
+                ctx.beginPath();
+                ctx.moveTo(core.x * scale, core.y * scale);
+                ctx.lineTo(delta.x * scale, delta.y * scale);
+                ctx.stroke();
+                
+                ctx.setLineDash([]);
+            }
+            
+            // Enhanced legend
+            const legendY = 235;
+            const legendBg = ctx.createLinearGradient(0, legendY - 5, 0, 250);
+            legendBg.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            legendBg.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+            ctx.fillStyle = legendBg;
+            ctx.fillRect(0, legendY - 10, 250, 25);
+            
+            ctx.font = '9px Inter';
+            ctx.fillStyle = '#ef4444';
+            ctx.fillText('● End', 5, legendY + 5);
+            ctx.fillStyle = '#10b981';
+            ctx.fillText('▲ Bif', 45, legendY + 5);
+            ctx.fillStyle = '#a855f7';
+            ctx.fillText('● Dot', 85, legendY + 5);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText('■ Core', 125, legendY + 5);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillText('◆ Delta', 175, legendY + 5);
+        }
+
+        // ==================== ORIENTATION FIELD SUMMARY ====================
+        
+        function summarizeOrientationField(orientation, segmentMask, size) {
+            const summary = {
+                dominant: 0,
+                variance: 0,
+                regions: {
+                    topLeft: 0, top: 0, topRight: 0,
+                    left: 0, center: 0, right: 0,
+                    bottomLeft: 0, bottom: 0, bottomRight: 0
+                }
+            };
+            
+            // Calculate overall dominant orientation
+            let sinSum = 0, cosSum = 0;
+            let validCount = 0;
+            
+            for (let i = 0; i < orientation.length; i++) {
+                if (!segmentMask || segmentMask[i] > 0) {
+                    sinSum += Math.sin(2 * orientation[i]);
+                    cosSum += Math.cos(2 * orientation[i]);
+                    validCount++;
+                }
+            }
+            
+            summary.dominant = Math.atan2(sinSum, cosSum) / 2;
+            const R = Math.sqrt(sinSum * sinSum + cosSum * cosSum) / validCount;
+            summary.variance = 1 - R;
+            
+            // Calculate regional orientations
+            const third = Math.floor(size / 3);
+            const regionCoords = {
+                topLeft: [0, 0], top: [third, 0], topRight: [2*third, 0],
+                left: [0, third], center: [third, third], right: [2*third, third],
+                bottomLeft: [0, 2*third], bottom: [third, 2*third], bottomRight: [2*third, 2*third]
+            };
+            
+            for (const [region, [startX, startY]] of Object.entries(regionCoords)) {
+                let rSin = 0, rCos = 0, rCount = 0;
+                
+                for (let y = startY; y < startY + third && y < size; y++) {
+                    for (let x = startX; x < startX + third && x < size; x++) {
+                        const idx = y * size + x;
+                        if (!segmentMask || segmentMask[idx] > 0) {
+                            rSin += Math.sin(2 * orientation[idx]);
+                            rCos += Math.cos(2 * orientation[idx]);
+                            rCount++;
+                        }
+                    }
+                }
+                
+                if (rCount > 0) {
+                    summary.regions[region] = (Math.atan2(rSin, rCos) / 2 * 180 / Math.PI).toFixed(0);
+                }
+            }
+            
+            return summary;
+        }
+
         // ==================== DISPLAY ANALYSIS RESULTS ====================
         function displayAnalysisResults() {
             document.getElementById('analysisResults').style.display = 'block';
@@ -1356,39 +3270,212 @@
             
             // Quality Assessment
             const qualityColor = r.quality.overall >= 70 ? '#10b981' : r.quality.overall >= 50 ? '#f59e0b' : '#ef4444';
-            document.getElementById('qualityDisplay').innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: center;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 3rem; font-weight: 700; color: ${qualityColor};">${r.quality.overall}%</div>
-                        <div style="font-size: 1.1rem; color: ${qualityColor}; font-weight: 600;">${r.quality.grade}</div>
-                    </div>
-                    <div>
-                        <div style="margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 3px;">
-                                <span>Contrast</span><span>${r.quality.contrast}%</span>
-                            </div>
-                            <div class="quality-meter">
-                                <div class="quality-fill" style="width: ${r.quality.contrast}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
-                            </div>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 3px;">
-                                <span>Clarity</span><span>${r.quality.clarity}%</span>
-                            </div>
-                            <div class="quality-meter">
-                                <div class="quality-fill" style="width: ${r.quality.clarity}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+            
+            // Check if we have advanced metrics
+            const hasAdvancedMetrics = r.quality.metrics && r.quality.nfiqScore;
+            
+            if (hasAdvancedMetrics) {
+                document.getElementById('qualityDisplay').innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 3rem; font-weight: 700; color: ${qualityColor};">${r.quality.overall}%</div>
+                            <div style="font-size: 1.1rem; color: ${qualityColor}; font-weight: 600;">${r.quality.grade}</div>
+                            <div style="margin-top: 10px; padding: 5px 10px; background: var(--card-bg); border-radius: 8px;">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">NFIQ Score: </span>
+                                <span style="font-weight: 600; color: ${r.quality.nfiqScore <= 2 ? '#10b981' : r.quality.nfiqScore <= 3 ? '#f59e0b' : '#ef4444'};">${r.quality.nfiqScore}/5</span>
                             </div>
                         </div>
                         <div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 3px;">
-                                <span>Ridge Continuity</span><span>${r.quality.continuity}%</span>
+                            <div style="margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 2px;">
+                                    <span>Contrast</span><span>${r.quality.metrics.contrast}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.metrics.contrast}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
                             </div>
-                            <div class="quality-meter">
-                                <div class="quality-fill" style="width: ${r.quality.continuity}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                            <div style="margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 2px;">
+                                    <span>Ridge Clarity</span><span>${r.quality.metrics.clarity}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.metrics.clarity}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 2px;">
+                                    <span>Orientation Consistency</span><span>${r.quality.metrics.orientationConsistency}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.metrics.orientationConsistency}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 2px;">
+                                    <span>Ridge Continuity</span><span>${r.quality.metrics.ridgeContinuity}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.metrics.ridgeContinuity}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 2px;">
+                                    <span>Minutiae Quality</span><span>${r.quality.metrics.minutiaeQuality}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.metrics.minutiaeQuality}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 2px;">
+                                    <span>Foreground Coverage</span><span>${r.quality.metrics.foregroundRatio}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.metrics.foregroundRatio}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                `;
+            } else {
+                document.getElementById('qualityDisplay').innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: center;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 3rem; font-weight: 700; color: ${qualityColor};">${r.quality.overall}%</div>
+                            <div style="font-size: 1.1rem; color: ${qualityColor}; font-weight: 600;">${r.quality.grade}</div>
+                        </div>
+                        <div>
+                            <div style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 3px;">
+                                    <span>Contrast</span><span>${r.quality.contrast}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.contrast}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 3px;">
+                                    <span>Clarity</span><span>${r.quality.clarity}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.clarity}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 3px;">
+                                    <span>Ridge Continuity</span><span>${r.quality.continuity}%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: ${r.quality.continuity}%; background: linear-gradient(90deg, #6366f1, #22d3ee);"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Show ridge characteristics if available
+            if (r.ridgeCharacteristics) {
+                const rc = r.ridgeCharacteristics;
+                document.getElementById('ridgeStats').innerHTML = `
+                    <div class="minutiae-grid">
+                        <div class="minutiae-stat">
+                            <div class="count">${r.ridgeCount.primaryCount || r.ridgeCount.estimated}</div>
+                            <div class="label">Ridge Count</div>
+                        </div>
+                        <div class="minutiae-stat">
+                            <div class="count">${r.ridgeCount.density}%</div>
+                            <div class="label">Ridge Density</div>
+                        </div>
+                        <div class="minutiae-stat">
+                            <div class="count">${rc.avgSpacing.toFixed(1)}px</div>
+                            <div class="label">Avg Spacing</div>
+                        </div>
+                        <div class="minutiae-stat">
+                            <div class="count">${rc.avgWidth.toFixed(1)}px</div>
+                            <div class="label">Avg Width</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: var(--card-bg); border-radius: 8px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem;">
+                            <div><span style="color: var(--text-secondary);">Curvature:</span> ${rc.curvature}</div>
+                            <div><span style="color: var(--text-secondary);">Flow:</span> ${rc.flowPattern}</div>
+                            <div><span style="color: var(--text-secondary);">Ridge Quality:</span> ${rc.ridgeQuality}%</div>
+                            <div><span style="color: var(--text-secondary);">Analysis Size:</span> ${r.analysisSize || 300}px</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Enhanced minutiae display with quality info
+            if (r.minutiae.qualityScores) {
+                const qs = r.minutiae.qualityScores;
+                document.getElementById('minutiaeDisplay').innerHTML = `
+                    <div class="minutiae-grid">
+                        <div class="minutiae-stat">
+                            <div class="count" style="color: #ef4444;">${r.minutiae.ridgeEndings.length}</div>
+                            <div class="label">Ridge Endings</div>
+                        </div>
+                        <div class="minutiae-stat">
+                            <div class="count" style="color: #10b981;">${r.minutiae.bifurcations.length}</div>
+                            <div class="label">Bifurcations</div>
+                        </div>
+                        <div class="minutiae-stat">
+                            <div class="count" style="color: #a855f7;">${r.minutiae.dots ? r.minutiae.dots.length : 0}</div>
+                            <div class="label">Dots/Islands</div>
+                        </div>
+                        <div class="minutiae-stat">
+                            <div class="count" style="color: #6366f1;">${r.minutiae.total}</div>
+                            <div class="label">Total Minutiae</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: var(--card-bg); border-radius: 8px;">
+                        <div style="font-size: 0.85rem; margin-bottom: 8px; color: var(--text-primary);">
+                            <i class="fas fa-chart-bar"></i> Minutiae Quality Distribution
+                        </div>
+                        <div style="display: flex; gap: 15px; font-size: 0.8rem;">
+                            <span><span style="color: #10b981;">●</span> High: ${qs.high}</span>
+                            <span><span style="color: #f59e0b;">●</span> Medium: ${qs.medium}</span>
+                            <span><span style="color: #ef4444;">●</span> Low: ${qs.low}</span>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary);">
+                            Average Quality: ${(qs.average * 100).toFixed(0)}%
+                        </div>
+                    </div>
+                    <p style="margin-top: 12px; font-size: 0.8rem; color: var(--text-secondary); text-align: center;">
+                        <i class="fas fa-info-circle"></i> 12+ high-quality matching minutiae required for identification
+                    </p>
+                `;
+            }
+            
+            // Enhanced singular points display
+            const spType = r.singularPoints.type || 'unknown';
+            document.getElementById('singularPoints').innerHTML = `
+                <div class="minutiae-grid">
+                    <div class="minutiae-stat">
+                        <div class="count" style="color: #3b82f6;">${r.singularPoints.cores.length}</div>
+                        <div class="label">Core Points</div>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 5px;">
+                            ${r.singularPoints.cores.some(c => c.estimated) ? '(estimated)' : 'Pattern center'}
+                        </p>
+                    </div>
+                    <div class="minutiae-stat">
+                        <div class="count" style="color: #f59e0b;">${r.singularPoints.deltas.length}</div>
+                        <div class="label">Delta Points</div>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 5px;">
+                            ${r.singularPoints.deltas.some(d => d.estimated) ? '(estimated)' : 'Ridge divergence'}
+                        </p>
+                    </div>
                 </div>
+                <div style="margin-top: 15px; padding: 12px; background: var(--card-bg); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Singular Point Pattern:</div>
+                    <div style="font-size: 1rem; font-weight: 600; color: var(--accent-color); margin-top: 5px; text-transform: capitalize;">
+                        ${spType} Pattern
+                    </div>
+                </div>
+                <p style="margin-top: 12px; font-size: 0.8rem; color: var(--text-secondary); text-align: center;">
+                    Loops: 1 core + 1 delta | Whorls: 2+ cores + 2 deltas | Arches: 0 deltas
+                </p>
             `;
             
             document.getElementById('analysisResults').scrollIntoView({ behavior: 'smooth' });
