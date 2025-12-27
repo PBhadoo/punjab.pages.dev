@@ -5,6 +5,7 @@
     text-align: center;
     padding: 60px 20px 40px;
     position: relative;
+    overflow: hidden;
 }
 
 .homepage-hero::before {
@@ -127,7 +128,7 @@
 /* Tools Grid */
 .tools-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 30px;
     margin-bottom: 40px;
 }
@@ -515,5 +516,18 @@
     
     .cta-section {
         padding: 30px 20px;
+        margin: 40px 15px;
+    }
+    
+    .tools-section {
+        padding: 40px 15px 60px;
+    }
+    
+    .legal-section {
+        padding: 40px 15px;
+    }
+    
+    .legal-cards {
+        grid-template-columns: 1fr;
     }
 }

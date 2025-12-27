@@ -19,12 +19,16 @@
     box-sizing: border-box;
 }
 
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
 body {
     font-family: 'Inter', sans-serif;
     background: var(--primary-gradient);
     min-height: 100vh;
     color: var(--text-primary);
-    overflow-x: hidden;
 }
 
 /* Header */
