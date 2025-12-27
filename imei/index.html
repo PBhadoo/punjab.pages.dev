@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMEI Verifier | Punjab Investigation Tools</title>
+    <meta name="description" content="Verify IMEI integrity, identify device manufacturer and model information for investigation purposes.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">IMEI Verifier</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-mobile-screen"></i> IMEI Verifier</h1>
+                <p>Verify IMEI integrity using Luhn algorithm and identify device manufacturer information</p>
+            </div>
+        </section>
+
+        <section class="input-section">
+            <div class="input-group">
+                <h3><i class="fas fa-keyboard"></i> Enter IMEI Number</h3>
+                <div class="input-row">
+                    <input type="text" id="imeiInput" class="input-field" placeholder="Enter 15-digit IMEI number" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <button class="verify-btn" onclick="verifyIMEI()">
+                        <i class="fas fa-check-circle"></i> Verify
+                    </button>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px;">
+                    <i class="fas fa-info-circle"></i> IMEI can be found by dialing *#06# on any mobile phone
+                </p>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="result-card" id="resultCard">
+                <div class="result-header">
+                    <div class="result-icon" id="resultIcon">
+                        <i class="fas fa-mobile-screen"></i>
+                    </div>
+                    <div class="result-title">
+                        <h3 id="resultTitle">IMEI Verification Result</h3>
+                        <p id="resultSubtitle">Analysis complete</p>
+                    </div>
+                </div>
+
+                <div class="result-details" id="resultDetails">
+                    <!-- Results will be populated here -->
+                </div>
+
+                <div class="imei-breakdown" id="imeiBreakdown" style="margin-top: 25px;">
+                    <!-- IMEI breakdown will be shown here -->
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <h4><i class="fas fa-triangle-exclamation"></i> Important Information</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>This tool performs Luhn checksum validation and TAC (Type Allocation Code) lookup</li>
+                    <li>Manufacturer information is based on known TAC ranges and may not cover all devices</li>
+                    <li>A valid checksum does not guarantee the device is legitimate or not stolen</li>
+                    <li>For stolen device verification, check with CEIR portal: <a href="https://ceir.gov.in" target="_blank" style="color: var(--accent-secondary);">ceir.gov.in</a></li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="copyResult()">
+                    <i class="fas fa-copy"></i> Copy Result
+                </button>
+                <button class="action-btn" onclick="resetForm()">
+                    <i class="fas fa-redo"></i> Check Another
+                </button>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About IMEI</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-barcode"></i></div>
+                    <h4>What is IMEI?</h4>
+                    <p>International Mobile Equipment Identity is a unique 15-digit number assigned to every mobile device. It's used to identify valid devices on cellular networks.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-layer-group"></i></div>
+                    <h4>IMEI Structure</h4>
+                    <p>Digits 1-8: TAC (Type Allocation Code) identifying manufacturer and model. Digits 9-14: Serial number. Digit 15: Luhn checksum digit.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-calculator"></i></div>
+                    <h4>Luhn Algorithm</h4>
+                    <p>The last digit is a check digit calculated using the Luhn algorithm. It helps detect accidental errors in the IMEI number.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No data is sent to any server.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Known TAC prefixes for manufacturers (sample data)
+        const tacDatabase = {
+            '35': { brand: 'Various (Nokia, Samsung, etc.)', note: 'Common prefix for multiple manufacturers' },
+            '01': { brand: 'AEG', note: 'Early mobile devices' },
+            '10': { brand: 'Nokia', note: 'Legacy Nokia devices' },
+            '35332807': { brand: 'Apple', model: 'iPhone', note: 'Apple iPhone series' },
+            '35391107': { brand: 'Apple', model: 'iPhone', note: 'Apple iPhone series' },
+            '35405803': { brand: 'Apple', model: 'iPhone', note: 'Apple iPhone series' },
+            '86': { brand: 'Chinese Manufacturers', note: 'Common for devices made in China' },
+            '99000': { brand: 'Test/Virtual', note: 'Used for testing purposes' },
+            '35678904': { brand: 'Samsung', model: 'Galaxy Series', note: 'Samsung smartphones' },
+            '35294909': { brand: 'Samsung', model: 'Galaxy Series', note: 'Samsung smartphones' },
+            '35316406': { brand: 'Xiaomi', model: 'Mi/Redmi Series', note: 'Xiaomi smartphones' },
+            '86513403': { brand: 'OnePlus', model: 'OnePlus Series', note: 'OnePlus smartphones' },
+            '35480910': { brand: 'Oppo', model: 'Oppo Series', note: 'Oppo smartphones' },
+            '35851504': { brand: 'Vivo', model: 'Vivo Series', note: 'Vivo smartphones' },
+            '35900106': { brand: 'Realme', model: 'Realme Series', note: 'Realme smartphones' },
+            '35822009': { brand: 'Motorola', model: 'Moto Series', note: 'Motorola/Lenovo smartphones' },
+        };
+
+        // Luhn algorithm validation
+        function luhnCheck(imei) {
+            let sum = 0;
+            let isDouble = false;
+            
+            for (let i = imei.length - 1; i >= 0; i--) {
+                let digit = parseInt(imei[i]);
+                
+                if (isDouble) {
+                    digit *= 2;
+                    if (digit > 9) digit -= 9;
+                }
+                
+                sum += digit;
+                isDouble = !isDouble;
+            }
+            
+            return sum % 10 === 0;
+        }
+
+        // Calculate check digit
+        function calculateCheckDigit(imei14) {
+            let sum = 0;
+            for (let i = 0; i < 14; i++) {
+                let digit = parseInt(imei14[i]);
+                if (i % 2 === 1) {
+                    digit *= 2;
+                    if (digit > 9) digit -= 9;
+                }
+                sum += digit;
+            }
+            return (10 - (sum % 10)) % 10;
+        }
+
+        // Find manufacturer from TAC
+        function findManufacturer(tac) {
+            // Check for exact matches first (8 digits)
+            if (tacDatabase[tac]) {
+                return tacDatabase[tac];
+            }
+            // Check for partial matches
+            for (let i = tac.length; i >= 2; i--) {
+                const prefix = tac.substring(0, i);
+                if (tacDatabase[prefix]) {
+                    return tacDatabase[prefix];
+                }
+            }
+            return null;
+        }
+
+        function verifyIMEI() {
+            const imei = document.getElementById('imeiInput').value.trim();
+            
+            if (imei.length !== 15) {
+                showToast('Please enter a valid 15-digit IMEI number');
+                return;
+            }
+            
+            if (!/^\d{15}$/.test(imei)) {
+                showToast('IMEI must contain only digits');
+                return;
+            }
+
+            const isValid = luhnCheck(imei);
+            const tac = imei.substring(0, 8);
+            const serialNumber = imei.substring(8, 14);
+            const checkDigit = imei.substring(14);
+            const expectedCheckDigit = calculateCheckDigit(imei.substring(0, 14));
+            const manufacturer = findManufacturer(tac);
+
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+
+            if (isValid) {
+                resultIcon.className = 'result-icon valid';
+                resultIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                resultTitle.textContent = 'Valid IMEI Checksum';
+                resultSubtitle.textContent = 'Luhn algorithm verification passed';
+            } else {
+                resultIcon.className = 'result-icon invalid';
+                resultIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                resultTitle.textContent = 'Invalid IMEI Checksum';
+                resultSubtitle.textContent = `Expected check digit: ${expectedCheckDigit}, Found: ${checkDigit}`;
+            }
+
+            let detailsHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">IMEI Number</div>
+                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${imei}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Checksum Status</div>
+                    <div class="detail-value" style="color: ${isValid ? 'var(--success-color)' : '#ef4444'}">${isValid ? 'Valid' : 'Invalid'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">TAC (Type Allocation Code)</div>
+                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${tac}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Serial Number</div>
+                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${serialNumber}</div>
+                </div>
+            `;
+
+            if (manufacturer) {
+                detailsHTML += `
+                    <div class="detail-item">
+                        <div class="detail-label">Manufacturer</div>
+                        <div class="detail-value">${manufacturer.brand}</div>
+                    </div>
+                `;
+                if (manufacturer.model) {
+                    detailsHTML += `
+                        <div class="detail-item">
+                            <div class="detail-label">Model Series</div>
+                            <div class="detail-value">${manufacturer.model}</div>
+                        </div>
+                    `;
+                }
+            } else {
+                detailsHTML += `
+                    <div class="detail-item">
+                        <div class="detail-label">Manufacturer</div>
+                        <div class="detail-value" style="color: var(--text-secondary)">Unknown (TAC not in database)</div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('resultDetails').innerHTML = detailsHTML;
+
+            // IMEI Breakdown visualization
+            document.getElementById('imeiBreakdown').innerHTML = `
+                <h4 style="margin-bottom: 15px; color: var(--text-primary);"><i class="fas fa-puzzle-piece"></i> IMEI Structure Breakdown</h4>
+                <div style="display: flex; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; flex-wrap: wrap; justify-content: center;">
+                    <div style="background: rgba(99, 102, 241, 0.3); padding: 10px 15px; border-radius: 8px; border: 2px solid rgba(99, 102, 241, 0.5);">
+                        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">TAC</div>
+                        ${tac}
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.3); padding: 10px 15px; border-radius: 8px; border: 2px solid rgba(16, 185, 129, 0.5);">
+                        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">Serial</div>
+                        ${serialNumber}
+                    </div>
+                    <div style="background: ${isValid ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}; padding: 10px 15px; border-radius: 8px; border: 2px solid ${isValid ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'};">
+                        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">Check</div>
+                        ${checkDigit}
+                    </div>
+                </div>
+            `;
+
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyResult() {
+            const imei = document.getElementById('imeiInput').value;
+            const isValid = luhnCheck(imei);
+            const tac = imei.substring(0, 8);
+            const manufacturer = findManufacturer(tac);
+            
+            let text = `IMEI Verification Report\n`;
+            text += `========================\n`;
+            text += `IMEI: ${imei}\n`;
+            text += `Checksum: ${isValid ? 'Valid' : 'Invalid'}\n`;
+            text += `TAC: ${tac}\n`;
+            text += `Manufacturer: ${manufacturer ? manufacturer.brand : 'Unknown'}\n`;
+            text += `\nGenerated by Punjab Investigation Tools`;
+            
+            navigator.clipboard.writeText(text);
+            showToast('Result copied to clipboard');
+        }
+
+        function resetForm() {
+            document.getElementById('imeiInput').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('imeiInput').focus();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Allow Enter key to verify
+        document.getElementById('imeiInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') verifyIMEI();
+        });
+    </script>
+</body>
+</html>

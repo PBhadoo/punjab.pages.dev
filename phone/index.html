@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Number Lookup | Punjab Investigation Tools</title>
+    <meta name="description" content="Identify country, region, and possible telecom operator from phone numbers.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Phone Number Lookup</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-phone"></i> Phone Number Lookup</h1>
+                <p>Identify country, region, and possible telecom operator from phone numbers</p>
+            </div>
+        </section>
+
+        <section class="input-section">
+            <div class="input-group">
+                <h3><i class="fas fa-keyboard"></i> Enter Phone Number</h3>
+                <div class="input-row">
+                    <input type="text" id="phoneInput" class="input-field" placeholder="+91 98765 43210 or 9876543210" maxlength="20">
+                    <button class="verify-btn" onclick="lookupPhone()">
+                        <i class="fas fa-search"></i> Lookup
+                    </button>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px;">
+                    <i class="fas fa-info-circle"></i> Enter with or without country code. Indian numbers are assumed if no country code provided.
+                </p>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="result-card" id="resultCard">
+                <div class="result-header">
+                    <div class="result-icon valid" id="resultIcon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="result-title">
+                        <h3 id="resultTitle">Phone Number Analysis</h3>
+                        <p id="resultSubtitle">Information retrieved</p>
+                    </div>
+                </div>
+
+                <div class="result-details" id="resultDetails">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <h4><i class="fas fa-triangle-exclamation"></i> Important: Mobile Number Portability (MNP)</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Numbers can be ported</strong> - The operator shown is based on original allocation and may not reflect current operator</li>
+                    <li>In India, MNP allows users to switch operators while keeping their number</li>
+                    <li>For accurate current operator information, official carrier verification is required</li>
+                    <li>Circle/region information is based on original number allocation</li>
+                    <li>Virtual numbers and VoIP services may show different information</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="copyResult()">
+                    <i class="fas fa-copy"></i> Copy Result
+                </button>
+                <button class="action-btn" onclick="resetForm()">
+                    <i class="fas fa-redo"></i> Check Another
+                </button>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About Phone Numbers</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-globe"></i></div>
+                    <h4>Country Codes</h4>
+                    <p>International phone numbers start with a country code (e.g., +91 for India, +1 for USA). This helps identify the country of origin.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <h4>Number Series</h4>
+                    <p>In India, mobile numbers are allocated in series to different operators and circles. The first few digits indicate the original operator and region.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <h4>Number Portability</h4>
+                    <p>MNP allows users to change operators while keeping their number. The prefix may not reflect the current operator after porting.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No data is sent to any server.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Country codes database
+        const countryCodes = {
+            '1': { country: 'United States/Canada', flag: '🇺🇸' },
+            '7': { country: 'Russia/Kazakhstan', flag: '🇷🇺' },
+            '20': { country: 'Egypt', flag: '🇪🇬' },
+            '27': { country: 'South Africa', flag: '🇿🇦' },
+            '30': { country: 'Greece', flag: '🇬🇷' },
+            '31': { country: 'Netherlands', flag: '🇳🇱' },
+            '32': { country: 'Belgium', flag: '🇧🇪' },
+            '33': { country: 'France', flag: '🇫🇷' },
+            '34': { country: 'Spain', flag: '🇪🇸' },
+            '36': { country: 'Hungary', flag: '🇭🇺' },
+            '39': { country: 'Italy', flag: '🇮🇹' },
+            '40': { country: 'Romania', flag: '🇷🇴' },
+            '41': { country: 'Switzerland', flag: '🇨🇭' },
+            '43': { country: 'Austria', flag: '🇦🇹' },
+            '44': { country: 'United Kingdom', flag: '🇬🇧' },
+            '45': { country: 'Denmark', flag: '🇩🇰' },
+            '46': { country: 'Sweden', flag: '🇸🇪' },
+            '47': { country: 'Norway', flag: '🇳🇴' },
+            '48': { country: 'Poland', flag: '🇵🇱' },
+            '49': { country: 'Germany', flag: '🇩🇪' },
+            '51': { country: 'Peru', flag: '🇵🇪' },
+            '52': { country: 'Mexico', flag: '🇲🇽' },
+            '53': { country: 'Cuba', flag: '🇨🇺' },
+            '54': { country: 'Argentina', flag: '🇦🇷' },
+            '55': { country: 'Brazil', flag: '🇧🇷' },
+            '56': { country: 'Chile', flag: '🇨🇱' },
+            '57': { country: 'Colombia', flag: '🇨🇴' },
+            '58': { country: 'Venezuela', flag: '🇻🇪' },
+            '60': { country: 'Malaysia', flag: '🇲🇾' },
+            '61': { country: 'Australia', flag: '🇦🇺' },
+            '62': { country: 'Indonesia', flag: '🇮🇩' },
+            '63': { country: 'Philippines', flag: '🇵🇭' },
+            '64': { country: 'New Zealand', flag: '🇳🇿' },
+            '65': { country: 'Singapore', flag: '🇸🇬' },
+            '66': { country: 'Thailand', flag: '🇹🇭' },
+            '81': { country: 'Japan', flag: '🇯🇵' },
+            '82': { country: 'South Korea', flag: '🇰🇷' },
+            '84': { country: 'Vietnam', flag: '🇻🇳' },
+            '86': { country: 'China', flag: '🇨🇳' },
+            '90': { country: 'Turkey', flag: '🇹🇷' },
+            '91': { country: 'India', flag: '🇮🇳' },
+            '92': { country: 'Pakistan', flag: '🇵🇰' },
+            '93': { country: 'Afghanistan', flag: '🇦🇫' },
+            '94': { country: 'Sri Lanka', flag: '🇱🇰' },
+            '95': { country: 'Myanmar', flag: '🇲🇲' },
+            '98': { country: 'Iran', flag: '🇮🇷' },
+            '212': { country: 'Morocco', flag: '🇲🇦' },
+            '213': { country: 'Algeria', flag: '🇩🇿' },
+            '216': { country: 'Tunisia', flag: '🇹🇳' },
+            '218': { country: 'Libya', flag: '🇱🇾' },
+            '220': { country: 'Gambia', flag: '🇬🇲' },
+            '221': { country: 'Senegal', flag: '🇸🇳' },
+            '234': { country: 'Nigeria', flag: '🇳🇬' },
+            '254': { country: 'Kenya', flag: '🇰🇪' },
+            '255': { country: 'Tanzania', flag: '🇹🇿' },
+            '256': { country: 'Uganda', flag: '🇺🇬' },
+            '260': { country: 'Zambia', flag: '🇿🇲' },
+            '263': { country: 'Zimbabwe', flag: '🇿🇼' },
+            '264': { country: 'Namibia', flag: '🇳🇦' },
+            '265': { country: 'Malawi', flag: '🇲🇼' },
+            '267': { country: 'Botswana', flag: '🇧🇼' },
+            '268': { country: 'Eswatini', flag: '🇸🇿' },
+            '269': { country: 'Comoros', flag: '🇰🇲' },
+            '351': { country: 'Portugal', flag: '🇵🇹' },
+            '352': { country: 'Luxembourg', flag: '🇱🇺' },
+            '353': { country: 'Ireland', flag: '🇮🇪' },
+            '354': { country: 'Iceland', flag: '🇮🇸' },
+            '358': { country: 'Finland', flag: '🇫🇮' },
+            '370': { country: 'Lithuania', flag: '🇱🇹' },
+            '371': { country: 'Latvia', flag: '🇱🇻' },
+            '372': { country: 'Estonia', flag: '🇪🇪' },
+            '373': { country: 'Moldova', flag: '🇲🇩' },
+            '374': { country: 'Armenia', flag: '🇦🇲' },
+            '375': { country: 'Belarus', flag: '🇧🇾' },
+            '376': { country: 'Andorra', flag: '🇦🇩' },
+            '377': { country: 'Monaco', flag: '🇲🇨' },
+            '380': { country: 'Ukraine', flag: '🇺🇦' },
+            '381': { country: 'Serbia', flag: '🇷🇸' },
+            '385': { country: 'Croatia', flag: '🇭🇷' },
+            '386': { country: 'Slovenia', flag: '🇸🇮' },
+            '387': { country: 'Bosnia', flag: '🇧🇦' },
+            '389': { country: 'North Macedonia', flag: '🇲🇰' },
+            '420': { country: 'Czech Republic', flag: '🇨🇿' },
+            '421': { country: 'Slovakia', flag: '🇸🇰' },
+            '880': { country: 'Bangladesh', flag: '🇧🇩' },
+            '886': { country: 'Taiwan', flag: '🇹🇼' },
+            '960': { country: 'Maldives', flag: '🇲🇻' },
+            '961': { country: 'Lebanon', flag: '🇱🇧' },
+            '962': { country: 'Jordan', flag: '🇯🇴' },
+            '963': { country: 'Syria', flag: '🇸🇾' },
+            '964': { country: 'Iraq', flag: '🇮🇶' },
+            '965': { country: 'Kuwait', flag: '🇰🇼' },
+            '966': { country: 'Saudi Arabia', flag: '🇸🇦' },
+            '967': { country: 'Yemen', flag: '🇾🇪' },
+            '968': { country: 'Oman', flag: '🇴🇲' },
+            '970': { country: 'Palestine', flag: '🇵🇸' },
+            '971': { country: 'UAE', flag: '🇦🇪' },
+            '972': { country: 'Israel', flag: '🇮🇱' },
+            '973': { country: 'Bahrain', flag: '🇧🇭' },
+            '974': { country: 'Qatar', flag: '🇶🇦' },
+            '975': { country: 'Bhutan', flag: '🇧🇹' },
+            '976': { country: 'Mongolia', flag: '🇲🇳' },
+            '977': { country: 'Nepal', flag: '🇳🇵' },
+        };
+
+        // Indian mobile operator prefixes (first 4 digits after country code)
+        const indianOperators = {
+            // Jio
+            '6000': { operator: 'Jio', circle: 'Assam' },
+            '6001': { operator: 'Jio', circle: 'Assam' },
+            '6002': { operator: 'Jio', circle: 'Assam' },
+            '6003': { operator: 'Jio', circle: 'Assam' },
+            '6005': { operator: 'Jio', circle: 'J&K' },
+            '6006': { operator: 'Jio', circle: 'J&K' },
+            '7000': { operator: 'Jio', circle: 'Madhya Pradesh' },
+            '7001': { operator: 'Jio', circle: 'Kolkata' },
+            '7002': { operator: 'Jio', circle: 'Assam' },
+            '7003': { operator: 'Jio', circle: 'West Bengal' },
+            '7004': { operator: 'Jio', circle: 'Bihar' },
+            '7005': { operator: 'Jio', circle: 'J&K' },
+            '7006': { operator: 'Jio', circle: 'J&K' },
+            '7007': { operator: 'Jio', circle: 'Uttar Pradesh (East)' },
+            '7008': { operator: 'Jio', circle: 'Orissa' },
+            '7009': { operator: 'Jio', circle: 'Punjab' },
+            '7010': { operator: 'Jio', circle: 'Tamil Nadu' },
+            '7011': { operator: 'Jio', circle: 'Delhi' },
+            '7012': { operator: 'Jio', circle: 'Kerala' },
+            '7013': { operator: 'Jio', circle: 'Andhra Pradesh' },
+            '7014': { operator: 'Jio', circle: 'Rajasthan' },
+            '7015': { operator: 'Jio', circle: 'Haryana' },
+            '7016': { operator: 'Jio', circle: 'Gujarat' },
+            '7017': { operator: 'Jio', circle: 'Himachal Pradesh' },
+            '7018': { operator: 'Jio', circle: 'Himachal Pradesh' },
+            '7019': { operator: 'Jio', circle: 'Karnataka' },
+            '7020': { operator: 'Jio', circle: 'Maharashtra' },
+            '7021': { operator: 'Jio', circle: 'Mumbai' },
+            '7022': { operator: 'Jio', circle: 'Karnataka' },
+
+            // Airtel
+            '9800': { operator: 'Airtel', circle: 'Kolkata' },
+            '9801': { operator: 'Airtel', circle: 'Kolkata' },
+            '9810': { operator: 'Airtel', circle: 'Delhi' },
+            '9811': { operator: 'Airtel', circle: 'Delhi' },
+            '9812': { operator: 'Airtel', circle: 'Haryana' },
+            '9813': { operator: 'Airtel', circle: 'Haryana' },
+            '9814': { operator: 'Airtel', circle: 'Punjab' },
+            '9815': { operator: 'Airtel', circle: 'Punjab' },
+            '9816': { operator: 'Airtel', circle: 'Himachal Pradesh' },
+            '9817': { operator: 'Airtel', circle: 'Haryana' },
+            '9818': { operator: 'Airtel', circle: 'Delhi' },
+            '9820': { operator: 'Airtel', circle: 'Mumbai' },
+            '9821': { operator: 'Airtel', circle: 'Mumbai' },
+            '9822': { operator: 'Airtel', circle: 'Maharashtra' },
+            '9823': { operator: 'Airtel', circle: 'Maharashtra' },
+            '9824': { operator: 'Airtel', circle: 'Gujarat' },
+            '9825': { operator: 'Airtel', circle: 'Gujarat' },
+            '9826': { operator: 'Airtel', circle: 'Madhya Pradesh' },
+            '9827': { operator: 'Airtel', circle: 'Madhya Pradesh' },
+            '9829': { operator: 'Airtel', circle: 'Rajasthan' },
+            '9830': { operator: 'Airtel', circle: 'Kolkata' },
+            '9831': { operator: 'Airtel', circle: 'Kolkata' },
+            '9833': { operator: 'Airtel', circle: 'Mumbai' },
+            '9840': { operator: 'Airtel', circle: 'Tamil Nadu' },
+            '9841': { operator: 'Airtel', circle: 'Tamil Nadu' },
+            '9844': { operator: 'Airtel', circle: 'Karnataka' },
+            '9845': { operator: 'Airtel', circle: 'Karnataka' },
+            '9846': { operator: 'Airtel', circle: 'Kerala' },
+            '9847': { operator: 'Airtel', circle: 'Kerala' },
+            '9848': { operator: 'Airtel', circle: 'Andhra Pradesh' },
+            '9849': { operator: 'Airtel', circle: 'Andhra Pradesh' },
+            '9850': { operator: 'Airtel', circle: 'Maharashtra' },
+            '9851': { operator: 'Airtel', circle: 'Nepal' },
+            '9860': { operator: 'Airtel', circle: 'Bihar' },
+            '9861': { operator: 'Airtel', circle: 'Orissa' },
+            '9862': { operator: 'Airtel', circle: 'North East' },
+            '9863': { operator: 'Airtel', circle: 'North East' },
+            '9864': { operator: 'Airtel', circle: 'Assam' },
+            '9866': { operator: 'Airtel', circle: 'Andhra Pradesh' },
+            '9867': { operator: 'Airtel', circle: 'Mumbai' },
+            '9868': { operator: 'Airtel', circle: 'Delhi' },
+            '9869': { operator: 'Airtel', circle: 'Mumbai' },
+            '9871': { operator: 'Airtel', circle: 'Delhi' },
+            '9872': { operator: 'Airtel', circle: 'Punjab' },
+            '9873': { operator: 'Airtel', circle: 'Delhi' },
+            '9876': { operator: 'Airtel', circle: 'Punjab' },
+            '9878': { operator: 'Airtel', circle: 'Punjab' },
+            '9879': { operator: 'Airtel', circle: 'Gujarat' },
+            '9880': { operator: 'Airtel', circle: 'Karnataka' },
+            '9881': { operator: 'Airtel', circle: 'Maharashtra' },
+            '9884': { operator: 'Airtel', circle: 'Tamil Nadu' },
+            '9885': { operator: 'Airtel', circle: 'Andhra Pradesh' },
+            '9886': { operator: 'Airtel', circle: 'Karnataka' },
+            '9888': { operator: 'Airtel', circle: 'Punjab' },
+            '9889': { operator: 'Airtel', circle: 'Uttar Pradesh (East)' },
+            '9890': { operator: 'Airtel', circle: 'Maharashtra' },
+            '9891': { operator: 'Airtel', circle: 'Delhi' },
+            '9892': { operator: 'Airtel', circle: 'Mumbai' },
+            '9893': { operator: 'Airtel', circle: 'Madhya Pradesh' },
+            '9894': { operator: 'Airtel', circle: 'Tamil Nadu' },
+            '9895': { operator: 'Airtel', circle: 'Kerala' },
+            '9896': { operator: 'Airtel', circle: 'Haryana' },
+            '9897': { operator: 'Airtel', circle: 'Uttar Pradesh (West)' },
+            '9898': { operator: 'Airtel', circle: 'Gujarat' },
+            '9899': { operator: 'Airtel', circle: 'Delhi' },
+
+            // Vi (Vodafone Idea)
+            '9900': { operator: 'Vi (Vodafone Idea)', circle: 'Karnataka' },
+            '9901': { operator: 'Vi (Vodafone Idea)', circle: 'Karnataka' },
+            '9902': { operator: 'Vi (Vodafone Idea)', circle: 'Karnataka' },
+            '9904': { operator: 'Vi (Vodafone Idea)', circle: 'Gujarat' },
+            '9909': { operator: 'Vi (Vodafone Idea)', circle: 'Gujarat' },
+            '9910': { operator: 'Vi (Vodafone Idea)', circle: 'Delhi' },
+            '9911': { operator: 'Vi (Vodafone Idea)', circle: 'Delhi' },
+            '9920': { operator: 'Vi (Vodafone Idea)', circle: 'Mumbai' },
+            '9921': { operator: 'Vi (Vodafone Idea)', circle: 'Maharashtra' },
+            '9922': { operator: 'Vi (Vodafone Idea)', circle: 'Maharashtra' },
+            '9923': { operator: 'Vi (Vodafone Idea)', circle: 'Maharashtra' },
+            '9925': { operator: 'Vi (Vodafone Idea)', circle: 'Gujarat' },
+            '9926': { operator: 'Vi (Vodafone Idea)', circle: 'Madhya Pradesh' },
+            '9927': { operator: 'Vi (Vodafone Idea)', circle: 'Uttar Pradesh (West)' },
+            '9928': { operator: 'Vi (Vodafone Idea)', circle: 'Rajasthan' },
+            '9929': { operator: 'Vi (Vodafone Idea)', circle: 'Rajasthan' },
+            '9930': { operator: 'Vi (Vodafone Idea)', circle: 'Mumbai' },
+            '9931': { operator: 'Vi (Vodafone Idea)', circle: 'Bihar' },
+            '9932': { operator: 'Vi (Vodafone Idea)', circle: 'West Bengal' },
+            '9933': { operator: 'Vi (Vodafone Idea)', circle: 'West Bengal' },
+            '9934': { operator: 'Vi (Vodafone Idea)', circle: 'Bihar' },
+            '9935': { operator: 'Vi (Vodafone Idea)', circle: 'Uttar Pradesh (East)' },
+            '9936': { operator: 'Vi (Vodafone Idea)', circle: 'Uttar Pradesh (East)' },
+            '9937': { operator: 'Vi (Vodafone Idea)', circle: 'Orissa' },
+            '9938': { operator: 'Vi (Vodafone Idea)', circle: 'Orissa' },
+            '9939': { operator: 'Vi (Vodafone Idea)', circle: 'Bihar' },
+            '9940': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9941': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9942': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9943': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9944': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9945': { operator: 'Vi (Vodafone Idea)', circle: 'Karnataka' },
+            '9946': { operator: 'Vi (Vodafone Idea)', circle: 'Kerala' },
+            '9947': { operator: 'Vi (Vodafone Idea)', circle: 'Kerala' },
+            '9948': { operator: 'Vi (Vodafone Idea)', circle: 'Andhra Pradesh' },
+            '9949': { operator: 'Vi (Vodafone Idea)', circle: 'Andhra Pradesh' },
+            '9950': { operator: 'Vi (Vodafone Idea)', circle: 'Rajasthan' },
+            '9951': { operator: 'Vi (Vodafone Idea)', circle: 'Andhra Pradesh' },
+            '9952': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9953': { operator: 'Vi (Vodafone Idea)', circle: 'Delhi' },
+            '9955': { operator: 'Vi (Vodafone Idea)', circle: 'Jharkhand' },
+            '9958': { operator: 'Vi (Vodafone Idea)', circle: 'Delhi' },
+            '9960': { operator: 'Vi (Vodafone Idea)', circle: 'Maharashtra' },
+            '9961': { operator: 'Vi (Vodafone Idea)', circle: 'Kerala' },
+            '9962': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9963': { operator: 'Vi (Vodafone Idea)', circle: 'Andhra Pradesh' },
+            '9964': { operator: 'Vi (Vodafone Idea)', circle: 'Karnataka' },
+            '9965': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9966': { operator: 'Vi (Vodafone Idea)', circle: 'Andhra Pradesh' },
+            '9967': { operator: 'Vi (Vodafone Idea)', circle: 'Mumbai' },
+            '9971': { operator: 'Vi (Vodafone Idea)', circle: 'Delhi' },
+            '9972': { operator: 'Vi (Vodafone Idea)', circle: 'Karnataka' },
+            '9974': { operator: 'Vi (Vodafone Idea)', circle: 'Gujarat' },
+            '9975': { operator: 'Vi (Vodafone Idea)', circle: 'Maharashtra' },
+            '9976': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9977': { operator: 'Vi (Vodafone Idea)', circle: 'Madhya Pradesh' },
+            '9978': { operator: 'Vi (Vodafone Idea)', circle: 'Gujarat' },
+            '9979': { operator: 'Vi (Vodafone Idea)', circle: 'Gujarat' },
+            '9980': { operator: 'Vi (Vodafone Idea)', circle: 'Karnataka' },
+            '9981': { operator: 'Vi (Vodafone Idea)', circle: 'Madhya Pradesh' },
+            '9982': { operator: 'Vi (Vodafone Idea)', circle: 'Madhya Pradesh' },
+            '9984': { operator: 'Vi (Vodafone Idea)', circle: 'Uttar Pradesh (East)' },
+            '9985': { operator: 'Vi (Vodafone Idea)', circle: 'Andhra Pradesh' },
+            '9986': { operator: 'Vi (Vodafone Idea)', circle: 'Karnataka' },
+            '9987': { operator: 'Vi (Vodafone Idea)', circle: 'Mumbai' },
+            '9988': { operator: 'Vi (Vodafone Idea)', circle: 'Punjab' },
+            '9989': { operator: 'Vi (Vodafone Idea)', circle: 'Andhra Pradesh' },
+            '9990': { operator: 'Vi (Vodafone Idea)', circle: 'Delhi' },
+            '9991': { operator: 'Vi (Vodafone Idea)', circle: 'Haryana' },
+            '9993': { operator: 'Vi (Vodafone Idea)', circle: 'Madhya Pradesh' },
+            '9994': { operator: 'Vi (Vodafone Idea)', circle: 'Tamil Nadu' },
+            '9995': { operator: 'Vi (Vodafone Idea)', circle: 'Kerala' },
+            '9996': { operator: 'Vi (Vodafone Idea)', circle: 'Haryana' },
+            '9997': { operator: 'Vi (Vodafone Idea)', circle: 'Uttar Pradesh (West)' },
+            '9998': { operator: 'Vi (Vodafone Idea)', circle: 'Gujarat' },
+            '9999': { operator: 'Vi (Vodafone Idea)', circle: 'Delhi' },
+
+            // BSNL
+            '9400': { operator: 'BSNL', circle: 'Kerala' },
+            '9401': { operator: 'BSNL', circle: 'Assam' },
+            '9402': { operator: 'BSNL', circle: 'North East' },
+            '9403': { operator: 'BSNL', circle: 'Maharashtra' },
+            '9404': { operator: 'BSNL', circle: 'Maharashtra' },
+            '9405': { operator: 'BSNL', circle: 'Maharashtra' },
+            '9406': { operator: 'BSNL', circle: 'Madhya Pradesh' },
+            '9407': { operator: 'BSNL', circle: 'Madhya Pradesh' },
+            '9408': { operator: 'BSNL', circle: 'Gujarat' },
+            '9409': { operator: 'BSNL', circle: 'Gujarat' },
+            '9410': { operator: 'BSNL', circle: 'Uttar Pradesh (West)' },
+            '9411': { operator: 'BSNL', circle: 'Uttar Pradesh (West)' },
+            '9412': { operator: 'BSNL', circle: 'Uttar Pradesh (West)' },
+            '9413': { operator: 'BSNL', circle: 'Rajasthan' },
+            '9414': { operator: 'BSNL', circle: 'Rajasthan' },
+            '9415': { operator: 'BSNL', circle: 'Uttar Pradesh (East)' },
+            '9416': { operator: 'BSNL', circle: 'Haryana' },
+            '9417': { operator: 'BSNL', circle: 'Punjab' },
+            '9418': { operator: 'BSNL', circle: 'Himachal Pradesh' },
+            '9419': { operator: 'BSNL', circle: 'J&K' },
+            '9420': { operator: 'BSNL', circle: 'Maharashtra' },
+            '9421': { operator: 'BSNL', circle: 'Maharashtra' },
+            '9422': { operator: 'BSNL', circle: 'Maharashtra' },
+            '9423': { operator: 'BSNL', circle: 'Maharashtra' },
+            '9424': { operator: 'BSNL', circle: 'Madhya Pradesh' },
+            '9425': { operator: 'BSNL', circle: 'Madhya Pradesh' },
+            '9426': { operator: 'BSNL', circle: 'Gujarat' },
+            '9427': { operator: 'BSNL', circle: 'Gujarat' },
+            '9428': { operator: 'BSNL', circle: 'Gujarat' },
+            '9429': { operator: 'BSNL', circle: 'Gujarat' },
+            '9430': { operator: 'BSNL', circle: 'Bihar' },
+            '9431': { operator: 'BSNL', circle: 'Bihar' },
+            '9432': { operator: 'BSNL', circle: 'West Bengal' },
+            '9433': { operator: 'BSNL', circle: 'Kolkata' },
+            '9434': { operator: 'BSNL', circle: 'West Bengal' },
+            '9435': { operator: 'BSNL', circle: 'Assam' },
+            '9436': { operator: 'BSNL', circle: 'North East' },
+            '9437': { operator: 'BSNL', circle: 'Orissa' },
+            '9438': { operator: 'BSNL', circle: 'Orissa' },
+            '9439': { operator: 'BSNL', circle: 'Orissa' },
+            '9440': { operator: 'BSNL', circle: 'Andhra Pradesh' },
+            '9441': { operator: 'BSNL', circle: 'Andhra Pradesh' },
+            '9442': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9443': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9444': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9445': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9446': { operator: 'BSNL', circle: 'Kerala' },
+            '9447': { operator: 'BSNL', circle: 'Kerala' },
+            '9448': { operator: 'BSNL', circle: 'Karnataka' },
+            '9449': { operator: 'BSNL', circle: 'Karnataka' },
+            '9450': { operator: 'BSNL', circle: 'Uttar Pradesh (East)' },
+            '9451': { operator: 'BSNL', circle: 'Uttar Pradesh (East)' },
+            '9452': { operator: 'BSNL', circle: 'Uttar Pradesh (East)' },
+            '9453': { operator: 'BSNL', circle: 'Uttar Pradesh (East)' },
+            '9454': { operator: 'BSNL', circle: 'Uttar Pradesh (East)' },
+            '9455': { operator: 'BSNL', circle: 'Uttar Pradesh (East)' },
+            '9456': { operator: 'BSNL', circle: 'Uttar Pradesh (West)' },
+            '9457': { operator: 'BSNL', circle: 'Uttar Pradesh (West)' },
+            '9460': { operator: 'BSNL', circle: 'Rajasthan' },
+            '9461': { operator: 'BSNL', circle: 'Rajasthan' },
+            '9462': { operator: 'BSNL', circle: 'Rajasthan' },
+            '9463': { operator: 'BSNL', circle: 'Punjab' },
+            '9464': { operator: 'BSNL', circle: 'Punjab' },
+            '9465': { operator: 'BSNL', circle: 'Punjab' },
+            '9466': { operator: 'BSNL', circle: 'Haryana' },
+            '9467': { operator: 'BSNL', circle: 'Haryana' },
+            '9468': { operator: 'BSNL', circle: 'Haryana' },
+            '9469': { operator: 'BSNL', circle: 'J&K' },
+            '9470': { operator: 'BSNL', circle: 'Jharkhand' },
+            '9471': { operator: 'BSNL', circle: 'Bihar' },
+            '9472': { operator: 'BSNL', circle: 'Bihar' },
+            '9473': { operator: 'BSNL', circle: 'Bihar' },
+            '9474': { operator: 'BSNL', circle: 'Kolkata' },
+            '9475': { operator: 'BSNL', circle: 'West Bengal' },
+            '9476': { operator: 'BSNL', circle: 'A&N Islands' },
+            '9479': { operator: 'BSNL', circle: 'Madhya Pradesh' },
+            '9480': { operator: 'BSNL', circle: 'Karnataka' },
+            '9481': { operator: 'BSNL', circle: 'Karnataka' },
+            '9482': { operator: 'BSNL', circle: 'Karnataka' },
+            '9483': { operator: 'BSNL', circle: 'Karnataka' },
+            '9484': { operator: 'BSNL', circle: 'Karnataka' },
+            '9485': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9486': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9487': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9488': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9489': { operator: 'BSNL', circle: 'Tamil Nadu' },
+            '9490': { operator: 'BSNL', circle: 'Andhra Pradesh' },
+            '9491': { operator: 'BSNL', circle: 'Andhra Pradesh' },
+            '9492': { operator: 'BSNL', circle: 'Andhra Pradesh' },
+            '9493': { operator: 'BSNL', circle: 'Andhra Pradesh' },
+            '9494': { operator: 'BSNL', circle: 'Andhra Pradesh' },
+            '9495': { operator: 'BSNL', circle: 'Kerala' },
+            '9496': { operator: 'BSNL', circle: 'Kerala' },
+            '9497': { operator: 'BSNL', circle: 'Kerala' },
+        };
+
+        function parsePhoneNumber(input) {
+            // Remove all non-digit characters except +
+            let cleaned = input.replace(/[^\d+]/g, '');
+            
+            // Handle different formats
+            if (cleaned.startsWith('+')) {
+                cleaned = cleaned.substring(1);
+            } else if (cleaned.startsWith('00')) {
+                cleaned = cleaned.substring(2);
+            }
+            
+            // If 10 digits, assume Indian number
+            if (cleaned.length === 10 && cleaned.match(/^[6-9]/)) {
+                return { countryCode: '91', nationalNumber: cleaned };
+            }
+            
+            // Try to match country code
+            for (let len = 3; len >= 1; len--) {
+                const prefix = cleaned.substring(0, len);
+                if (countryCodes[prefix]) {
+                    return { countryCode: prefix, nationalNumber: cleaned.substring(len) };
+                }
+            }
+            
+            return { countryCode: null, nationalNumber: cleaned };
+        }
+
+        function lookupPhone() {
+            const input = document.getElementById('phoneInput').value.trim();
+            
+            if (!input) {
+                showToast('Please enter a phone number');
+                return;
+            }
+
+            const parsed = parsePhoneNumber(input);
+            
+            if (!parsed.nationalNumber || parsed.nationalNumber.length < 7) {
+                showToast('Please enter a valid phone number');
+                return;
+            }
+
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+
+            let countryInfo = parsed.countryCode ? countryCodes[parsed.countryCode] : null;
+            let operatorInfo = null;
+
+            // If Indian number, try to find operator
+            if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
+                const prefix = parsed.nationalNumber.substring(0, 4);
+                operatorInfo = indianOperators[prefix];
+            }
+
+            if (countryInfo) {
+                resultIcon.className = 'result-icon valid';
+                resultIcon.innerHTML = '<span style="font-size: 32px;">' + countryInfo.flag + '</span>';
+                resultTitle.textContent = countryInfo.country;
+                resultSubtitle.textContent = operatorInfo ? `${operatorInfo.operator} - ${operatorInfo.circle}` : 'Country identified';
+            } else {
+                resultIcon.className = 'result-icon warning';
+                resultIcon.innerHTML = '<i class="fas fa-question"></i>';
+                resultTitle.textContent = 'Unknown Country';
+                resultSubtitle.textContent = 'Could not determine country from number';
+            }
+
+            let formattedNumber = parsed.countryCode ? `+${parsed.countryCode} ${parsed.nationalNumber}` : parsed.nationalNumber;
+
+            let detailsHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Phone Number</div>
+                    <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${formattedNumber}</div>
+                </div>
+            `;
+
+            if (parsed.countryCode) {
+                detailsHTML += `
+                    <div class="detail-item">
+                        <div class="detail-label">Country Code</div>
+                        <div class="detail-value">+${parsed.countryCode}</div>
+                    </div>
+                `;
+            }
+
+            if (countryInfo) {
+                detailsHTML += `
+                    <div class="detail-item">
+                        <div class="detail-label">Country</div>
+                        <div class="detail-value">${countryInfo.flag} ${countryInfo.country}</div>
+                    </div>
+                `;
+            }
+
+            if (operatorInfo) {
+                detailsHTML += `
+                    <div class="detail-item">
+                        <div class="detail-label">Original Operator</div>
+                        <div class="detail-value">${operatorInfo.operator}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Telecom Circle</div>
+                        <div class="detail-value">${operatorInfo.circle}</div>
+                    </div>
+                `;
+            }
+
+            detailsHTML += `
+                <div class="detail-item">
+                    <div class="detail-label">Number Length</div>
+                    <div class="detail-value">${parsed.nationalNumber.length} digits (national)</div>
+                </div>
+            `;
+
+            // Number type detection
+            let numberType = 'Unknown';
+            if (parsed.countryCode === '91') {
+                if (parsed.nationalNumber.match(/^[6-9]/)) {
+                    numberType = 'Mobile';
+                } else if (parsed.nationalNumber.match(/^[1-5]/)) {
+                    numberType = 'Landline';
+                }
+            }
+
+            detailsHTML += `
+                <div class="detail-item">
+                    <div class="detail-label">Number Type</div>
+                    <div class="detail-value">${numberType}</div>
+                </div>
+            `;
+
+            document.getElementById('resultDetails').innerHTML = detailsHTML;
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyResult() {
+            const input = document.getElementById('phoneInput').value.trim();
+            const parsed = parsePhoneNumber(input);
+            const countryInfo = parsed.countryCode ? countryCodes[parsed.countryCode] : null;
+            let operatorInfo = null;
+            
+            if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
+                const prefix = parsed.nationalNumber.substring(0, 4);
+                operatorInfo = indianOperators[prefix];
+            }
+            
+            let text = `Phone Number Lookup Report\n`;
+            text += `==========================\n`;
+            text += `Number: +${parsed.countryCode || ''} ${parsed.nationalNumber}\n`;
+            text += `Country: ${countryInfo ? countryInfo.country : 'Unknown'}\n`;
+            if (operatorInfo) {
+                text += `Operator: ${operatorInfo.operator}\n`;
+                text += `Circle: ${operatorInfo.circle}\n`;
+            }
+            text += `\nNote: Operator info may not reflect current operator due to MNP\n`;
+            text += `\nGenerated by Punjab Investigation Tools`;
+            
+            navigator.clipboard.writeText(text);
+            showToast('Result copied to clipboard');
+        }
+
+        function resetForm() {
+            document.getElementById('phoneInput').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('phoneInput').focus();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        document.getElementById('phoneInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') lookupPhone();
+        });
+    </script>
+</body>
+</html>

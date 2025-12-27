@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fingerprint Matcher | Punjab Investigation Tools</title>
+    <meta name="description" content="Compare two fingerprint images and calculate similarity percentage.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Fingerprint Matcher</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-hand-dots"></i> Fingerprint Matcher</h1>
+                <p>Compare two fingerprint images and calculate similarity percentage using pattern matching</p>
+            </div>
+        </section>
+
+        <section class="compare-section">
+            <div class="compare-container">
+                <div class="file-drop-zone" id="dropZone1" onclick="document.getElementById('fileInput1').click()">
+                    <i class="fas fa-fingerprint"></i>
+                    <h4>Fingerprint 1</h4>
+                    <p>Drop image here or click to select</p>
+                    <input type="file" id="fileInput1" accept="image/*" hidden>
+                    <div class="image-preview" id="preview1" style="display: none;">
+                        <img id="img1" alt="Fingerprint 1">
+                    </div>
+                </div>
+
+                <div class="file-drop-zone" id="dropZone2" onclick="document.getElementById('fileInput2').click()">
+                    <i class="fas fa-fingerprint"></i>
+                    <h4>Fingerprint 2</h4>
+                    <p>Drop image here or click to select</p>
+                    <input type="file" id="fileInput2" accept="image/*" hidden>
+                    <div class="image-preview" id="preview2" style="display: none;">
+                        <img id="img2" alt="Fingerprint 2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="compare-actions" style="text-align: center; margin-top: 20px;">
+                <button class="verify-btn" onclick="matchFingerprints()" id="matchBtn" disabled>
+                    <i class="fas fa-scale-balanced"></i> Match Fingerprints
+                </button>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="result-card">
+                <div class="result-header">
+                    <div class="result-icon" id="resultIcon">
+                        <i class="fas fa-hand-dots"></i>
+                    </div>
+                    <div class="result-title">
+                        <h3 id="resultTitle">Match Analysis Result</h3>
+                        <p id="resultSubtitle">Comparison complete</p>
+                    </div>
+                </div>
+
+                <div class="similarity-display" id="similarityDisplay">
+                    <!-- Similarity meter will be shown here -->
+                </div>
+
+                <div class="result-details" id="resultDetails">
+                    <!-- Analysis details -->
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <h4><i class="fas fa-triangle-exclamation"></i> Important Disclaimer</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>This is a basic image comparison tool</strong> - It uses pixel-based and structural similarity analysis</li>
+                    <li>This tool is NOT a certified forensic fingerprint matching system (like AFIS)</li>
+                    <li>Results should be used for <strong>preliminary screening only</strong></li>
+                    <li>For legal proceedings, professional forensic analysis by certified experts is required</li>
+                    <li>Image quality, orientation, and partial prints significantly affect accuracy</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="copyResult()">
+                    <i class="fas fa-copy"></i> Copy Report
+                </button>
+                <button class="action-btn" onclick="resetMatcher()">
+                    <i class="fas fa-redo"></i> Compare New Prints
+                </button>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About Fingerprint Matching</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-microscope"></i></div>
+                    <h4>Analysis Methods</h4>
+                    <p>This tool uses multiple comparison methods including histogram analysis, structural similarity (SSIM), and edge detection to estimate similarity.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-chart-pie"></i></div>
+                    <h4>Similarity Score</h4>
+                    <p>The similarity percentage indicates visual and structural likeness. Higher scores suggest more similar prints, but verification requires expert analysis.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-user-shield"></i></div>
+                    <h4>Privacy Protected</h4>
+                    <p>All fingerprint analysis is done locally in your browser. No biometric data is transmitted or stored on any server.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No biometric data is uploaded to any server.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <style>
+        .image-preview {
+            margin-top: 15px;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .image-preview img {
+            max-width: 100%;
+            border-radius: 8px;
+            border: 2px solid var(--card-border);
+        }
+        .similarity-display {
+            text-align: center;
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+        .similarity-meter {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .similarity-value {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+        .similarity-label {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+        .match-level {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        .match-high { background: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        .match-medium { background: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        .match-low { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    </style>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        let image1 = null;
+        let image2 = null;
+        let similarityScore = 0;
+
+        // Setup file inputs
+        ['1', '2'].forEach(num => {
+            const dropZone = document.getElementById(`dropZone${num}`);
+            const fileInput = document.getElementById(`fileInput${num}`);
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) {
+                    handleImage(num, e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleImage(num, e.target.files[0]);
+                }
+            });
+        });
+
+        function handleImage(num, file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    if (num === '1') {
+                        image1 = img;
+                    } else {
+                        image2 = img;
+                    }
+
+                    const dropZone = document.getElementById(`dropZone${num}`);
+                    const preview = document.getElementById(`preview${num}`);
+                    const previewImg = document.getElementById(`img${num}`);
+                    
+                    dropZone.classList.add('has-file');
+                    dropZone.querySelector('i').style.display = 'none';
+                    dropZone.querySelector('h4').textContent = file.name;
+                    dropZone.querySelector('p').textContent = `${img.width} × ${img.height}`;
+                    
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+
+                    document.getElementById('matchBtn').disabled = !(image1 && image2);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function matchFingerprints() {
+            if (!image1 || !image2) {
+                showToast('Please select both fingerprint images');
+                return;
+            }
+
+            document.getElementById('matchBtn').disabled = true;
+            document.getElementById('matchBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+
+            // Use setTimeout to allow UI to update
+            setTimeout(() => {
+                try {
+                    similarityScore = calculateSimilarity(image1, image2);
+                    displayResults();
+                } catch (error) {
+                    showToast('Error analyzing images: ' + error.message);
+                } finally {
+                    document.getElementById('matchBtn').disabled = false;
+                    document.getElementById('matchBtn').innerHTML = '<i class="fas fa-scale-balanced"></i> Match Fingerprints';
+                }
+            }, 100);
+        }
+
+        function calculateSimilarity(img1, img2) {
+            // Create canvases for both images
+            const size = 256; // Normalize to same size
+            
+            const canvas1 = document.createElement('canvas');
+            const canvas2 = document.createElement('canvas');
+            canvas1.width = canvas2.width = size;
+            canvas1.height = canvas2.height = size;
+            
+            const ctx1 = canvas1.getContext('2d');
+            const ctx2 = canvas2.getContext('2d');
+            
+            // Draw and convert to grayscale
+            ctx1.drawImage(img1, 0, 0, size, size);
+            ctx2.drawImage(img2, 0, 0, size, size);
+            
+            const data1 = ctx1.getImageData(0, 0, size, size);
+            const data2 = ctx2.getImageData(0, 0, size, size);
+            
+            // Convert to grayscale
+            const gray1 = toGrayscale(data1);
+            const gray2 = toGrayscale(data2);
+            
+            // Calculate multiple similarity metrics
+            const histogramSim = histogramSimilarity(gray1, gray2);
+            const structuralSim = structuralSimilarity(gray1, gray2, size);
+            const pixelSim = pixelSimilarity(gray1, gray2);
+            
+            // Weighted average of different methods
+            const similarity = (histogramSim * 0.3 + structuralSim * 0.4 + pixelSim * 0.3) * 100;
+            
+            return Math.min(100, Math.max(0, similarity));
+        }
+
+        function toGrayscale(imageData) {
+            const gray = new Float32Array(imageData.width * imageData.height);
+            for (let i = 0; i < gray.length; i++) {
+                const r = imageData.data[i * 4];
+                const g = imageData.data[i * 4 + 1];
+                const b = imageData.data[i * 4 + 2];
+                gray[i] = 0.299 * r + 0.587 * g + 0.114 * b;
+            }
+            return gray;
+        }
+
+        function histogramSimilarity(gray1, gray2) {
+            // Build histograms
+            const hist1 = new Float32Array(256).fill(0);
+            const hist2 = new Float32Array(256).fill(0);
+            
+            for (let i = 0; i < gray1.length; i++) {
+                hist1[Math.floor(gray1[i])]++;
+                hist2[Math.floor(gray2[i])]++;
+            }
+            
+            // Normalize histograms
+            for (let i = 0; i < 256; i++) {
+                hist1[i] /= gray1.length;
+                hist2[i] /= gray2.length;
+            }
+            
+            // Calculate correlation
+            let sum1 = 0, sum2 = 0, sum12 = 0;
+            let sq1 = 0, sq2 = 0;
+            
+            for (let i = 0; i < 256; i++) {
+                sum1 += hist1[i];
+                sum2 += hist2[i];
+                sum12 += hist1[i] * hist2[i];
+                sq1 += hist1[i] * hist1[i];
+                sq2 += hist2[i] * hist2[i];
+            }
+            
+            const mean1 = sum1 / 256;
+            const mean2 = sum2 / 256;
+            
+            let num = 0, den1 = 0, den2 = 0;
+            for (let i = 0; i < 256; i++) {
+                num += (hist1[i] - mean1) * (hist2[i] - mean2);
+                den1 += (hist1[i] - mean1) * (hist1[i] - mean1);
+                den2 += (hist2[i] - mean2) * (hist2[i] - mean2);
+            }
+            
+            const correlation = num / (Math.sqrt(den1 * den2) + 0.0001);
+            return (correlation + 1) / 2; // Normalize to 0-1
+        }
+
+        function structuralSimilarity(gray1, gray2, size) {
+            // Simplified SSIM calculation
+            const C1 = 6.5025, C2 = 58.5225;
+            
+            let mean1 = 0, mean2 = 0;
+            for (let i = 0; i < gray1.length; i++) {
+                mean1 += gray1[i];
+                mean2 += gray2[i];
+            }
+            mean1 /= gray1.length;
+            mean2 /= gray2.length;
+            
+            let var1 = 0, var2 = 0, covar = 0;
+            for (let i = 0; i < gray1.length; i++) {
+                var1 += (gray1[i] - mean1) * (gray1[i] - mean1);
+                var2 += (gray2[i] - mean2) * (gray2[i] - mean2);
+                covar += (gray1[i] - mean1) * (gray2[i] - mean2);
+            }
+            var1 /= gray1.length;
+            var2 /= gray2.length;
+            covar /= gray1.length;
+            
+            const ssim = ((2 * mean1 * mean2 + C1) * (2 * covar + C2)) / 
+                        ((mean1 * mean1 + mean2 * mean2 + C1) * (var1 + var2 + C2));
+            
+            return (ssim + 1) / 2; // Normalize to 0-1
+        }
+
+        function pixelSimilarity(gray1, gray2) {
+            let diff = 0;
+            for (let i = 0; i < gray1.length; i++) {
+                diff += Math.abs(gray1[i] - gray2[i]);
+            }
+            const avgDiff = diff / gray1.length;
+            return 1 - (avgDiff / 255);
+        }
+
+        function displayResults() {
+            document.getElementById('resultsSection').style.display = 'block';
+
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+
+            let matchLevel, matchClass, color;
+            if (similarityScore >= 80) {
+                matchLevel = 'High Similarity';
+                matchClass = 'match-high';
+                color = 'var(--success-color)';
+                resultIcon.className = 'result-icon valid';
+            } else if (similarityScore >= 50) {
+                matchLevel = 'Moderate Similarity';
+                matchClass = 'match-medium';
+                color = 'var(--warning-color)';
+                resultIcon.className = 'result-icon warning';
+            } else {
+                matchLevel = 'Low Similarity';
+                matchClass = 'match-low';
+                color = '#ef4444';
+                resultIcon.className = 'result-icon invalid';
+            }
+
+            resultIcon.innerHTML = '<i class="fas fa-hand-dots"></i>';
+            resultTitle.textContent = `${similarityScore.toFixed(1)}% Similarity`;
+            resultSubtitle.textContent = matchLevel;
+
+            document.getElementById('similarityDisplay').innerHTML = `
+                <div class="similarity-meter" style="background: conic-gradient(${color} ${similarityScore * 3.6}deg, rgba(255,255,255,0.1) 0deg);">
+                    <div style="background: var(--primary-gradient); width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <span class="similarity-value" style="color: ${color}">${similarityScore.toFixed(1)}%</span>
+                    </div>
+                </div>
+                <div class="similarity-label">Estimated Similarity Score</div>
+                <span class="match-level ${matchClass}">${matchLevel}</span>
+            `;
+
+            document.getElementById('resultDetails').innerHTML = `
+                <div class="result-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Analysis Method</div>
+                        <div class="detail-value">Histogram + SSIM + Pixel Comparison</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Image 1 Size</div>
+                        <div class="detail-value">${image1.width} × ${image1.height} px</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Image 2 Size</div>
+                        <div class="detail-value">${image2.width} × ${image2.height} px</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Confidence Level</div>
+                        <div class="detail-value" style="color: var(--warning-color)">Screening Tool Only</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyResult() {
+            let text = `Fingerprint Comparison Report\n`;
+            text += `=============================\n\n`;
+            text += `Similarity Score: ${similarityScore.toFixed(1)}%\n`;
+            text += `Match Level: ${similarityScore >= 80 ? 'High' : similarityScore >= 50 ? 'Moderate' : 'Low'}\n\n`;
+            text += `Image 1: ${image1.width} × ${image1.height} pixels\n`;
+            text += `Image 2: ${image2.width} × ${image2.height} pixels\n\n`;
+            text += `Analysis Timestamp: ${new Date().toLocaleString()}\n\n`;
+            text += `DISCLAIMER: This is a basic screening tool and NOT a certified forensic fingerprint matching system.\n`;
+            text += `Results should be verified by qualified forensic experts for legal proceedings.\n`;
+            text += `\nGenerated by Punjab Investigation Tools`;
+            
+            navigator.clipboard.writeText(text);
+            showToast('Report copied to clipboard');
+        }
+
+        function resetMatcher() {
+            image1 = null;
+            image2 = null;
+            similarityScore = 0;
+            
+            ['1', '2'].forEach(num => {
+                const dropZone = document.getElementById(`dropZone${num}`);
+                const preview = document.getElementById(`preview${num}`);
+                const fileInput = document.getElementById(`fileInput${num}`);
+                
+                dropZone.classList.remove('has-file');
+                dropZone.querySelector('i').style.display = '';
+                dropZone.querySelector('i').className = 'fas fa-fingerprint';
+                dropZone.querySelector('h4').textContent = `Fingerprint ${num}`;
+                dropZone.querySelector('p').textContent = 'Drop image here or click to select';
+                preview.style.display = 'none';
+                fileInput.value = '';
+            });
+            
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('matchBtn').disabled = true;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

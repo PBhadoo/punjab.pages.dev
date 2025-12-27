@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDR Analysis | Punjab Investigation Tools</title>
+    <meta name="description" content="Analyze Call Data Records (CDR) for investigation purposes.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">CDR Analysis</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-phone-volume"></i> CDR Analysis</h1>
+                <p>Analyze Call Data Records to identify patterns, frequent contacts, and call timelines</p>
+            </div>
+        </section>
+
+        <section class="input-section">
+            <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-file-csv"></i>
+                <h4>Upload CDR File</h4>
+                <p>Drop CSV/Excel file here or click to select</p>
+                <span class="supported-formats">Expected columns: Caller Number, Called Number, Date/Time, Duration, Call Type, Cell ID/Location</span>
+                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.txt" hidden>
+            </div>
+
+            <div class="column-mapping" id="columnMapping" style="display: none;">
+                <h4><i class="fas fa-columns"></i> Map Your Columns</h4>
+                <p style="color: var(--text-secondary); margin-bottom: 15px;">Select which columns in your file correspond to CDR fields</p>
+                <div class="mapping-grid">
+                    <div class="mapping-item">
+                        <label>Caller/A-Party Number</label>
+                        <select id="mapCaller"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Called/B-Party Number</label>
+                        <select id="mapCalled"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Date/Time</label>
+                        <select id="mapDateTime"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Duration (seconds)</label>
+                        <select id="mapDuration"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Call Type (optional)</label>
+                        <select id="mapCallType"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Cell ID/Location (optional)</label>
+                        <select id="mapCellId"></select>
+                    </div>
+                </div>
+                <button class="verify-btn" onclick="analyzeWithMapping()">
+                    <i class="fas fa-chart-line"></i> Analyze CDR
+                </button>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <!-- Summary Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-phone"></i></div>
+                    <div class="stat-value" id="totalCalls">0</div>
+                    <div class="stat-label">Total Calls</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-value" id="uniqueNumbers">0</div>
+                    <div class="stat-label">Unique Numbers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="stat-value" id="totalDuration">0h</div>
+                    <div class="stat-label">Total Duration</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calendar-days"></i></div>
+                    <div class="stat-value" id="dateRange">-</div>
+                    <div class="stat-label">Date Range</div>
+                </div>
+            </div>
+
+            <!-- Top Contacts -->
+            <div class="result-card">
+                <h3><i class="fas fa-address-book"></i> Most Frequent Contacts</h3>
+                <div class="data-table-container">
+                    <table class="data-table" id="topContactsTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Phone Number</th>
+                                <th>Total Calls</th>
+                                <th>Incoming</th>
+                                <th>Outgoing</th>
+                                <th>Total Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topContactsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h4><i class="fas fa-chart-bar"></i> Hourly Call Distribution</h4>
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4><i class="fas fa-chart-pie"></i> Call Type Distribution</h4>
+                    <canvas id="callTypeChart"></canvas>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card full-width">
+                    <h4><i class="fas fa-chart-line"></i> Daily Call Volume</h4>
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Cell Tower Analysis -->
+            <div class="result-card" id="cellTowerSection" style="display: none;">
+                <h3><i class="fas fa-tower-cell"></i> Cell Tower / Location Analysis</h3>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cell ID / Location</th>
+                                <th>Call Count</th>
+                                <th>First Seen</th>
+                                <th>Last Seen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cellTowerBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="result-card">
+                <h3><i class="fas fa-timeline"></i> Call Timeline (Sample)</h3>
+                <div class="timeline-container" id="timelineContainer">
+                    <!-- Timeline items will be populated here -->
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="downloadAnalysis()">
+                    <i class="fas fa-download"></i> Download Analysis
+                </button>
+                <button class="action-btn" onclick="resetTool()">
+                    <i class="fas fa-redo"></i> Analyze New CDR
+                </button>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About CDR Analysis</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-database"></i></div>
+                    <h4>What is CDR?</h4>
+                    <p>Call Data Records (CDR) contain metadata about phone calls including caller/callee numbers, timestamps, duration, and cell tower information.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-search-location"></i></div>
+                    <h4>Investigation Use</h4>
+                    <p>CDR analysis helps identify communication patterns, frequent contacts, location movements, and timeline of events in investigations.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-user-shield"></i></div>
+                    <h4>Privacy Protected</h4>
+                    <p>All CDR analysis happens locally in your browser. No call records or personal data is uploaded to any server.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No data is uploaded to any server.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <style>
+        .column-mapping {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .column-mapping h4 {
+            color: var(--accent-blue);
+            margin-bottom: 5px;
+        }
+        .mapping-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .mapping-item label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        .mapping-item select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+        }
+        .stat-icon {
+            font-size: 2rem;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .chart-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+        }
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+        .chart-card h4 {
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+        }
+        .timeline-container {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .timeline-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            border-left: 3px solid var(--accent-blue);
+            margin-left: 10px;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0 8px 8px 0;
+        }
+        .timeline-time {
+            min-width: 150px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+        .timeline-content {
+            flex: 1;
+        }
+        .timeline-number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+        .timeline-duration {
+            color: var(--success-color);
+            font-size: 0.9rem;
+        }
+        .call-incoming { border-left-color: var(--success-color); }
+        .call-outgoing { border-left-color: var(--accent-blue); }
+        .call-missed { border-left-color: #ef4444; }
+        .supported-formats {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+        .data-table-container {
+            overflow-x: auto;
+        }
+    </style>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        let rawData = [];
+        let parsedData = [];
+        let headers = [];
+        let charts = {};
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    rawData = results.data;
+                    headers = results.meta.fields || [];
+                    
+                    if (rawData.length === 0) {
+                        showToast('No data found in the file');
+                        return;
+                    }
+                    
+                    showColumnMapping();
+                }
+            });
+        }
+
+        function showColumnMapping() {
+            const mappingSection = document.getElementById('columnMapping');
+            mappingSection.style.display = 'block';
+            
+            const selects = ['mapCaller', 'mapCalled', 'mapDateTime', 'mapDuration', 'mapCallType', 'mapCellId'];
+            const autoMatch = {
+                mapCaller: ['caller', 'a_party', 'aparty', 'a party', 'calling', 'from', 'msisdn'],
+                mapCalled: ['called', 'b_party', 'bparty', 'b party', 'to', 'destination'],
+                mapDateTime: ['date', 'time', 'datetime', 'timestamp', 'call_date', 'call_time'],
+                mapDuration: ['duration', 'dur', 'seconds', 'length', 'call_duration'],
+                mapCallType: ['type', 'call_type', 'calltype', 'direction', 'incoming', 'outgoing'],
+                mapCellId: ['cell', 'cellid', 'cell_id', 'lac', 'location', 'tower', 'site']
+            };
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">-- Select Column --</option>';
+                
+                headers.forEach(header => {
+                    const option = document.createElement('option');
+                    option.value = header;
+                    option.textContent = header;
+                    
+                    // Auto-match based on column name
+                    const keywords = autoMatch[selectId] || [];
+                    if (keywords.some(kw => header.toLowerCase().includes(kw))) {
+                        option.selected = true;
+                    }
+                    
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function analyzeWithMapping() {
+            const mapping = {
+                caller: document.getElementById('mapCaller').value,
+                called: document.getElementById('mapCalled').value,
+                dateTime: document.getElementById('mapDateTime').value,
+                duration: document.getElementById('mapDuration').value,
+                callType: document.getElementById('mapCallType').value,
+                cellId: document.getElementById('mapCellId').value
+            };
+            
+            if (!mapping.caller || !mapping.called || !mapping.dateTime) {
+                showToast('Please map at least Caller, Called, and Date/Time columns');
+                return;
+            }
+            
+            // Parse data with mapping
+            parsedData = rawData.map(row => ({
+                caller: row[mapping.caller] || '',
+                called: row[mapping.called] || '',
+                dateTime: parseDateTime(row[mapping.dateTime]),
+                duration: parseInt(row[mapping.duration]) || 0,
+                callType: row[mapping.callType] || 'Unknown',
+                cellId: row[mapping.cellId] || ''
+            })).filter(r => r.dateTime);
+            
+            if (parsedData.length === 0) {
+                showToast('Could not parse any valid records');
+                return;
+            }
+            
+            analyzeData();
+        }
+
+        function parseDateTime(str) {
+            if (!str) return null;
+            const date = new Date(str);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        function analyzeData() {
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Calculate summary stats
+            const totalCalls = parsedData.length;
+            const allNumbers = new Set([
+                ...parsedData.map(r => r.caller),
+                ...parsedData.map(r => r.called)
+            ]);
+            const totalDuration = parsedData.reduce((sum, r) => sum + r.duration, 0);
+            
+            const dates = parsedData.map(r => r.dateTime).sort((a, b) => a - b);
+            const dateRange = dates.length > 0 
+                ? `${dates[0].toLocaleDateString()} - ${dates[dates.length - 1].toLocaleDateString()}`
+                : '-';
+            
+            document.getElementById('totalCalls').textContent = totalCalls.toLocaleString();
+            document.getElementById('uniqueNumbers').textContent = allNumbers.size.toLocaleString();
+            document.getElementById('totalDuration').textContent = formatDuration(totalDuration);
+            document.getElementById('dateRange').textContent = dateRange;
+            
+            // Top contacts analysis
+            analyzeTopContacts();
+            
+            // Charts
+            createHourlyChart();
+            createCallTypeChart();
+            createDailyChart();
+            
+            // Cell tower analysis
+            if (parsedData.some(r => r.cellId)) {
+                analyzeCellTowers();
+            }
+            
+            // Timeline
+            createTimeline();
+            
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function analyzeTopContacts() {
+            const contactStats = {};
+            
+            parsedData.forEach(record => {
+                // Analyze called numbers
+                if (!contactStats[record.called]) {
+                    contactStats[record.called] = { total: 0, incoming: 0, outgoing: 0, duration: 0 };
+                }
+                contactStats[record.called].total++;
+                contactStats[record.called].outgoing++;
+                contactStats[record.called].duration += record.duration;
+                
+                // Also track as incoming for the caller
+                if (!contactStats[record.caller]) {
+                    contactStats[record.caller] = { total: 0, incoming: 0, outgoing: 0, duration: 0 };
+                }
+            });
+            
+            // Sort by total calls
+            const sorted = Object.entries(contactStats)
+                .sort((a, b) => b[1].total - a[1].total)
+                .slice(0, 20);
+            
+            const tbody = document.getElementById('topContactsBody');
+            tbody.innerHTML = sorted.map(([number, stats], idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><span class="mono">${number}</span></td>
+                    <td>${stats.total}</td>
+                    <td>${stats.incoming}</td>
+                    <td>${stats.outgoing}</td>
+                    <td>${formatDuration(stats.duration)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function createHourlyChart() {
+            const hourCounts = new Array(24).fill(0);
+            parsedData.forEach(r => {
+                hourCounts[r.dateTime.getHours()]++;
+            });
+            
+            if (charts.hourly) charts.hourly.destroy();
+            
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            charts.hourly = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Calls',
+                        data: hourCounts,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(255,255,255,0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createCallTypeChart() {
+            const typeCounts = {};
+            parsedData.forEach(r => {
+                typeCounts[r.callType] = (typeCounts[r.callType] || 0) + 1;
+            });
+            
+            if (charts.callType) charts.callType.destroy();
+            
+            const ctx = document.getElementById('callTypeChart').getContext('2d');
+            charts.callType = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(typeCounts),
+                    datasets: [{
+                        data: Object.values(typeCounts),
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(139, 92, 246, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createDailyChart() {
+            const dayCounts = {};
+            parsedData.forEach(r => {
+                const day = r.dateTime.toISOString().split('T')[0];
+                dayCounts[day] = (dayCounts[day] || 0) + 1;
+            });
+            
+            const sortedDays = Object.keys(dayCounts).sort();
+            
+            if (charts.daily) charts.daily.destroy();
+            
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+            charts.daily = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedDays,
+                    datasets: [{
+                        label: 'Calls per Day',
+                        data: sortedDays.map(d => dayCounts[d]),
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(255,255,255,0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8', maxTicksLimit: 10 },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function analyzeCellTowers() {
+            document.getElementById('cellTowerSection').style.display = 'block';
+            
+            const cellStats = {};
+            parsedData.filter(r => r.cellId).forEach(r => {
+                if (!cellStats[r.cellId]) {
+                    cellStats[r.cellId] = { count: 0, first: r.dateTime, last: r.dateTime };
+                }
+                cellStats[r.cellId].count++;
+                if (r.dateTime < cellStats[r.cellId].first) cellStats[r.cellId].first = r.dateTime;
+                if (r.dateTime > cellStats[r.cellId].last) cellStats[r.cellId].last = r.dateTime;
+            });
+            
+            const sorted = Object.entries(cellStats)
+                .sort((a, b) => b[1].count - a[1].count)
+                .slice(0, 20);
+            
+            const tbody = document.getElementById('cellTowerBody');
+            tbody.innerHTML = sorted.map(([cellId, stats]) => `
+                <tr>
+                    <td><span class="mono">${cellId}</span></td>
+                    <td>${stats.count}</td>
+                    <td>${stats.first.toLocaleString()}</td>
+                    <td>${stats.last.toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function createTimeline() {
+            const sample = parsedData.slice(0, 50);
+            const container = document.getElementById('timelineContainer');
+            
+            container.innerHTML = sample.map(r => {
+                const typeClass = r.callType.toLowerCase().includes('incoming') ? 'call-incoming' :
+                                  r.callType.toLowerCase().includes('outgoing') ? 'call-outgoing' :
+                                  r.callType.toLowerCase().includes('missed') ? 'call-missed' : '';
+                return `
+                    <div class="timeline-item ${typeClass}">
+                        <div class="timeline-time">${r.dateTime.toLocaleString()}</div>
+                        <div class="timeline-content">
+                            <div class="timeline-number">${r.caller} → ${r.called}</div>
+                            <div class="timeline-duration">
+                                ${r.callType} • ${formatDuration(r.duration)}
+                                ${r.cellId ? ` • Cell: ${r.cellId}` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatDuration(seconds) {
+            if (seconds < 60) return `${seconds}s`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${mins}m`;
+        }
+
+        function downloadAnalysis() {
+            const report = {
+                summary: {
+                    totalCalls: parsedData.length,
+                    dateRange: {
+                        start: parsedData[0]?.dateTime,
+                        end: parsedData[parsedData.length - 1]?.dateTime
+                    }
+                },
+                data: parsedData,
+                generatedAt: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cdr_analysis_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Analysis report downloaded');
+        }
+
+        function resetTool() {
+            rawData = [];
+            parsedData = [];
+            headers = [];
+            fileInput.value = '';
+            document.getElementById('columnMapping').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            Object.values(charts).forEach(c => c?.destroy());
+            charts = {};
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

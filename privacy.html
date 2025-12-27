@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | Punjab Investigation Tools</title>
+    <meta name="description" content="Privacy Policy for Punjab Investigation Tools - Digital Forensics Platform">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/tool-common.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Privacy Policy</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-user-shield"></i> Privacy Policy</h1>
+                <p>Your privacy is our top priority. Learn how we protect your data.</p>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="content-card">
+                <h2><i class="fas fa-lock"></i> Our Privacy Commitment</h2>
+                <p class="last-updated">Last Updated: December 2024</p>
+                
+                <div class="policy-section">
+                    <h3>1. No Data Collection</h3>
+                    <p>Punjab Investigation Tools is designed with a <strong>zero data collection</strong> policy. We do not collect, store, transmit, or process any of your files, data, or personal information on our servers.</p>
+                    <div class="highlight-box success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>All processing happens 100% locally in your browser. Your files never leave your device.</span>
+                    </div>
+                </div>
+
+                <div class="policy-section">
+                    <h3>2. Client-Side Processing</h3>
+                    <p>Every tool on this platform operates entirely within your web browser using JavaScript. This means:</p>
+                    <ul>
+                        <li>Files you analyze are processed locally on your device</li>
+                        <li>Hash values are computed in your browser</li>
+                        <li>No files are uploaded to any server</li>
+                        <li>No network requests are made with your data</li>
+                        <li>Closing the browser tab removes all processed data</li>
+                    </ul>
+                </div>
+
+                <div class="policy-section">
+                    <h3>3. No Cookies for Tracking</h3>
+                    <p>We do not use cookies, local storage, or any other mechanism to track your usage or store personal information. The platform functions without any persistent storage of user data.</p>
+                </div>
+
+                <div class="policy-section">
+                    <h3>4. External Resources</h3>
+                    <p>Our platform loads the following external resources for functionality:</p>
+                    <ul>
+                        <li><strong>Google Fonts</strong> - For typography (Inter, JetBrains Mono)</li>
+                        <li><strong>Font Awesome</strong> - For icons</li>
+                        <li><strong>CDN Libraries</strong> - hash-wasm, PDF.js, EXIF.js, Chart.js, PapaParse</li>
+                    </ul>
+                    <p>These services may have their own privacy policies. We recommend reviewing them if you have concerns.</p>
+                </div>
+
+                <div class="policy-section">
+                    <h3>5. Evidence Confidentiality</h3>
+                    <p>We understand that investigation tools may be used with sensitive evidence. Our architecture ensures:</p>
+                    <ul>
+                        <li>Complete confidentiality of all files processed</li>
+                        <li>No logs or records of tool usage</li>
+                        <li>No ability for us to access your data</li>
+                        <li>Compliance with evidence handling best practices</li>
+                    </ul>
+                </div>
+
+                <div class="policy-section">
+                    <h3>6. Open Source Transparency</h3>
+                    <p>This platform is open source. You can inspect the code yourself to verify our privacy claims. All processing logic is visible in the browser's developer tools.</p>
+                </div>
+
+                <div class="policy-section">
+                    <h3>7. Third-Party Links</h3>
+                    <p>Our tools may contain links to official government portals (e.g., UIDAI, CEIR). These external sites have their own privacy policies which we do not control.</p>
+                </div>
+
+                <div class="policy-section">
+                    <h3>8. Changes to This Policy</h3>
+                    <p>We may update this privacy policy from time to time. Any changes will be reflected on this page with an updated revision date.</p>
+                </div>
+
+                <div class="policy-section">
+                    <h3>9. Contact</h3>
+                    <p>If you have any questions about this privacy policy or our privacy practices, please reach out through the official channels of Punjab Police.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> Your privacy is protected. All processing happens locally.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <style>
+        .content-section {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .content-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 40px;
+        }
+        .content-card h2 {
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+        }
+        .last-updated {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+        .policy-section {
+            margin-bottom: 30px;
+        }
+        .policy-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .policy-section p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .policy-section ul {
+            color: var(--text-secondary);
+            margin-left: 25px;
+            line-height: 2;
+        }
+        .highlight-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+        .highlight-box.success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success-color);
+        }
+        .highlight-box i {
+            font-size: 1.5rem;
+        }
+    </style>
+</body>
+</html>

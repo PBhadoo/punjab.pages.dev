@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Metadata Extractor | Punjab Investigation Tools</title>
+    <meta name="description" content="Extract metadata from documents including creation date, modification date, author, and more.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Document Metadata</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-file-circle-info"></i> Document Metadata Extractor</h1>
+                <p>Extract creation date, modification time, author, and other hidden metadata from documents and images</p>
+            </div>
+        </section>
+
+        <section class="input-section">
+            <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-file-upload"></i>
+                <h4>Drop File Here</h4>
+                <p>or click to select a document or image</p>
+                <span class="supported-formats">Supports: PDF, Images (JPG, PNG, TIFF, GIF, WebP), and common document formats</span>
+                <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.gif,.tiff,.webp,.bmp,.doc,.docx,.xls,.xlsx,.ppt,.pptx" hidden>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="result-card">
+                <div class="result-header">
+                    <div class="result-icon" id="resultIcon">
+                        <i class="fas fa-file-circle-info"></i>
+                    </div>
+                    <div class="result-title">
+                        <h3 id="fileName">Document Name</h3>
+                        <p id="fileType">File Type</p>
+                    </div>
+                </div>
+
+                <div class="metadata-categories">
+                    <!-- Basic Info -->
+                    <div class="metadata-category">
+                        <h4><i class="fas fa-file"></i> Basic Information</h4>
+                        <div class="metadata-grid" id="basicInfo">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Timestamps -->
+                    <div class="metadata-category" id="timestampsCategory" style="display: none;">
+                        <h4><i class="fas fa-clock"></i> Timestamps</h4>
+                        <div class="metadata-grid" id="timestamps">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Author/Creator Info -->
+                    <div class="metadata-category" id="authorCategory" style="display: none;">
+                        <h4><i class="fas fa-user-pen"></i> Author & Creator</h4>
+                        <div class="metadata-grid" id="authorInfo">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Technical Info -->
+                    <div class="metadata-category" id="technicalCategory" style="display: none;">
+                        <h4><i class="fas fa-cogs"></i> Technical Details</h4>
+                        <div class="metadata-grid" id="technicalInfo">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Camera/Device Info (for images) -->
+                    <div class="metadata-category" id="cameraCategory" style="display: none;">
+                        <h4><i class="fas fa-camera"></i> Camera & Device</h4>
+                        <div class="metadata-grid" id="cameraInfo">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Location Info (for images) -->
+                    <div class="metadata-category" id="locationCategory" style="display: none;">
+                        <h4><i class="fas fa-location-dot"></i> Location Data</h4>
+                        <div class="metadata-grid" id="locationInfo">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- All Raw Metadata -->
+                    <div class="metadata-category">
+                        <h4><i class="fas fa-code"></i> All Metadata (Raw)</h4>
+                        <div class="raw-metadata" id="rawMetadata">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" id="forensicNote" style="display: none;">
+                <h4><i class="fas fa-microscope"></i> Forensic Note</h4>
+                <p id="forensicNoteContent"></p>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="copyMetadata()">
+                    <i class="fas fa-copy"></i> Copy Metadata
+                </button>
+                <button class="action-btn" onclick="downloadReport()">
+                    <i class="fas fa-download"></i> Download Report
+                </button>
+                <button class="action-btn" onclick="resetTool()">
+                    <i class="fas fa-redo"></i> Analyze New File
+                </button>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About Document Metadata</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-clock-rotate-left"></i></div>
+                    <h4>Timeline Evidence</h4>
+                    <p>Creation and modification dates can establish document timelines and detect backdating attempts in investigations.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-user-secret"></i></div>
+                    <h4>Hidden Identity</h4>
+                    <p>Author names, software versions, and device info can help identify who created or modified a document.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-user-shield"></i></div>
+                    <h4>Privacy Protected</h4>
+                    <p>All metadata extraction happens locally in your browser. No files are uploaded to any server.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No files are uploaded to any server.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <style>
+        .metadata-categories {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .metadata-category {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--card-border);
+        }
+        .metadata-category h4 {
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+        .metadata-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        .metadata-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .metadata-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+        .raw-metadata {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .supported-formats {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+        .gps-link {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        .gps-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let currentFile = null;
+        let extractedMetadata = {};
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        async function handleFile(file) {
+            currentFile = file;
+            extractedMetadata = {};
+
+            // Basic file info
+            extractedMetadata.basic = {
+                'File Name': file.name,
+                'File Size': formatFileSize(file.size),
+                'MIME Type': file.type || 'Unknown',
+                'File Extension': getFileExtension(file.name)
+            };
+
+            // Last modified from File object
+            if (file.lastModified) {
+                extractedMetadata.timestamps = {
+                    'Last Modified (Browser)': new Date(file.lastModified).toLocaleString()
+                };
+            }
+
+            // Process based on file type
+            if (file.type === 'application/pdf') {
+                await extractPDFMetadata(file);
+            } else if (file.type.startsWith('image/')) {
+                await extractImageMetadata(file);
+            } else {
+                // For other files, just show basic info
+                showForensicNote('Limited metadata extraction available for this file type. For comprehensive analysis, use specialized forensic tools.');
+            }
+
+            displayResults();
+        }
+
+        async function extractPDFMetadata(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const metadata = await pdf.getMetadata();
+
+                if (metadata.info) {
+                    const info = metadata.info;
+                    
+                    // Timestamps
+                    extractedMetadata.timestamps = extractedMetadata.timestamps || {};
+                    if (info.CreationDate) {
+                        extractedMetadata.timestamps['Created'] = parsePDFDate(info.CreationDate);
+                    }
+                    if (info.ModDate) {
+                        extractedMetadata.timestamps['Modified'] = parsePDFDate(info.ModDate);
+                    }
+
+                    // Author info
+                    if (info.Author || info.Creator || info.Producer) {
+                        extractedMetadata.author = {};
+                        if (info.Author) extractedMetadata.author['Author'] = info.Author;
+                        if (info.Creator) extractedMetadata.author['Creator Software'] = info.Creator;
+                        if (info.Producer) extractedMetadata.author['PDF Producer'] = info.Producer;
+                    }
+
+                    // Technical info
+                    extractedMetadata.technical = {
+                        'PDF Version': info.PDFFormatVersion || 'Unknown',
+                        'Page Count': pdf.numPages,
+                        'Title': info.Title || 'Not set',
+                        'Subject': info.Subject || 'Not set',
+                        'Keywords': info.Keywords || 'Not set'
+                    };
+
+                    extractedMetadata.raw = info;
+                }
+
+                if (metadata.metadata) {
+                    const xmp = metadata.metadata.getAll();
+                    if (Object.keys(xmp).length > 0) {
+                        extractedMetadata.raw = { ...extractedMetadata.raw, ...xmp };
+                    }
+                }
+            } catch (error) {
+                console.error('PDF metadata extraction error:', error);
+                showForensicNote('Error extracting PDF metadata: ' + error.message);
+            }
+        }
+
+        async function extractImageMetadata(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    extractedMetadata.technical = {
+                        'Width': img.width + ' px',
+                        'Height': img.height + ' px',
+                        'Aspect Ratio': (img.width / img.height).toFixed(2)
+                    };
+
+                    // Try to extract EXIF data
+                    EXIF.getData(img, function() {
+                        const allTags = EXIF.getAllTags(this);
+                        
+                        if (Object.keys(allTags).length > 0) {
+                            // Timestamps
+                            if (allTags.DateTime || allTags.DateTimeOriginal || allTags.DateTimeDigitized) {
+                                extractedMetadata.timestamps = extractedMetadata.timestamps || {};
+                                if (allTags.DateTimeOriginal) {
+                                    extractedMetadata.timestamps['Date Taken'] = formatExifDate(allTags.DateTimeOriginal);
+                                }
+                                if (allTags.DateTimeDigitized) {
+                                    extractedMetadata.timestamps['Date Digitized'] = formatExifDate(allTags.DateTimeDigitized);
+                                }
+                                if (allTags.DateTime) {
+                                    extractedMetadata.timestamps['Date/Time'] = formatExifDate(allTags.DateTime);
+                                }
+                            }
+
+                            // Author info
+                            if (allTags.Artist || allTags.Copyright || allTags.Software) {
+                                extractedMetadata.author = {};
+                                if (allTags.Artist) extractedMetadata.author['Artist'] = allTags.Artist;
+                                if (allTags.Copyright) extractedMetadata.author['Copyright'] = allTags.Copyright;
+                                if (allTags.Software) extractedMetadata.author['Software'] = allTags.Software;
+                                if (allTags.ImageDescription) extractedMetadata.author['Description'] = allTags.ImageDescription;
+                            }
+
+                            // Camera info
+                            if (allTags.Make || allTags.Model || allTags.LensModel) {
+                                extractedMetadata.camera = {};
+                                if (allTags.Make) extractedMetadata.camera['Camera Make'] = allTags.Make;
+                                if (allTags.Model) extractedMetadata.camera['Camera Model'] = allTags.Model;
+                                if (allTags.LensModel) extractedMetadata.camera['Lens'] = allTags.LensModel;
+                                if (allTags.FNumber) extractedMetadata.camera['Aperture'] = 'f/' + allTags.FNumber;
+                                if (allTags.ExposureTime) extractedMetadata.camera['Exposure Time'] = allTags.ExposureTime + 's';
+                                if (allTags.ISOSpeedRatings) extractedMetadata.camera['ISO'] = allTags.ISOSpeedRatings;
+                                if (allTags.FocalLength) extractedMetadata.camera['Focal Length'] = allTags.FocalLength + 'mm';
+                                if (allTags.Flash) extractedMetadata.camera['Flash'] = allTags.Flash;
+                            }
+
+                            // GPS info
+                            const lat = allTags.GPSLatitude;
+                            const lon = allTags.GPSLongitude;
+                            if (lat && lon) {
+                                const latRef = allTags.GPSLatitudeRef || 'N';
+                                const lonRef = allTags.GPSLongitudeRef || 'E';
+                                const latDec = convertDMSToDD(lat, latRef);
+                                const lonDec = convertDMSToDD(lon, lonRef);
+                                
+                                extractedMetadata.location = {
+                                    'Latitude': `${lat[0]}° ${lat[1]}' ${lat[2]}" ${latRef}`,
+                                    'Longitude': `${lon[0]}° ${lon[1]}' ${lon[2]}" ${lonRef}`,
+                                    'Decimal Coordinates': `${latDec.toFixed(6)}, ${lonDec.toFixed(6)}`,
+                                    'View on Map': `https://www.google.com/maps?q=${latDec},${lonDec}`
+                                };
+                                
+                                if (allTags.GPSAltitude) {
+                                    extractedMetadata.location['Altitude'] = allTags.GPSAltitude + ' m';
+                                }
+
+                                showForensicNote('⚠️ GPS LOCATION DATA FOUND: This image contains embedded GPS coordinates. This can reveal where the photo was taken.');
+                            }
+
+                            // More technical details
+                            if (allTags.XResolution) extractedMetadata.technical['X Resolution'] = allTags.XResolution + ' DPI';
+                            if (allTags.YResolution) extractedMetadata.technical['Y Resolution'] = allTags.YResolution + ' DPI';
+                            if (allTags.ColorSpace) extractedMetadata.technical['Color Space'] = allTags.ColorSpace === 1 ? 'sRGB' : allTags.ColorSpace;
+                            if (allTags.Orientation) extractedMetadata.technical['Orientation'] = getOrientationLabel(allTags.Orientation);
+
+                            extractedMetadata.raw = allTags;
+                        } else {
+                            showForensicNote('No EXIF metadata found in this image. The metadata may have been stripped or the image format does not support EXIF.');
+                        }
+                        
+                        resolve();
+                    });
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        function displayResults() {
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('fileName').textContent = currentFile.name;
+            document.getElementById('fileType').textContent = currentFile.type || 'Unknown type';
+
+            // Basic info
+            document.getElementById('basicInfo').innerHTML = renderMetadataGrid(extractedMetadata.basic);
+
+            // Timestamps
+            if (extractedMetadata.timestamps && Object.keys(extractedMetadata.timestamps).length > 0) {
+                document.getElementById('timestampsCategory').style.display = 'block';
+                document.getElementById('timestamps').innerHTML = renderMetadataGrid(extractedMetadata.timestamps);
+            } else {
+                document.getElementById('timestampsCategory').style.display = 'none';
+            }
+
+            // Author info
+            if (extractedMetadata.author && Object.keys(extractedMetadata.author).length > 0) {
+                document.getElementById('authorCategory').style.display = 'block';
+                document.getElementById('authorInfo').innerHTML = renderMetadataGrid(extractedMetadata.author);
+            } else {
+                document.getElementById('authorCategory').style.display = 'none';
+            }
+
+            // Technical info
+            if (extractedMetadata.technical && Object.keys(extractedMetadata.technical).length > 0) {
+                document.getElementById('technicalCategory').style.display = 'block';
+                document.getElementById('technicalInfo').innerHTML = renderMetadataGrid(extractedMetadata.technical);
+            } else {
+                document.getElementById('technicalCategory').style.display = 'none';
+            }
+
+            // Camera info
+            if (extractedMetadata.camera && Object.keys(extractedMetadata.camera).length > 0) {
+                document.getElementById('cameraCategory').style.display = 'block';
+                document.getElementById('cameraInfo').innerHTML = renderMetadataGrid(extractedMetadata.camera);
+            } else {
+                document.getElementById('cameraCategory').style.display = 'none';
+            }
+
+            // Location info
+            if (extractedMetadata.location && Object.keys(extractedMetadata.location).length > 0) {
+                document.getElementById('locationCategory').style.display = 'block';
+                let locationHtml = '';
+                for (const [key, value] of Object.entries(extractedMetadata.location)) {
+                    if (key === 'View on Map') {
+                        locationHtml += `<div class="metadata-item">
+                            <span class="metadata-label">${key}</span>
+                            <a href="${value}" target="_blank" class="gps-link metadata-value">
+                                <i class="fas fa-external-link-alt"></i> Open in Google Maps
+                            </a>
+                        </div>`;
+                    } else {
+                        locationHtml += `<div class="metadata-item">
+                            <span class="metadata-label">${key}</span>
+                            <span class="metadata-value">${value}</span>
+                        </div>`;
+                    }
+                }
+                document.getElementById('locationInfo').innerHTML = locationHtml;
+            } else {
+                document.getElementById('locationCategory').style.display = 'none';
+            }
+
+            // Raw metadata
+            if (extractedMetadata.raw) {
+                document.getElementById('rawMetadata').textContent = JSON.stringify(extractedMetadata.raw, null, 2);
+            } else {
+                document.getElementById('rawMetadata').textContent = 'No additional raw metadata available';
+            }
+
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderMetadataGrid(data) {
+            let html = '';
+            for (const [key, value] of Object.entries(data)) {
+                html += `<div class="metadata-item">
+                    <span class="metadata-label">${key}</span>
+                    <span class="metadata-value">${value || 'Not available'}</span>
+                </div>`;
+            }
+            return html;
+        }
+
+        function showForensicNote(message) {
+            const noteEl = document.getElementById('forensicNote');
+            noteEl.style.display = 'block';
+            document.getElementById('forensicNoteContent').textContent = message;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getFileExtension(filename) {
+            return filename.split('.').pop().toUpperCase();
+        }
+
+        function parsePDFDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+            // PDF dates: D:YYYYMMDDHHmmss
+            const match = dateStr.match(/D:(\d{4})(\d{2})(\d{2})(\d{2})?(\d{2})?(\d{2})?/);
+            if (match) {
+                const [, year, month, day, hour = '00', min = '00', sec = '00'] = match;
+                return new Date(year, month - 1, day, hour, min, sec).toLocaleString();
+            }
+            return dateStr;
+        }
+
+        function formatExifDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+            // EXIF dates: YYYY:MM:DD HH:mm:ss
+            const parts = dateStr.split(' ');
+            if (parts.length === 2) {
+                const dateParts = parts[0].split(':');
+                return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], ...parts[1].split(':')).toLocaleString();
+            }
+            return dateStr;
+        }
+
+        function convertDMSToDD(dms, ref) {
+            const degrees = dms[0] + dms[1] / 60 + dms[2] / 3600;
+            return (ref === 'S' || ref === 'W') ? -degrees : degrees;
+        }
+
+        function getOrientationLabel(orientation) {
+            const labels = {
+                1: 'Normal',
+                2: 'Mirrored horizontal',
+                3: 'Rotated 180°',
+                4: 'Mirrored vertical',
+                5: 'Mirrored horizontal and rotated 270°',
+                6: 'Rotated 90°',
+                7: 'Mirrored horizontal and rotated 90°',
+                8: 'Rotated 270°'
+            };
+            return labels[orientation] || orientation;
+        }
+
+        function copyMetadata() {
+            let text = `Document Metadata Report\n`;
+            text += `========================\n\n`;
+            text += `File: ${currentFile.name}\n`;
+            text += `Type: ${currentFile.type}\n`;
+            text += `Size: ${formatFileSize(currentFile.size)}\n\n`;
+            
+            if (extractedMetadata.timestamps) {
+                text += `TIMESTAMPS:\n`;
+                for (const [key, value] of Object.entries(extractedMetadata.timestamps)) {
+                    text += `  ${key}: ${value}\n`;
+                }
+                text += '\n';
+            }
+            
+            if (extractedMetadata.author) {
+                text += `AUTHOR/CREATOR:\n`;
+                for (const [key, value] of Object.entries(extractedMetadata.author)) {
+                    text += `  ${key}: ${value}\n`;
+                }
+                text += '\n';
+            }
+            
+            if (extractedMetadata.location) {
+                text += `LOCATION DATA:\n`;
+                for (const [key, value] of Object.entries(extractedMetadata.location)) {
+                    text += `  ${key}: ${value}\n`;
+                }
+                text += '\n';
+            }
+            
+            text += `\nExtracted: ${new Date().toLocaleString()}\n`;
+            text += `Generated by Punjab Investigation Tools`;
+            
+            navigator.clipboard.writeText(text);
+            showToast('Metadata copied to clipboard');
+        }
+
+        function downloadReport() {
+            const report = {
+                file: {
+                    name: currentFile.name,
+                    type: currentFile.type,
+                    size: currentFile.size,
+                    sizeFormatted: formatFileSize(currentFile.size)
+                },
+                metadata: extractedMetadata,
+                extractedAt: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `metadata_${currentFile.name.replace(/\.[^/.]+$/, '')}_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Report downloaded');
+        }
+
+        function resetTool() {
+            currentFile = null;
+            extractedMetadata = {};
+            fileInput.value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('forensicNote').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

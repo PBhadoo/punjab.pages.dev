@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Forensics | Punjab Investigation Tools</title>
+    <meta name="description" content="Analyze images for manipulation detection, error level analysis, and metadata extraction for forensic investigation.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+    
+    <!-- EXIF.js for metadata extraction -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Image Forensics</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-magnifying-glass-chart"></i> Image Forensics Analyzer</h1>
+                <p>Detect image manipulation, analyze error levels, and extract hidden metadata for forensic investigation</p>
+            </div>
+        </section>
+
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <h3>Drop image here or click to upload</h3>
+                    <p>Supports JPG, PNG, WebP, BMP formats</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select Image
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="analysis-container">
+                <!-- Original Image -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-image"></i> Original Image</h3>
+                    <div class="image-display">
+                        <img id="originalImage" alt="Original">
+                    </div>
+                    <div class="image-info" id="imageInfo"></div>
+                </div>
+
+                <!-- ELA Analysis -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-wave-square"></i> Error Level Analysis (ELA)</h3>
+                    <div class="image-display">
+                        <canvas id="elaCanvas"></canvas>
+                    </div>
+                    <div class="ela-info">
+                        <p><i class="fas fa-info-circle"></i> Brighter areas may indicate manipulation. Uniform brightness suggests original content.</p>
+                    </div>
+                    <div class="ela-controls">
+                        <label>ELA Quality: <span id="qualityValue">95</span>%</label>
+                        <input type="range" id="elaQuality" min="50" max="99" value="95" onchange="updateELA()">
+                        <label>Enhancement: <span id="enhanceValue">15</span>x</label>
+                        <input type="range" id="elaEnhance" min="5" max="50" value="15" onchange="updateELA()">
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="analysis-card full-width">
+                    <h3><i class="fas fa-tags"></i> Image Metadata (EXIF)</h3>
+                    <div class="metadata-grid" id="metadataGrid">
+                        <p class="loading">Extracting metadata...</p>
+                    </div>
+                </div>
+
+                <!-- Hash Values -->
+                <div class="analysis-card full-width">
+                    <h3><i class="fas fa-fingerprint"></i> Image Hash Values</h3>
+                    <div class="hash-results" id="hashResults">
+                        <p class="loading">Calculating hashes...</p>
+                    </div>
+                </div>
+
+                <!-- Forensic Notes -->
+                <div class="analysis-card full-width">
+                    <h3><i class="fas fa-clipboard-list"></i> Forensic Analysis Notes</h3>
+                    <div class="forensic-notes" id="forensicNotes"></div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="downloadReport()">
+                    <i class="fas fa-file-pdf"></i> Download Report
+                </button>
+                <button class="action-btn" onclick="resetAnalysis()">
+                    <i class="fas fa-redo"></i> Analyze Another Image
+                </button>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About Image Forensics</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-wave-square"></i></div>
+                    <h4>Error Level Analysis</h4>
+                    <p>ELA reveals differences in compression levels. Modified areas often show different error levels than original content, appearing brighter in the analysis.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-tags"></i></div>
+                    <h4>EXIF Metadata</h4>
+                    <p>Images contain hidden data including camera model, date taken, GPS coordinates, and software used - crucial for establishing evidence authenticity.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-triangle-exclamation"></i></div>
+                    <h4>Limitations</h4>
+                    <p>ELA is a screening tool, not definitive proof. Multiple saves, format conversions, or sophisticated edits may affect results. Always use multiple analysis methods.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No images are uploaded to any server.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4"></script>
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        let currentImage = null;
+        let imageFile = null;
+
+        // Setup drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file');
+                return;
+            }
+
+            imageFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = new Image();
+                currentImage.onload = () => {
+                    analyzeImage();
+                };
+                currentImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function analyzeImage() {
+            document.getElementById('resultsSection').style.display = 'block';
+            document.querySelector('.upload-section').style.display = 'none';
+
+            // Display original
+            const originalImg = document.getElementById('originalImage');
+            originalImg.src = currentImage.src;
+
+            // Image info
+            document.getElementById('imageInfo').innerHTML = `
+                <p><strong>Filename:</strong> ${imageFile.name}</p>
+                <p><strong>Dimensions:</strong> ${currentImage.width} × ${currentImage.height} pixels</p>
+                <p><strong>File Size:</strong> ${formatFileSize(imageFile.size)}</p>
+                <p><strong>Type:</strong> ${imageFile.type}</p>
+            `;
+
+            // Perform analyses
+            performELA();
+            extractMetadata();
+            calculateHashes();
+            generateForensicNotes();
+        }
+
+        function performELA() {
+            const quality = parseInt(document.getElementById('elaQuality').value);
+            const enhance = parseInt(document.getElementById('elaEnhance').value);
+
+            const canvas = document.getElementById('elaCanvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+
+            // Draw original
+            ctx.drawImage(currentImage, 0, 0);
+
+            // Get original image data
+            const originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            // Create compressed version
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = currentImage.width;
+            tempCanvas.height = currentImage.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(currentImage, 0, 0);
+
+            // Compress and reload
+            const compressedDataUrl = tempCanvas.toDataURL('image/jpeg', quality / 100);
+            const compressedImg = new Image();
+            compressedImg.onload = () => {
+                tempCtx.drawImage(compressedImg, 0, 0);
+                const compressedData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+
+                // Calculate difference
+                const diffData = ctx.createImageData(canvas.width, canvas.height);
+                for (let i = 0; i < originalData.data.length; i += 4) {
+                    const diffR = Math.abs(originalData.data[i] - compressedData.data[i]) * enhance;
+                    const diffG = Math.abs(originalData.data[i + 1] - compressedData.data[i + 1]) * enhance;
+                    const diffB = Math.abs(originalData.data[i + 2] - compressedData.data[i + 2]) * enhance;
+
+                    diffData.data[i] = Math.min(255, diffR);
+                    diffData.data[i + 1] = Math.min(255, diffG);
+                    diffData.data[i + 2] = Math.min(255, diffB);
+                    diffData.data[i + 3] = 255;
+                }
+
+                ctx.putImageData(diffData, 0, 0);
+            };
+            compressedImg.src = compressedDataUrl;
+        }
+
+        function updateELA() {
+            document.getElementById('qualityValue').textContent = document.getElementById('elaQuality').value;
+            document.getElementById('enhanceValue').textContent = document.getElementById('elaEnhance').value;
+            performELA();
+        }
+
+        function extractMetadata() {
+            const metadataGrid = document.getElementById('metadataGrid');
+            
+            EXIF.getData(imageFile, function() {
+                const allMetadata = EXIF.getAllTags(this);
+                
+                if (Object.keys(allMetadata).length === 0) {
+                    metadataGrid.innerHTML = '<p class="no-data"><i class="fas fa-exclamation-circle"></i> No EXIF metadata found. Image may have been stripped of metadata or saved without it.</p>';
+                    return;
+                }
+
+                let html = '<div class="metadata-items">';
+                
+                const importantTags = ['Make', 'Model', 'DateTime', 'DateTimeOriginal', 'Software', 'GPSLatitude', 'GPSLongitude', 'ExifImageWidth', 'ExifImageHeight', 'ColorSpace', 'Flash', 'FocalLength', 'ExposureTime', 'FNumber', 'ISOSpeedRatings'];
+                
+                importantTags.forEach(tag => {
+                    if (allMetadata[tag]) {
+                        let value = allMetadata[tag];
+                        if (Array.isArray(value)) {
+                            value = value.join(', ');
+                        }
+                        html += `<div class="metadata-item">
+                            <span class="meta-label">${formatTagName(tag)}</span>
+                            <span class="meta-value">${value}</span>
+                        </div>`;
+                    }
+                });
+
+                // Add remaining tags
+                Object.keys(allMetadata).forEach(tag => {
+                    if (!importantTags.includes(tag) && typeof allMetadata[tag] !== 'object') {
+                        html += `<div class="metadata-item">
+                            <span class="meta-label">${formatTagName(tag)}</span>
+                            <span class="meta-value">${allMetadata[tag]}</span>
+                        </div>`;
+                    }
+                });
+
+                html += '</div>';
+                metadataGrid.innerHTML = html;
+            });
+        }
+
+        function formatTagName(tag) {
+            return tag.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        }
+
+        async function calculateHashes() {
+            const hashResults = document.getElementById('hashResults');
+            
+            try {
+                const arrayBuffer = await imageFile.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+
+                const [md5, sha1, sha256, sha512] = await Promise.all([
+                    hashwasm.md5(uint8Array),
+                    hashwasm.sha1(uint8Array),
+                    hashwasm.sha256(uint8Array),
+                    hashwasm.sha512(uint8Array)
+                ]);
+
+                hashResults.innerHTML = `
+                    <div class="hash-item">
+                        <span class="hash-label">MD5</span>
+                        <code class="hash-value">${md5}</code>
+                        <button class="copy-btn" onclick="copyHash('${md5}')"><i class="fas fa-copy"></i></button>
+                    </div>
+                    <div class="hash-item">
+                        <span class="hash-label">SHA-1</span>
+                        <code class="hash-value">${sha1}</code>
+                        <button class="copy-btn" onclick="copyHash('${sha1}')"><i class="fas fa-copy"></i></button>
+                    </div>
+                    <div class="hash-item">
+                        <span class="hash-label">SHA-256</span>
+                        <code class="hash-value">${sha256}</code>
+                        <button class="copy-btn" onclick="copyHash('${sha256}')"><i class="fas fa-copy"></i></button>
+                    </div>
+                    <div class="hash-item">
+                        <span class="hash-label">SHA-512</span>
+                        <code class="hash-value">${sha512}</code>
+                        <button class="copy-btn" onclick="copyHash('${sha512}')"><i class="fas fa-copy"></i></button>
+                    </div>
+                `;
+            } catch (error) {
+                hashResults.innerHTML = '<p class="error">Error calculating hashes</p>';
+            }
+        }
+
+        function generateForensicNotes() {
+            const notes = document.getElementById('forensicNotes');
+            const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            
+            notes.innerHTML = `
+                <div class="note-item">
+                    <i class="fas fa-clock"></i>
+                    <span><strong>Analysis Timestamp:</strong> ${timestamp} IST</span>
+                </div>
+                <div class="note-item">
+                    <i class="fas fa-file"></i>
+                    <span><strong>File Analyzed:</strong> ${imageFile.name}</span>
+                </div>
+                <div class="note-item">
+                    <i class="fas fa-microchip"></i>
+                    <span><strong>Processing:</strong> All analysis performed client-side in browser</span>
+                </div>
+                <div class="note-item warning">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span><strong>Disclaimer:</strong> ELA is a screening tool and should not be used as sole evidence of manipulation. Professional forensic analysis is recommended for legal proceedings.</span>
+                </div>
+            `;
+        }
+
+        function copyHash(hash) {
+            navigator.clipboard.writeText(hash);
+            showToast('Hash copied to clipboard');
+        }
+
+        function resetAnalysis() {
+            document.getElementById('resultsSection').style.display = 'none';
+            document.querySelector('.upload-section').style.display = 'block';
+            fileInput.value = '';
+            currentImage = null;
+            imageFile = null;
+        }
+
+        function downloadReport() {
+            showToast('Report generation - Feature coming soon');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

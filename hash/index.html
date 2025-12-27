@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hash Generator | Punjab Investigation Tools</title>
+    <meta name="description" content="Generate SHA-256, SHA-512, SHA3-256, BLAKE2b, SHA-1, and MD5 hash values for electronic evidence under Bharatiya Sakshya Adhiniyam 2023 Section 63(4)(c)">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <!-- hash-wasm Library for high-performance hashing -->
+    <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4"></script>
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle" id="logoSubtitle">Hash Generator</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+                <div class="language-switcher">
+                    <i class="fas fa-globe"></i>
+                    <select id="siteLanguage" onchange="changeSiteLanguage()">
+                        <option value="en">English</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="pa">ਪੰਜਾਬੀ</option>
+                    </select>
+                </div>
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 id="heroTitle"><i class="fas fa-fingerprint"></i> Electronic Evidence Hash Generator</h1>
+                <p id="heroDesc">Generate cryptographic hash values for digital evidence authentication under Bharatiya Sakshya Adhiniyam 2023</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3 id="uploadTitle">Drop files here or click to upload</h3>
+                    <p id="uploadDesc">Support for all file types • Multiple files • No size limit</p>
+                    <button class="upload-btn" id="selectFilesBtn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select Files
+                    </button>
+                    <input type="file" id="fileInput" multiple hidden>
+                </div>
+
+                <!-- Progress -->
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-info">
+                        <span id="progressFile">Processing...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div class="results-title">
+                    <i class="fas fa-list-check"></i>
+                    <h2 id="processedFilesTitle">Processed Files</h2>
+                    <span class="file-count" id="fileCount">0</span>
+                </div>
+                <div class="results-actions">
+                    <button class="action-btn" onclick="copyAllHashes()" id="copyAllBtn">
+                        <i class="fas fa-copy"></i> Copy All
+                    </button>
+                    <button class="action-btn" onclick="exportCSV()" id="exportCsvBtn">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                    <button class="action-btn primary" onclick="openCertificateModal()" id="genCertBtn">
+                        <i class="fas fa-certificate"></i> Generate Certificate
+                    </button>
+                </div>
+            </div>
+            <div class="file-cards" id="fileCards"></div>
+        </section>
+
+        <!-- Info Section -->
+        <section class="info-section">
+            <h3 id="aboutHashTitle"><i class="fas fa-info-circle"></i> About Hash Algorithms</h3>
+            <div class="hash-info-grid">
+                <div class="hash-info-card">
+                    <div class="hash-info-icon md5">MD5</div>
+                    <div class="hash-info-content">
+                        <h4>MD5 (128-bit)</h4>
+                        <p id="md5Desc">Legacy algorithm, included for reference and backward compatibility. Not recommended for security purposes.</p>
+                    </div>
+                </div>
+                <div class="hash-info-card">
+                    <div class="hash-info-icon sha1">SHA-1</div>
+                    <div class="hash-info-content">
+                        <h4>SHA-1 (160-bit)</h4>
+                        <p id="sha1Desc">Deprecated but still referenced in older systems. Included for legacy support.</p>
+                    </div>
+                </div>
+                <div class="hash-info-card">
+                    <div class="hash-info-icon sha256">SHA-256</div>
+                    <div class="hash-info-content">
+                        <h4>SHA-256 (256-bit)</h4>
+                        <p id="sha256Desc">Recommended for electronic evidence. Part of SHA-2 family, widely used in forensics and legal contexts.</p>
+                    </div>
+                </div>
+                <div class="hash-info-card">
+                    <div class="hash-info-icon sha512">SHA-512</div>
+                    <div class="hash-info-content">
+                        <h4>SHA-512 (512-bit)</h4>
+                        <p id="sha512Desc">Highest security in SHA-2 family. Provides 512-bit output for maximum collision resistance.</p>
+                    </div>
+                </div>
+                <div class="hash-info-card">
+                    <div class="hash-info-icon sha3">SHA3-256</div>
+                    <div class="hash-info-content">
+                        <h4>SHA3-256 (256-bit)</h4>
+                        <p id="sha3Desc">Latest NIST standard. Uses Keccak algorithm, provides additional security assurance.</p>
+                    </div>
+                </div>
+                <div class="hash-info-card">
+                    <div class="hash-info-icon blake2b">BLAKE2b</div>
+                    <div class="hash-info-content">
+                        <h4>BLAKE2b-256 (256-bit)</h4>
+                        <p id="blake2bDesc">Modern, high-performance algorithm. Faster than SHA-256 while maintaining security.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <p id="footerDesc"><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No files are uploaded to any server.</p>
+            </div>
+            <div class="footer-links">
+                <a href="javascript:void(0)" onclick="showDisclaimer()" id="disclaimerLink"><i class="fas fa-exclamation-triangle"></i> Disclaimer</a>
+                <a href="javascript:void(0)" onclick="showAboutHash()" id="aboutHashLink"><i class="fas fa-hashtag"></i> About Hash</a>
+                <a href="javascript:void(0)" onclick="showAboutBSA()" id="aboutBsaLink"><i class="fas fa-gavel"></i> About BSA 2023</a>
+                <a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank" id="officialFormLink"><i class="fas fa-file-pdf"></i> Official BSA 63(4)(c)Form</a>
+            </div>
+            <div class="footer-copyright">
+                <p id="copyright">© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Certificate Modal -->
+    <div class="modal" id="certificateModal">
+        <div class="modal-content certificate-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-certificate"></i> Section 63(4)(c) Certificate</h2>
+                <div class="modal-header-actions">
+                    <div class="language-switcher modal-lang-switcher">
+                        <i class="fas fa-globe"></i>
+                        <select id="languageSelectTop" onchange="updateCertificateLanguageFromTop()">
+                            <option value="en">English</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="pa">ਪੰਜਾਬੀ</option>
+                        </select>
+                    </div>
+                    <button class="close-btn" onclick="closeCertificateModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body" id="certificateContent">
+                <!-- Certificate content will be generated here -->
+            </div>
+            <div class="modal-footer">
+                <div class="language-switcher">
+                    <label>Certificate Language:</label>
+                    <select id="languageSelect" onchange="updateCertificateLanguage()">
+                        <option value="en">English</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-btn" onclick="printCertificate()">
+                        <i class="fas fa-print"></i> Print Certificate
+                    </button>
+                    <button class="action-btn primary" onclick="downloadCertificateAsPDF()">
+                        <i class="fas fa-file-pdf"></i> Save as PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal" id="infoModal">
+        <div class="modal-content info-modal">
+            <div class="modal-header">
+                <h2 id="infoModalTitle"><i class="fas fa-info-circle"></i> Information</h2>
+                <button class="close-btn" onclick="closeInfoModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="infoModalContent">
+                <!-- Content will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="closeInfoModal()">
+                    <i class="fas fa-check"></i> Got it
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <!-- Application Scripts -->
+    <script src="../js/translations.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

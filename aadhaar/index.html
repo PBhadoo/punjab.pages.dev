@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhaar Validator | Punjab Investigation Tools</title>
+    <meta name="description" content="Validate Aadhaar number format and checksum integrity.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Aadhaar Validator</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-id-card"></i> Aadhaar Validator</h1>
+                <p>Validate Aadhaar number format and checksum using Verhoeff algorithm</p>
+            </div>
+        </section>
+
+        <section class="input-section">
+            <div class="input-container">
+                <label for="aadhaarInput">Enter Aadhaar Number</label>
+                <div class="input-wrapper">
+                    <input type="text" id="aadhaarInput" placeholder="XXXX XXXX XXXX" maxlength="14" autocomplete="off">
+                    <button class="verify-btn" onclick="validateAadhaar()">
+                        <i class="fas fa-check-circle"></i> Validate
+                    </button>
+                </div>
+                <p class="input-hint">Enter 12-digit Aadhaar number (spaces will be ignored)</p>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="result-card">
+                <div class="result-header">
+                    <div class="result-icon" id="resultIcon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <div class="result-title">
+                        <h3 id="resultTitle">Validation Result</h3>
+                        <p id="resultSubtitle">Aadhaar Number Check</p>
+                    </div>
+                </div>
+
+                <div class="aadhaar-display" id="aadhaarDisplay">
+                    <!-- Formatted Aadhaar will be shown here -->
+                </div>
+
+                <div class="result-details" id="resultDetails">
+                    <!-- Validation details will be populated here -->
+                </div>
+            </div>
+
+            <div class="info-box" id="validInfo" style="display: none;">
+                <h4><i class="fas fa-circle-check"></i> Checksum Valid</h4>
+                <p>The Aadhaar number passes the Verhoeff checksum algorithm. This means the number <strong>has a valid format</strong>, but does NOT guarantee that it is an actual issued Aadhaar number.</p>
+            </div>
+
+            <div class="warning-box" id="invalidInfo" style="display: none;">
+                <h4><i class="fas fa-circle-xmark"></i> Invalid Aadhaar</h4>
+                <p>This number fails the Verhoeff checksum validation. It is either incorrectly entered or a fabricated number.</p>
+            </div>
+
+            <div class="action-card">
+                <h4><i class="fas fa-external-link-alt"></i> Verify on Official UIDAI Portal</h4>
+                <p>To check if this Aadhaar number is actually issued and active, verify on the official UIDAI website:</p>
+                <a href="https://myaadhaar.uidai.gov.in/check-aadhaar-validity/en" target="_blank" class="verify-btn" style="display: inline-flex; margin-top: 15px; text-decoration: none;">
+                    <i class="fas fa-external-link-alt"></i> Check on myaadhaar.uidai.gov.in
+                </a>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="copyResult()">
+                    <i class="fas fa-copy"></i> Copy Result
+                </button>
+                <button class="action-btn" onclick="resetValidator()">
+                    <i class="fas fa-redo"></i> Check Another
+                </button>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About Aadhaar Validation</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-barcode"></i></div>
+                    <h4>Verhoeff Algorithm</h4>
+                    <p>Aadhaar uses the Verhoeff checksum algorithm which can detect all single-digit errors and all adjacent transposition errors.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-calculator"></i></div>
+                    <h4>Format Check</h4>
+                    <p>This tool validates the mathematical integrity of the 12-digit number, not whether it's actually issued by UIDAI.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-user-shield"></i></div>
+                    <h4>Privacy Protected</h4>
+                    <p>All validation happens locally in your browser. No Aadhaar numbers are transmitted or stored anywhere.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-landmark"></i> Legal Framework</h3>
+            <div class="info-card" style="max-width: 100%;">
+                <p style="line-height: 1.8;">
+                    <strong>Aadhaar (Targeted Delivery of Financial and Other Subsidies, Benefits and Services) Act, 2016</strong><br><br>
+                    Aadhaar is a 12-digit unique identification number issued by UIDAI to residents of India. Under Section 29 of the Aadhaar Act, 
+                    Aadhaar numbers should be used only for the purposes authorized under the Act. For investigation purposes, proper legal 
+                    authorization from competent authority is required to obtain Aadhaar-linked information from UIDAI.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No Aadhaar data is transmitted or stored.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <style>
+        .input-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .input-container label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 15px;
+        }
+        .input-wrapper input {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            letter-spacing: 3px;
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+        .input-hint {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        .aadhaar-display {
+            text-align: center;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        .aadhaar-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            letter-spacing: 5px;
+            margin-bottom: 15px;
+        }
+        .aadhaar-number .digit {
+            display: inline-block;
+            padding: 5px 8px;
+            margin: 0 2px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+        .aadhaar-number .space {
+            width: 20px;
+            display: inline-block;
+        }
+        .aadhaar-number .checksum {
+            background: rgba(59, 130, 246, 0.3);
+            border: 2px solid var(--accent-blue);
+        }
+        .action-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .action-card h4 {
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+        }
+        .action-card p {
+            color: var(--text-secondary);
+        }
+        @media (max-width: 600px) {
+            .input-wrapper {
+                flex-direction: column;
+            }
+            .aadhaar-number {
+                font-size: 1.5rem;
+                letter-spacing: 2px;
+            }
+        }
+    </style>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Verhoeff algorithm tables
+        const d = [
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+            [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+            [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+            [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+            [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+            [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+            [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+            [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+            [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+        ];
+
+        const p = [
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+            [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+            [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+            [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+            [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+            [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+            [7, 0, 4, 6, 9, 1, 3, 2, 5, 8]
+        ];
+
+        const inv = [0, 4, 3, 2, 1, 5, 6, 7, 8, 9];
+
+        let currentAadhaar = '';
+        let isValid = false;
+
+        // Format input as user types
+        document.getElementById('aadhaarInput').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 12) value = value.substring(0, 12);
+            
+            // Format with spaces
+            let formatted = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) formatted += ' ';
+                formatted += value[i];
+            }
+            e.target.value = formatted;
+        });
+
+        document.getElementById('aadhaarInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') validateAadhaar();
+        });
+
+        function verhoeffValidate(num) {
+            let c = 0;
+            const myArray = num.split('').reverse().map(Number);
+            for (let i = 0; i < myArray.length; i++) {
+                c = d[c][p[i % 8][myArray[i]]];
+            }
+            return c === 0;
+        }
+
+        function validateAadhaar() {
+            const input = document.getElementById('aadhaarInput').value;
+            currentAadhaar = input.replace(/\D/g, '');
+            
+            if (currentAadhaar.length !== 12) {
+                showToast('Please enter a valid 12-digit Aadhaar number');
+                return;
+            }
+
+            // Check for invalid starting digit (0 or 1)
+            if (currentAadhaar[0] === '0' || currentAadhaar[0] === '1') {
+                isValid = false;
+                displayResults(false, 'Aadhaar numbers cannot start with 0 or 1');
+                return;
+            }
+
+            // Validate using Verhoeff algorithm
+            isValid = verhoeffValidate(currentAadhaar);
+            displayResults(isValid);
+        }
+
+        function displayResults(valid, customError = null) {
+            document.getElementById('resultsSection').style.display = 'block';
+
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+
+            if (valid) {
+                resultIcon.className = 'result-icon valid';
+                resultIcon.innerHTML = '<i class="fas fa-circle-check"></i>';
+                resultTitle.textContent = 'Valid Format';
+                resultSubtitle.textContent = 'Checksum verification passed';
+                document.getElementById('validInfo').style.display = 'block';
+                document.getElementById('invalidInfo').style.display = 'none';
+            } else {
+                resultIcon.className = 'result-icon invalid';
+                resultIcon.innerHTML = '<i class="fas fa-circle-xmark"></i>';
+                resultTitle.textContent = 'Invalid Format';
+                resultSubtitle.textContent = customError || 'Checksum verification failed';
+                document.getElementById('validInfo').style.display = 'none';
+                document.getElementById('invalidInfo').style.display = 'block';
+            }
+
+            // Display formatted Aadhaar
+            let displayHtml = '<div class="aadhaar-number">';
+            for (let i = 0; i < currentAadhaar.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    displayHtml += '<span class="space"></span>';
+                }
+                const isChecksum = i === 11;
+                displayHtml += `<span class="digit ${isChecksum ? 'checksum' : ''}">${currentAadhaar[i]}</span>`;
+            }
+            displayHtml += '</div>';
+            displayHtml += '<p style="color: var(--text-secondary); font-size: 0.9rem;">Last digit (highlighted) is the checksum digit</p>';
+            document.getElementById('aadhaarDisplay').innerHTML = displayHtml;
+
+            // Display result details
+            document.getElementById('resultDetails').innerHTML = `
+                <div class="result-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Aadhaar Number</div>
+                        <div class="detail-value mono">${formatAadhaar(currentAadhaar)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Digit Count</div>
+                        <div class="detail-value">${currentAadhaar.length} digits</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Checksum Algorithm</div>
+                        <div class="detail-value">Verhoeff</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Checksum Valid</div>
+                        <div class="detail-value" style="color: ${valid ? 'var(--success-color)' : '#ef4444'}">
+                            ${valid ? 'Yes ✓' : 'No ✗'}
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">First Digit</div>
+                        <div class="detail-value">${currentAadhaar[0]} ${['0', '1'].includes(currentAadhaar[0]) ? '(Invalid - cannot be 0 or 1)' : '(Valid)'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Checksum Digit</div>
+                        <div class="detail-value">${currentAadhaar[11]}</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function formatAadhaar(num) {
+            return num.replace(/(.{4})/g, '$1 ').trim();
+        }
+
+        function copyResult() {
+            let text = `Aadhaar Validation Report\n`;
+            text += `=========================\n\n`;
+            text += `Aadhaar Number: ${formatAadhaar(currentAadhaar)}\n`;
+            text += `Format Valid: ${isValid ? 'Yes' : 'No'}\n`;
+            text += `Checksum Algorithm: Verhoeff\n\n`;
+            text += `Note: This only validates the mathematical format.\n`;
+            text += `To verify if this Aadhaar is actually issued, visit:\n`;
+            text += `https://myaadhaar.uidai.gov.in/check-aadhaar-validity/en\n\n`;
+            text += `Checked at: ${new Date().toLocaleString()}\n`;
+            text += `Generated by Punjab Investigation Tools`;
+            
+            navigator.clipboard.writeText(text);
+            showToast('Result copied to clipboard');
+        }
+
+        function resetValidator() {
+            currentAadhaar = '';
+            isValid = false;
+            document.getElementById('aadhaarInput').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('aadhaarInput').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Comparison | Punjab Investigation Tools</title>
+    <meta name="description" content="Compare two files to verify integrity and detect modifications.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+    <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">File Comparison</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-code-compare"></i> File Comparison Tool</h1>
+                <p>Compare two files to verify integrity - confirm if files with different names are identical</p>
+            </div>
+        </section>
+
+        <section class="compare-section">
+            <div class="compare-container">
+                <div class="file-drop-zone" id="dropZone1" onclick="document.getElementById('fileInput1').click()">
+                    <i class="fas fa-file"></i>
+                    <h4>File 1</h4>
+                    <p>Drop file here or click to select</p>
+                    <input type="file" id="fileInput1" hidden>
+                    <div class="file-info-preview" id="fileInfo1" style="display: none;"></div>
+                </div>
+
+                <div class="file-drop-zone" id="dropZone2" onclick="document.getElementById('fileInput2').click()">
+                    <i class="fas fa-file"></i>
+                    <h4>File 2</h4>
+                    <p>Drop file here or click to select</p>
+                    <input type="file" id="fileInput2" hidden>
+                    <div class="file-info-preview" id="fileInfo2" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="compare-actions" style="text-align: center; margin-top: 20px;">
+                <button class="verify-btn" onclick="compareFiles()" id="compareBtn" disabled>
+                    <i class="fas fa-code-compare"></i> Compare Files
+                </button>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="result-card">
+                <div class="result-header">
+                    <div class="result-icon" id="resultIcon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="result-title">
+                        <h3 id="resultTitle">Comparison Result</h3>
+                        <p id="resultSubtitle">Analysis complete</p>
+                    </div>
+                </div>
+
+                <div class="comparison-details" id="comparisonDetails">
+                    <!-- Comparison results will be populated here -->
+                </div>
+            </div>
+
+            <div class="hash-comparison" id="hashComparison" style="margin-top: 25px;">
+                <!-- Hash comparison table -->
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="copyResult()">
+                    <i class="fas fa-copy"></i> Copy Report
+                </button>
+                <button class="action-btn" onclick="resetComparison()">
+                    <i class="fas fa-redo"></i> Compare New Files
+                </button>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About File Comparison</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-fingerprint"></i></div>
+                    <h4>Hash-Based Comparison</h4>
+                    <p>Files are compared using cryptographic hash functions. If hashes match, the files are byte-for-byte identical regardless of filename.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-shield-check"></i></div>
+                    <h4>Evidence Integrity</h4>
+                    <p>Verify that copies of digital evidence match the original. Essential for maintaining chain of custody in legal proceedings.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-laptop"></i></div>
+                    <h4>Local Processing</h4>
+                    <p>All comparison is done locally in your browser. Files are never uploaded to any server, ensuring complete confidentiality.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No files are uploaded to any server.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        let file1 = null;
+        let file2 = null;
+        let file1Hashes = null;
+        let file2Hashes = null;
+
+        // Setup file inputs
+        ['1', '2'].forEach(num => {
+            const dropZone = document.getElementById(`dropZone${num}`);
+            const fileInput = document.getElementById(`fileInput${num}`);
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) {
+                    handleFile(num, e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(num, e.target.files[0]);
+                }
+            });
+        });
+
+        function handleFile(num, file) {
+            if (num === '1') {
+                file1 = file;
+            } else {
+                file2 = file;
+            }
+
+            const dropZone = document.getElementById(`dropZone${num}`);
+            const fileInfo = document.getElementById(`fileInfo${num}`);
+            
+            dropZone.classList.add('has-file');
+            dropZone.querySelector('i').className = 'fas fa-file-check';
+            dropZone.querySelector('h4').textContent = file.name;
+            dropZone.querySelector('p').textContent = formatFileSize(file.size);
+            
+            fileInfo.innerHTML = `
+                <p><strong>Name:</strong> ${file.name}</p>
+                <p><strong>Size:</strong> ${formatFileSize(file.size)}</p>
+                <p><strong>Type:</strong> ${file.type || 'Unknown'}</p>
+                <p><strong>Modified:</strong> ${new Date(file.lastModified).toLocaleString()}</p>
+            `;
+            fileInfo.style.display = 'block';
+
+            // Enable compare button if both files selected
+            document.getElementById('compareBtn').disabled = !(file1 && file2);
+        }
+
+        async function calculateHashes(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            const [md5, sha1, sha256, sha512] = await Promise.all([
+                hashwasm.md5(uint8Array),
+                hashwasm.sha1(uint8Array),
+                hashwasm.sha256(uint8Array),
+                hashwasm.sha512(uint8Array)
+            ]);
+
+            return { md5, sha1, sha256, sha512 };
+        }
+
+        async function compareFiles() {
+            if (!file1 || !file2) {
+                showToast('Please select both files');
+                return;
+            }
+
+            document.getElementById('compareBtn').disabled = true;
+            document.getElementById('compareBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Comparing...';
+
+            try {
+                [file1Hashes, file2Hashes] = await Promise.all([
+                    calculateHashes(file1),
+                    calculateHashes(file2)
+                ]);
+
+                displayResults();
+            } catch (error) {
+                showToast('Error comparing files: ' + error.message);
+            } finally {
+                document.getElementById('compareBtn').disabled = false;
+                document.getElementById('compareBtn').innerHTML = '<i class="fas fa-code-compare"></i> Compare Files';
+            }
+        }
+
+        function displayResults() {
+            document.getElementById('resultsSection').style.display = 'block';
+
+            const isIdentical = file1Hashes.sha256 === file2Hashes.sha256;
+            const sizeMatch = file1.size === file2.size;
+            const nameMatch = file1.name === file2.name;
+
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+
+            if (isIdentical) {
+                resultIcon.className = 'result-icon valid';
+                resultIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                resultTitle.textContent = 'Files are IDENTICAL';
+                resultSubtitle.textContent = 'Both files have matching hash values - they are byte-for-byte identical';
+            } else {
+                resultIcon.className = 'result-icon invalid';
+                resultIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                resultTitle.textContent = 'Files are DIFFERENT';
+                resultSubtitle.textContent = 'Hash values do not match - files have different content';
+            }
+
+            // Comparison details
+            document.getElementById('comparisonDetails').innerHTML = `
+                <div class="result-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Content Match</div>
+                        <div class="detail-value" style="color: ${isIdentical ? 'var(--success-color)' : '#ef4444'}">
+                            ${isIdentical ? '✓ Identical' : '✗ Different'}
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Size Match</div>
+                        <div class="detail-value" style="color: ${sizeMatch ? 'var(--success-color)' : '#ef4444'}">
+                            ${sizeMatch ? '✓ Same Size' : '✗ Different Sizes'}
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">File 1</div>
+                        <div class="detail-value">${file1.name} (${formatFileSize(file1.size)})</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">File 2</div>
+                        <div class="detail-value">${file2.name} (${formatFileSize(file2.size)})</div>
+                    </div>
+                </div>
+            `;
+
+            // Hash comparison table
+            document.getElementById('hashComparison').innerHTML = `
+                <div class="result-card">
+                    <h3 style="margin-bottom: 20px; color: var(--accent-secondary);"><i class="fas fa-fingerprint"></i> Hash Value Comparison</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>File 1</th>
+                                    <th>File 2</th>
+                                    <th>Match</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${['md5', 'sha1', 'sha256', 'sha512'].map(algo => {
+                                    const match = file1Hashes[algo] === file2Hashes[algo];
+                                    return `
+                                        <tr>
+                                            <td><strong>${algo.toUpperCase()}</strong></td>
+                                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; word-break: break-all;">${file1Hashes[algo]}</td>
+                                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; word-break: break-all;">${file2Hashes[algo]}</td>
+                                            <td style="color: ${match ? 'var(--success-color)' : '#ef4444'}">
+                                                ${match ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyResult() {
+            const isIdentical = file1Hashes.sha256 === file2Hashes.sha256;
+            
+            let text = `File Comparison Report\n`;
+            text += `======================\n\n`;
+            text += `Result: ${isIdentical ? 'FILES ARE IDENTICAL' : 'FILES ARE DIFFERENT'}\n\n`;
+            text += `File 1: ${file1.name}\n`;
+            text += `Size: ${formatFileSize(file1.size)}\n`;
+            text += `SHA-256: ${file1Hashes.sha256}\n\n`;
+            text += `File 2: ${file2.name}\n`;
+            text += `Size: ${formatFileSize(file2.size)}\n`;
+            text += `SHA-256: ${file2Hashes.sha256}\n\n`;
+            text += `Comparison Timestamp: ${new Date().toLocaleString()}\n`;
+            text += `\nGenerated by Punjab Investigation Tools`;
+            
+            navigator.clipboard.writeText(text);
+            showToast('Report copied to clipboard');
+        }
+
+        function resetComparison() {
+            file1 = null;
+            file2 = null;
+            file1Hashes = null;
+            file2Hashes = null;
+            
+            ['1', '2'].forEach(num => {
+                const dropZone = document.getElementById(`dropZone${num}`);
+                const fileInfo = document.getElementById(`fileInfo${num}`);
+                const fileInput = document.getElementById(`fileInput${num}`);
+                
+                dropZone.classList.remove('has-file');
+                dropZone.querySelector('i').className = 'fas fa-file';
+                dropZone.querySelector('h4').textContent = `File ${num}`;
+                dropZone.querySelector('p').textContent = 'Drop file here or click to select';
+                fileInfo.style.display = 'none';
+                fileInput.value = '';
+            });
+            
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('compareBtn').disabled = true;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

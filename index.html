@@ -3,26 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Punjab Hashing Tool | Electronic Evidence Hash Calculator</title>
-    <meta name="description" content="Generate SHA-256, SHA-512, SHA3-256, BLAKE2b, SHA-1, and MD5 hash values for electronic evidence under Bharatiya Sakshya Adhiniyam 2023 Section 63(4)(c)">
+    <title>Punjab Investigation Tools | Digital Forensics & Evidence Verification</title>
+    <meta name="description" content="Professional digital investigation tools for Punjab Police. Hash generation, evidence verification, and forensic analysis under Bharatiya Sakshya Adhiniyam 2023.">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Application CSS -->
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="css/styles.css">
-    
-    <!-- hash-wasm Library for high-performance hashing -->
-    <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4"></script>
-    
-    <!-- PDF Generation Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="css/homepage.css">
 </head>
 <body>
     <!-- Header -->
@@ -33,227 +27,307 @@
                     <i class="fas fa-shield-halved"></i>
                 </div>
                 <div class="logo-text">
-                    <span class="logo-title">Punjab Hashing Tool</span>
-                    <span class="logo-subtitle" id="logoSubtitle">Section 63(4)(c) Evidence Tool</span>
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Digital Forensics Platform</span>
                 </div>
             </a>
             <div class="header-actions">
-                <div class="language-switcher">
-                    <i class="fas fa-globe"></i>
-                    <select id="siteLanguage" onchange="changeSiteLanguage()">
-                        <option value="en">English</option>
-                        <option value="hi">हिन्दी</option>
-                        <option value="pa">ਪੰਜਾਬੀ</option>
-                    </select>
-                </div>
                 <div class="status-badge">
                     <span class="status-dot"></span>
-                    <span id="statusText">Ready</span>
+                    <span>Online</span>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main>
         <!-- Hero Section -->
-        <section class="hero-section">
-            <div class="hero-content">
-                <h1 id="heroTitle"><i class="fas fa-fingerprint"></i> Electronic Evidence Hash Generator</h1>
-                <p id="heroDesc">Generate cryptographic hash values for digital evidence authentication under Bharatiya Sakshya Adhiniyam 2023</p>
+        <section class="homepage-hero">
+            <div class="hero-badge">
+                <i class="fas fa-gavel"></i>
+                BSA 2023 Compliant
             </div>
-        </section>
-
-        <!-- Upload Section -->
-        <section class="upload-section">
-            <div class="upload-container">
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">
-                        <i class="fas fa-cloud-arrow-up"></i>
-                    </div>
-                    <h3 id="uploadTitle">Drop files here or click to upload</h3>
-                    <p id="uploadDesc">Support for all file types • Multiple files • No size limit</p>
-                    <button class="upload-btn" id="selectFilesBtn" onclick="document.getElementById('fileInput').click()">
-                        <i class="fas fa-folder-open"></i> Select Files
-                    </button>
-                    <input type="file" id="fileInput" multiple hidden>
+            <h1>
+                <span class="gradient-text">Punjab Investigation</span><br>
+                <span class="highlight">Tools</span>
+            </h1>
+            <p class="hero-description">
+                Professional-grade digital forensics tools for law enforcement. 
+                Secure, client-side processing for evidence verification under 
+                Bharatiya Sakshya Adhiniyam, 2023.
+            </p>
+            
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Client-Side Processing</span>
                 </div>
-
-                <!-- Progress -->
-                <div class="progress-container" id="progressContainer">
-                    <div class="progress-info">
-                        <span id="progressFile">Processing...</span>
-                        <span id="progressPercent">0%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
+                <div class="stat-item">
+                    <span class="stat-number">11+</span>
+                    <span class="stat-label">Investigation Tools</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">3</span>
+                    <span class="stat-label">Languages Supported</span>
                 </div>
             </div>
         </section>
 
-        <!-- Results Section -->
-        <section class="results-section" id="resultsSection">
-            <div class="results-header">
-                <div class="results-title">
-                    <i class="fas fa-list-check"></i>
-                    <h2 id="processedFilesTitle">Processed Files</h2>
-                    <span class="file-count" id="fileCount">0</span>
-                </div>
-                <div class="results-actions">
-                    <button class="action-btn" onclick="copyAllHashes()" id="copyAllBtn">
-                        <i class="fas fa-copy"></i> Copy All
-                    </button>
-                    <button class="action-btn" onclick="exportCSV()" id="exportCsvBtn">
-                        <i class="fas fa-file-csv"></i> Export CSV
-                    </button>
-                    <button class="action-btn primary" onclick="openCertificateModal()" id="genCertBtn">
-                        <i class="fas fa-certificate"></i> Generate Certificate
-                    </button>
+        <!-- Tools Section -->
+        <section class="tools-section">
+            <div class="section-header">
+                <h2><i class="fas fa-toolbox"></i> Investigation Tools</h2>
+                <p>Select a tool to get started with your digital evidence analysis</p>
+            </div>
+
+            <div class="tools-grid">
+                <!-- Hash Generator - Available -->
+                <a href="hash/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon hash">
+                        <i class="fas fa-fingerprint"></i>
+                    </div>
+                    <h3>Hash Generator</h3>
+                    <p>Generate cryptographic hash values (MD5, SHA-1, SHA-256, SHA-512, SHA3, BLAKE2b) for electronic evidence with BSA 2023 Section 63(4)(c) certificate generation.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">SHA-256</span>
+                        <span class="feature-tag">SHA-512</span>
+                        <span class="feature-tag">PDF Certificate</span>
+                    </div>
+                </a>
+
+                <!-- Image Forensics - Available -->
+                <a href="image-forensics/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon forensic">
+                        <i class="fas fa-magnifying-glass-chart"></i>
+                    </div>
+                    <h3>Image Forensics</h3>
+                    <p>Analyze images for manipulation detection, error level analysis (ELA), metadata extraction, and forensic markers to verify authenticity.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">ELA Analysis</span>
+                        <span class="feature-tag">EXIF Data</span>
+                        <span class="feature-tag">Manipulation Detection</span>
+                    </div>
+                </a>
+
+                <!-- IMEI Verifier - Available -->
+                <a href="imei/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon imei">
+                        <i class="fas fa-mobile-screen"></i>
+                    </div>
+                    <h3>IMEI Verifier</h3>
+                    <p>Verify IMEI integrity using Luhn algorithm, identify device manufacturer, model information, and check device validity.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Luhn Check</span>
+                        <span class="feature-tag">TAC Lookup</span>
+                        <span class="feature-tag">Manufacturer ID</span>
+                    </div>
+                </a>
+
+                <!-- MAC Address Lookup - Available -->
+                <a href="mac/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon mac">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3>MAC Address Lookup</h3>
+                    <p>Identify device manufacturer from MAC address, verify format validity, and learn about MAC address rotation on mobile devices.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">OUI Lookup</span>
+                        <span class="feature-tag">Vendor ID</span>
+                        <span class="feature-tag">Format Check</span>
+                    </div>
+                </a>
+
+                <!-- Phone Number Check - Available -->
+                <a href="phone/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon phone">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <h3>Phone Number Lookup</h3>
+                    <p>Identify country, region, and possible telecom operator from phone numbers. Includes information about number portability.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Country Code</span>
+                        <span class="feature-tag">Operator ID</span>
+                        <span class="feature-tag">Portability Info</span>
+                    </div>
+                </a>
+
+                <!-- File Comparison - Available -->
+                <a href="compare/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon compare">
+                        <i class="fas fa-code-compare"></i>
+                    </div>
+                    <h3>File Comparison</h3>
+                    <p>Compare two files byte-by-byte to verify integrity, detect modifications, and confirm if files with different names are identical.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Byte Compare</span>
+                        <span class="feature-tag">Hash Match</span>
+                        <span class="feature-tag">Integrity Check</span>
+                    </div>
+                </a>
+
+                <!-- Fingerprint Matcher - Available -->
+                <a href="fingerprint/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon fingerprint">
+                        <i class="fas fa-hand-dots"></i>
+                    </div>
+                    <h3>Fingerprint Matcher</h3>
+                    <p>Compare two fingerprint images and calculate similarity percentage using advanced pattern matching algorithms.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Pattern Match</span>
+                        <span class="feature-tag">Similarity %</span>
+                        <span class="feature-tag">Minutiae Analysis</span>
+                    </div>
+                </a>
+
+                <!-- Document Metadata - Available -->
+                <a href="metadata/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon metadata">
+                        <i class="fas fa-file-lines"></i>
+                    </div>
+                    <h3>Document Metadata</h3>
+                    <p>Extract creation date, modification date, author, last accessed time and hidden metadata from documents and files.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Creation Date</span>
+                        <span class="feature-tag">Modified Date</span>
+                        <span class="feature-tag">Author Info</span>
+                    </div>
+                </a>
+
+                <!-- CDR Analysis - Available -->
+                <a href="cdr/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon cdr">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>CDR Analysis</h3>
+                    <p>Analyze Call Data Records - visualize call patterns, frequent contacts, duration analysis, and generate investigation reports.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Call Patterns</span>
+                        <span class="feature-tag">Timeline View</span>
+                        <span class="feature-tag">Contact Analysis</span>
+                    </div>
+                </a>
+
+                <!-- IPDR Analysis - Available -->
+                <a href="ipdr/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon ipdr">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h3>IPDR Analysis</h3>
+                    <p>Analyze IP Data Records - track data sessions, bandwidth usage, connection patterns, and IP address activities.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">IP Tracking</span>
+                        <span class="feature-tag">Session Analysis</span>
+                        <span class="feature-tag">Usage Patterns</span>
+                    </div>
+                </a>
+
+                <!-- Aadhaar Validator - Available -->
+                <a href="aadhaar/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon aadhaar">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <h3>Aadhaar Validator</h3>
+                    <p>Validate Aadhaar number integrity using Verhoeff algorithm checksum verification with link to official UIDAI portal.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Verhoeff Check</span>
+                        <span class="feature-tag">Format Validation</span>
+                        <span class="feature-tag">UIDAI Link</span>
+                    </div>
+                </a>
+
+                <!-- More Coming Soon -->
+                <div class="tool-card coming-soon">
+                    <span class="tool-badge coming-soon">Coming Soon</span>
+                    <div class="tool-icon more">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <h3>More Tools</h3>
+                    <p>Additional investigation and forensic tools are being developed. Stay tuned for updates and new features.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">In Development</span>
+                        <span class="feature-tag">Suggestions Welcome</span>
+                    </div>
                 </div>
             </div>
-            <div class="file-cards" id="fileCards"></div>
         </section>
 
-        <!-- Info Section -->
-        <section class="info-section">
-            <h3 id="aboutHashTitle"><i class="fas fa-info-circle"></i> About Hash Algorithms</h3>
-            <div class="hash-info-grid">
-                <div class="hash-info-card">
-                    <div class="hash-info-icon md5">MD5</div>
-                    <div class="hash-info-content">
-                        <h4>MD5 (128-bit)</h4>
-                        <p id="md5Desc">Legacy algorithm, included for reference and backward compatibility. Not recommended for security purposes.</p>
-                    </div>
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <h3><i class="fas fa-rocket"></i> Start Analyzing Evidence</h3>
+            <p>Begin with our Hash Generator - the most essential tool for digital evidence verification under BSA 2023.</p>
+            <a href="hash/" class="cta-btn">
+                <i class="fas fa-fingerprint"></i>
+                Open Hash Generator
+            </a>
+        </section>
+
+        <!-- Legal Framework Section -->
+        <section class="legal-section">
+            <div class="section-header">
+                <h2><i class="fas fa-scale-balanced"></i> Legal Framework</h2>
+                <p>Built in compliance with Indian digital evidence laws</p>
+            </div>
+
+            <div class="legal-cards">
+                <div class="legal-card">
+                    <h4><i class="fas fa-gavel"></i> BSA 2023 - Section 63</h4>
+                    <p>Bharatiya Sakshya Adhiniyam, 2023 provides the framework for admissibility of electronic records as evidence. Section 63(4)(c) requires proper certification of digital evidence.</p>
                 </div>
-                <div class="hash-info-card">
-                    <div class="hash-info-icon sha1">SHA-1</div>
-                    <div class="hash-info-content">
-                        <h4>SHA-1 (160-bit)</h4>
-                        <p id="sha1Desc">Deprecated but still referenced in older systems. Included for legacy support.</p>
-                    </div>
+                <div class="legal-card">
+                    <h4><i class="fas fa-certificate"></i> Certificate Generation</h4>
+                    <p>Our tools generate Part A and Part B certificates as required under Section 63(4) for proper documentation of electronic evidence authenticity.</p>
                 </div>
-                <div class="hash-info-card">
-                    <div class="hash-info-icon sha256">SHA-256</div>
-                    <div class="hash-info-content">
-                        <h4>SHA-256 (256-bit)</h4>
-                        <p id="sha256Desc">Recommended for electronic evidence. Part of SHA-2 family, widely used in forensics and legal contexts.</p>
-                    </div>
-                </div>
-                <div class="hash-info-card">
-                    <div class="hash-info-icon sha512">SHA-512</div>
-                    <div class="hash-info-content">
-                        <h4>SHA-512 (512-bit)</h4>
-                        <p id="sha512Desc">Highest security in SHA-2 family. Provides 512-bit output for maximum collision resistance.</p>
-                    </div>
-                </div>
-                <div class="hash-info-card">
-                    <div class="hash-info-icon sha3">SHA3-256</div>
-                    <div class="hash-info-content">
-                        <h4>SHA3-256 (256-bit)</h4>
-                        <p id="sha3Desc">Latest NIST standard. Uses Keccak algorithm, provides additional security assurance.</p>
-                    </div>
-                </div>
-                <div class="hash-info-card">
-                    <div class="hash-info-icon blake2b">BLAKE2b</div>
-                    <div class="hash-info-content">
-                        <h4>BLAKE2b-256 (256-bit)</h4>
-                        <p id="blake2bDesc">Modern, high-performance algorithm. Faster than SHA-256 while maintaining security.</p>
-                    </div>
+                <div class="legal-card">
+                    <h4><i class="fas fa-user-shield"></i> Privacy First</h4>
+                    <p>All processing happens locally in your browser. No files are ever uploaded to any server, ensuring complete confidentiality of sensitive evidence.</p>
                 </div>
             </div>
         </section>
     </main>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-info">
-                <p id="footerDesc"><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No files are uploaded to any server.</p>
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
             </div>
-            <div class="footer-links">
-                <a href="javascript:void(0)" onclick="showDisclaimer()" id="disclaimerLink"><i class="fas fa-exclamation-triangle"></i> Disclaimer</a>
-                <a href="javascript:void(0)" onclick="showAboutHash()" id="aboutHashLink"><i class="fas fa-hashtag"></i> About Hash</a>
-                <a href="javascript:void(0)" onclick="showAboutBSA()" id="aboutBsaLink"><i class="fas fa-gavel"></i> About BSA 2023</a>
-                <a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank" id="officialFormLink"><i class="fas fa-file-pdf"></i> Official BSA 63(4)(c)Form</a>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/19673" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                </ul>
             </div>
-            <div class="footer-copyright">
-                <p id="copyright">© 2024-<span id="currentYear"></span> Punjab Hashing Tool. Open source tool for electronic evidence authentication.</p>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="disclaimer.html">Disclaimer</a></li>
+                    <li><a href="privacy.html">Privacy Policy</a></li>
+                    <li><a href="terms.html">Terms of Use</a></li>
+                </ul>
             </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
         </div>
     </footer>
 
-    <!-- Certificate Modal -->
-    <div class="modal" id="certificateModal">
-        <div class="modal-content certificate-modal">
-            <div class="modal-header">
-                <h2><i class="fas fa-certificate"></i> Section 63(4)(c) Certificate</h2>
-                <div class="modal-header-actions">
-                    <div class="language-switcher modal-lang-switcher">
-                        <i class="fas fa-globe"></i>
-                        <select id="languageSelectTop" onchange="updateCertificateLanguageFromTop()">
-                            <option value="en">English</option>
-                            <option value="hi">हिन्दी</option>
-                            <option value="pa">ਪੰਜਾਬੀ</option>
-                        </select>
-                    </div>
-                    <button class="close-btn" onclick="closeCertificateModal()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="modal-body" id="certificateContent">
-                <!-- Certificate content will be generated here -->
-            </div>
-            <div class="modal-footer">
-                <div class="language-switcher">
-                    <label>Certificate Language:</label>
-                    <select id="languageSelect" onchange="updateCertificateLanguage()">
-                        <option value="en">English</option>
-                        <option value="hi">हिन्दी (Hindi)</option>
-                        <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button class="action-btn" onclick="printCertificate()">
-                        <i class="fas fa-print"></i> Print Certificate
-                    </button>
-                    <button class="action-btn primary" onclick="downloadCertificateAsPDF()">
-                        <i class="fas fa-file-pdf"></i> Save as PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Info Modal -->
-    <div class="modal" id="infoModal">
-        <div class="modal-content info-modal">
-            <div class="modal-header">
-                <h2 id="infoModalTitle"><i class="fas fa-info-circle"></i> Information</h2>
-                <button class="close-btn" onclick="closeInfoModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="infoModalContent">
-                <!-- Content will be inserted here -->
-            </div>
-            <div class="modal-footer">
-                <button class="action-btn primary" onclick="closeInfoModal()">
-                    <i class="fas fa-check"></i> Got it
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div class="toast" id="toast">
-        <i class="fas fa-check-circle"></i>
-        <span id="toastMessage">Action completed</span>
-    </div>
-
-    <!-- Application Scripts -->
-    <script src="js/translations.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        // Set current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
