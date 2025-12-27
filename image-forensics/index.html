@@ -15,11 +15,224 @@
     
     <!-- EXIF.js for metadata extraction -->
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    
+    <style>
+        .channel-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .channel-item {
+            text-align: center;
+        }
+        .channel-item h4 {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .channel-item canvas {
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #000;
+        }
+        .analysis-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 768px) {
+            .channel-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .ghost-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .ghost-item {
+            text-align: center;
+        }
+        .ghost-item h4 {
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .ghost-item canvas {
+            width: 100%;
+            max-height: 180px;
+            object-fit: contain;
+            border-radius: 6px;
+            background: #000;
+        }
+        @media (max-width: 900px) {
+            .ghost-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .bitplane-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .bitplane-item {
+            text-align: center;
+        }
+        .bitplane-item h4 {
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .bitplane-item canvas {
+            width: 100%;
+            max-height: 150px;
+            object-fit: contain;
+            border-radius: 6px;
+            background: #000;
+        }
+        @media (max-width: 900px) {
+            .bitplane-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 15, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loading-overlay.hidden {
+            display: none;
+        }
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        .loading-progress {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .progress-bar {
+            width: 300px;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .manipulation-score {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .manipulation-score h2 {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        .score-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .score-circle::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            padding: 6px;
+            background: conic-gradient(var(--score-color, #00d4ff) calc(var(--score) * 3.6deg), #333 0);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        .score-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--score-color, #00d4ff);
+        }
+        .score-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .score-verdict {
+            flex: 1;
+            min-width: 250px;
+            text-align: left;
+        }
+        .verdict-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .verdict-desc {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .score-low { --score-color: #00ff88; }
+        .score-medium { --score-color: #ffaa00; }
+        .score-high { --score-color: #ff4444; }
+    </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Analyzing Image...</div>
+        <div class="loading-progress" id="loadingProgress">Initializing...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
     <header class="header">
         <div class="header-container">
-            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+            <a href="javascript:location.reload()" class="logo" style="text-decoration: none; color: inherit;">
                 <div class="logo-icon">
                     <i class="fas fa-shield-halved"></i>
                 </div>
@@ -65,6 +278,21 @@
         </section>
 
         <section class="results-section" id="resultsSection" style="display: none;">
+            <!-- Manipulation Probability Score -->
+            <div class="manipulation-score" id="manipulationScore">
+                <h2><i class="fas fa-chart-pie"></i> Manipulation Probability Analysis</h2>
+                <div class="score-display">
+                    <div class="score-circle" id="scoreCircle" style="--score: 0">
+                        <span class="score-value" id="scoreValue">0%</span>
+                        <span class="score-label">Probability</span>
+                    </div>
+                    <div class="score-verdict">
+                        <div class="verdict-text" id="verdictText">Analyzing...</div>
+                        <div class="verdict-desc" id="verdictDesc">Processing image data to determine manipulation likelihood.</div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="analysis-container">
                 <!-- Original Image -->
                 <div class="analysis-card">
@@ -89,6 +317,242 @@
                         <input type="range" id="elaQuality" min="50" max="99" value="95" onchange="updateELA()">
                         <label>Enhancement: <span id="enhanceValue">15</span>x</label>
                         <input type="range" id="elaEnhance" min="5" max="50" value="15" onchange="updateELA()">
+                    </div>
+                </div>
+
+                <!-- Color Channel Separation -->
+                <div class="analysis-card full-width">
+                    <h3><i class="fas fa-palette"></i> Color Channel Separation</h3>
+                    <p class="analysis-desc">View individual RGB channels to detect inconsistencies in spliced or edited regions.</p>
+                    <div class="channel-grid">
+                        <div class="channel-item">
+                            <h4 style="color: #ff6b6b;">Red Channel</h4>
+                            <canvas id="redChannel"></canvas>
+                        </div>
+                        <div class="channel-item">
+                            <h4 style="color: #51cf66;">Green Channel</h4>
+                            <canvas id="greenChannel"></canvas>
+                        </div>
+                        <div class="channel-item">
+                            <h4 style="color: #339af0;">Blue Channel</h4>
+                            <canvas id="blueChannel"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edge Detection -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-border-all"></i> Edge Detection (Sobel)</h3>
+                    <p class="analysis-desc">Highlights edges to reveal unnatural boundaries from splicing or cloning.</p>
+                    <div class="image-display">
+                        <canvas id="edgeCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Histogram Analysis -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-chart-bar"></i> Histogram Analysis</h3>
+                    <p class="analysis-desc">Gaps or spikes in histogram may indicate manipulation or level adjustments.</p>
+                    <div class="image-display">
+                        <canvas id="histogramCanvas" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Luminance Gradient -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-sun"></i> Luminance Gradient Map</h3>
+                    <p class="analysis-desc">Visualizes light direction. Inconsistent gradients may indicate compositing.</p>
+                    <div class="image-display">
+                        <canvas id="luminanceCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Noise Analysis -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-wave-square"></i> Noise Analysis</h3>
+                    <p class="analysis-desc">Extracts sensor noise pattern. Different noise levels indicate different sources or editing.</p>
+                    <div class="image-display">
+                        <canvas id="noiseCanvas"></canvas>
+                    </div>
+                    <div class="ela-controls">
+                        <label>Noise Amplification: <span id="noiseAmpValue">10</span>x</label>
+                        <input type="range" id="noiseAmp" min="5" max="30" value="10" onchange="updateNoise()">
+                    </div>
+                </div>
+
+                <!-- JPEG Ghost Detection -->
+                <div class="analysis-card full-width">
+                    <h3><i class="fas fa-ghost"></i> JPEG Ghost Detection</h3>
+                    <p class="analysis-desc">Detects regions saved at different JPEG quality levels - indicates double compression or editing.</p>
+                    <div class="ghost-grid">
+                        <div class="ghost-item">
+                            <h4>Q: 60%</h4>
+                            <canvas id="ghostCanvas60"></canvas>
+                        </div>
+                        <div class="ghost-item">
+                            <h4>Q: 70%</h4>
+                            <canvas id="ghostCanvas70"></canvas>
+                        </div>
+                        <div class="ghost-item">
+                            <h4>Q: 80%</h4>
+                            <canvas id="ghostCanvas80"></canvas>
+                        </div>
+                        <div class="ghost-item">
+                            <h4>Q: 90%</h4>
+                            <canvas id="ghostCanvas90"></canvas>
+                        </div>
+                    </div>
+                    <p class="analysis-desc" style="margin-top: 10px;"><i class="fas fa-info-circle"></i> Darker regions at a specific quality suggest that area was originally saved at that quality level.</p>
+                </div>
+
+                <!-- Bit Plane Analysis -->
+                <div class="analysis-card full-width">
+                    <h3><i class="fas fa-layer-group"></i> Bit Plane Extraction</h3>
+                    <p class="analysis-desc">View individual bit planes (LSB to MSB). LSB manipulation may indicate steganography.</p>
+                    <div class="bitplane-grid">
+                        <div class="bitplane-item"><h4>Bit 0 (LSB)</h4><canvas id="bitplane0"></canvas></div>
+                        <div class="bitplane-item"><h4>Bit 1</h4><canvas id="bitplane1"></canvas></div>
+                        <div class="bitplane-item"><h4>Bit 2</h4><canvas id="bitplane2"></canvas></div>
+                        <div class="bitplane-item"><h4>Bit 3</h4><canvas id="bitplane3"></canvas></div>
+                        <div class="bitplane-item"><h4>Bit 4</h4><canvas id="bitplane4"></canvas></div>
+                        <div class="bitplane-item"><h4>Bit 5</h4><canvas id="bitplane5"></canvas></div>
+                        <div class="bitplane-item"><h4>Bit 6</h4><canvas id="bitplane6"></canvas></div>
+                        <div class="bitplane-item"><h4>Bit 7 (MSB)</h4><canvas id="bitplane7"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Min/Max RGB -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-arrows-up-down"></i> Min/Max RGB</h3>
+                    <p class="analysis-desc">Highlights extreme color values. Clipping or unnatural extremes may indicate editing.</p>
+                    <div class="image-display">
+                        <canvas id="minmaxCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Block Artifact Grid -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-grid"></i> JPEG Block Grid</h3>
+                    <p class="analysis-desc">Overlays 8x8 JPEG block boundaries. Misaligned blocks indicate splicing.</p>
+                    <div class="image-display">
+                        <canvas id="blockGridCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Saturation Map -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-palette"></i> Saturation Map</h3>
+                    <p class="analysis-desc">Highlights color saturation levels. Edited areas often show abnormal saturation.</p>
+                    <div class="image-display">
+                        <canvas id="saturationCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Local Contrast Map -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-adjust"></i> Local Contrast Map</h3>
+                    <p class="analysis-desc">Shows local contrast variation. Edited regions may have different contrast patterns.</p>
+                    <div class="image-display">
+                        <canvas id="contrastCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Inverted/Negative View -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-image"></i> Inverted (Negative)</h3>
+                    <p class="analysis-desc">Inverted colors reveal hidden details and manipulation artifacts.</p>
+                    <div class="image-display">
+                        <canvas id="invertedCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Principal Component Analysis -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-layer-group"></i> PCA Projection</h3>
+                    <p class="analysis-desc">Principal component projection reveals underlying image structure patterns.</p>
+                    <div class="image-display">
+                        <canvas id="pcaCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Grayscale Conversion -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-circle-half-stroke"></i> Grayscale View</h3>
+                    <p class="analysis-desc">Luminance-weighted grayscale reveals tonal inconsistencies in edited areas.</p>
+                    <div class="image-display">
+                        <canvas id="grayscaleCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Sharpen Filter -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-bolt"></i> Sharpened View</h3>
+                    <p class="analysis-desc">Sharpening enhances edges and reveals subtle manipulation boundaries.</p>
+                    <div class="image-display">
+                        <canvas id="sharpenCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Emboss Filter -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-stamp"></i> Emboss Effect</h3>
+                    <p class="analysis-desc">Embossing highlights surface texture and reveals clone stamp artifacts.</p>
+                    <div class="image-display">
+                        <canvas id="embossCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Laplacian Edge -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-border-all"></i> Laplacian Edges</h3>
+                    <p class="analysis-desc">Second derivative edge detection shows fine edge details and noise patterns.</p>
+                    <div class="image-display">
+                        <canvas id="laplacianCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Threshold Binary -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-circle-half-stroke"></i> Threshold Binary</h3>
+                    <p class="analysis-desc">Binary threshold at midpoint reveals hidden patterns and luminance variations.</p>
+                    <div class="image-display">
+                        <canvas id="thresholdCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Posterize -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-paint-brush"></i> Posterized (4 Levels)</h3>
+                    <p class="analysis-desc">Reduced color levels expose banding artifacts from editing.</p>
+                    <div class="image-display">
+                        <canvas id="posterizeCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Solarize -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-sun"></i> Solarize Effect</h3>
+                    <p class="analysis-desc">Partial inversion at threshold reveals tonality manipulation.</p>
+                    <div class="image-display">
+                        <canvas id="solarizeCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Standard Deviation Map -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-chart-area"></i> Std Deviation Map</h3>
+                    <p class="analysis-desc">Local variance detection highlights areas with unusual texture uniformity.</p>
+                    <div class="image-display">
+                        <canvas id="stddevCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gamma Correction -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-sliders-h"></i> High Gamma (3.0)</h3>
+                    <p class="analysis-desc">Extreme gamma reveals details in dark regions and shadow manipulation.</p>
+                    <div class="image-display">
+                        <canvas id="gammaCanvas"></canvas>
                     </div>
                 </div>
 
@@ -212,26 +676,967 @@
         }
 
         function analyzeImage() {
+            // Show loading overlay
+            const overlay = document.getElementById('loadingOverlay');
+            const progressText = document.getElementById('loadingProgress');
+            const progressFill = document.getElementById('progressFill');
+            overlay.classList.remove('hidden');
+            
+            // List of analysis tasks
+            const tasks = [
+                { name: 'Error Level Analysis', fn: performELA },
+                { name: 'Extracting Metadata', fn: extractMetadata },
+                { name: 'Calculating Hashes', fn: calculateHashes },
+                { name: 'Forensic Notes', fn: generateForensicNotes },
+                { name: 'Channel Separation', fn: performChannelSeparation },
+                { name: 'Edge Detection', fn: performEdgeDetection },
+                { name: 'Histogram Analysis', fn: performHistogramAnalysis },
+                { name: 'Luminance Gradient', fn: performLuminanceGradient },
+                { name: 'Noise Analysis', fn: performNoiseAnalysis },
+                { name: 'JPEG Ghost Detection', fn: performJPEGGhost },
+                { name: 'Bit Plane Extraction', fn: performBitPlaneExtraction },
+                { name: 'Min/Max RGB', fn: performMinMaxRGB },
+                { name: 'Block Grid', fn: performBlockGrid },
+                { name: 'Saturation Map', fn: performSaturationMap },
+                { name: 'Contrast Map', fn: performContrastMap },
+                { name: 'Inverted View', fn: performInvertedView },
+                { name: 'PCA Projection', fn: performPCAProjection },
+                { name: 'Grayscale', fn: performGrayscale },
+                { name: 'Sharpen', fn: performSharpen },
+                { name: 'Emboss', fn: performEmboss },
+                { name: 'Laplacian', fn: performLaplacian },
+                { name: 'Threshold', fn: performThreshold },
+                { name: 'Posterize', fn: performPosterize },
+                { name: 'Solarize', fn: performSolarize },
+                { name: 'Std Deviation Map', fn: performStdDevMap },
+                { name: 'Gamma Correction', fn: performGammaCorrection }
+            ];
+            
+            // Display original first
             document.getElementById('resultsSection').style.display = 'block';
             document.querySelector('.upload-section').style.display = 'none';
-
-            // Display original
+            
             const originalImg = document.getElementById('originalImage');
             originalImg.src = currentImage.src;
-
-            // Image info
+            
             document.getElementById('imageInfo').innerHTML = `
                 <p><strong>Filename:</strong> ${imageFile.name}</p>
                 <p><strong>Dimensions:</strong> ${currentImage.width} × ${currentImage.height} pixels</p>
                 <p><strong>File Size:</strong> ${formatFileSize(imageFile.size)}</p>
                 <p><strong>Type:</strong> ${imageFile.type}</p>
             `;
+            
+            // Run tasks with delays to prevent UI freeze
+            let taskIndex = 0;
+            
+            function runNextTask() {
+                if (taskIndex < tasks.length) {
+                    const task = tasks[taskIndex];
+                    const progress = Math.round(((taskIndex + 1) / tasks.length) * 100);
+                    
+                    progressText.textContent = `${task.name} (${taskIndex + 1}/${tasks.length})`;
+                    progressFill.style.width = progress + '%';
+                    
+                    // Use setTimeout to allow UI to update
+                    setTimeout(() => {
+                        try {
+                            task.fn();
+                        } catch (e) {
+                            console.error(`Error in ${task.name}:`, e);
+                        }
+                        taskIndex++;
+                        runNextTask();
+                    }, 50);
+                } else {
+                    // All done - calculate manipulation score
+                    progressText.textContent = 'Calculating manipulation probability...';
+                    setTimeout(() => {
+                        calculateManipulationScore();
+                        progressFill.style.width = '100%';
+                        progressText.textContent = 'Complete!';
+                        setTimeout(() => {
+                            overlay.classList.add('hidden');
+                        }, 300);
+                    }, 100);
+                }
+            }
+            
+            runNextTask();
+        }
 
-            // Perform analyses
-            performELA();
-            extractMetadata();
-            calculateHashes();
-            generateForensicNotes();
+        function performChannelSeparation() {
+            const channels = ['red', 'green', 'blue'];
+            const channelIndex = { red: 0, green: 1, blue: 2 };
+
+            channels.forEach(channel => {
+                const canvas = document.getElementById(channel + 'Channel');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = currentImage.width;
+                canvas.height = currentImage.height;
+                
+                ctx.drawImage(currentImage, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                const idx = channelIndex[channel];
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    const value = data[i + idx];
+                    data[i] = value;     // R
+                    data[i + 1] = value; // G
+                    data[i + 2] = value; // B
+                    // Alpha stays the same
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+            });
+        }
+
+        function performEdgeDetection() {
+            const canvas = document.getElementById('edgeCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Convert to grayscale first
+            const gray = new Float32Array(width * height);
+            for (let i = 0; i < gray.length; i++) {
+                gray[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+            }
+            
+            // Sobel kernels
+            const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+            const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+            
+            const output = new Uint8ClampedArray(width * height * 4);
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let gx = 0, gy = 0;
+                    
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const idx = (y + ky) * width + (x + kx);
+                            const kernelIdx = (ky + 1) * 3 + (kx + 1);
+                            gx += gray[idx] * sobelX[kernelIdx];
+                            gy += gray[idx] * sobelY[kernelIdx];
+                        }
+                    }
+                    
+                    const magnitude = Math.min(255, Math.sqrt(gx * gx + gy * gy));
+                    const outIdx = (y * width + x) * 4;
+                    output[outIdx] = magnitude;
+                    output[outIdx + 1] = magnitude;
+                    output[outIdx + 2] = magnitude;
+                    output[outIdx + 3] = 255;
+                }
+            }
+            
+            const outputData = new ImageData(output, width, height);
+            ctx.putImageData(outputData, 0, 0);
+        }
+
+        function performHistogramAnalysis() {
+            const canvas = document.getElementById('histogramCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Create temp canvas to get image data
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = currentImage.width;
+            tempCanvas.height = currentImage.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(currentImage, 0, 0);
+            const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const data = imageData.data;
+            
+            // Calculate histograms for R, G, B
+            const histR = new Array(256).fill(0);
+            const histG = new Array(256).fill(0);
+            const histB = new Array(256).fill(0);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                histR[data[i]]++;
+                histG[data[i + 1]]++;
+                histB[data[i + 2]]++;
+            }
+            
+            // Find max for normalization
+            const maxVal = Math.max(...histR, ...histG, ...histB);
+            
+            // Draw histogram
+            canvas.width = 512;
+            canvas.height = 200;
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const barWidth = canvas.width / 256;
+            const scale = canvas.height / maxVal;
+            
+            // Draw each channel
+            for (let i = 0; i < 256; i++) {
+                const x = i * barWidth;
+                
+                // Red
+                ctx.fillStyle = 'rgba(255, 107, 107, 0.5)';
+                ctx.fillRect(x, canvas.height - histR[i] * scale, barWidth, histR[i] * scale);
+                
+                // Green
+                ctx.fillStyle = 'rgba(81, 207, 102, 0.5)';
+                ctx.fillRect(x, canvas.height - histG[i] * scale, barWidth, histG[i] * scale);
+                
+                // Blue
+                ctx.fillStyle = 'rgba(51, 154, 240, 0.5)';
+                ctx.fillRect(x, canvas.height - histB[i] * scale, barWidth, histB[i] * scale);
+            }
+            
+            // Draw axis labels
+            ctx.fillStyle = '#666';
+            ctx.font = '10px Inter';
+            ctx.fillText('0', 5, canvas.height - 5);
+            ctx.fillText('255', canvas.width - 20, canvas.height - 5);
+        }
+
+        function performLuminanceGradient() {
+            const canvas = document.getElementById('luminanceCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Convert to luminance
+            const lum = new Float32Array(width * height);
+            for (let i = 0; i < lum.length; i++) {
+                lum[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+            }
+            
+            // Calculate gradient direction using Sobel
+            const output = new Uint8ClampedArray(width * height * 4);
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    // Sobel gradients
+                    const gx = -lum[(y-1)*width+(x-1)] + lum[(y-1)*width+(x+1)]
+                              -2*lum[y*width+(x-1)] + 2*lum[y*width+(x+1)]
+                              -lum[(y+1)*width+(x-1)] + lum[(y+1)*width+(x+1)];
+                    
+                    const gy = -lum[(y-1)*width+(x-1)] - 2*lum[(y-1)*width+x] - lum[(y-1)*width+(x+1)]
+                              +lum[(y+1)*width+(x-1)] + 2*lum[(y+1)*width+x] + lum[(y+1)*width+(x+1)];
+                    
+                    // Convert angle to hue (0-360)
+                    let angle = Math.atan2(gy, gx) * 180 / Math.PI + 180;
+                    const magnitude = Math.min(1, Math.sqrt(gx*gx + gy*gy) / 255);
+                    
+                    // HSL to RGB (hue = angle, saturation = 1, lightness = magnitude)
+                    const h = angle / 360;
+                    const s = magnitude > 0.1 ? 1 : 0;
+                    const l = 0.3 + magnitude * 0.4;
+                    
+                    const rgb = hslToRgb(h, s, l);
+                    const outIdx = (y * width + x) * 4;
+                    output[outIdx] = rgb[0];
+                    output[outIdx + 1] = rgb[1];
+                    output[outIdx + 2] = rgb[2];
+                    output[outIdx + 3] = 255;
+                }
+            }
+            
+            ctx.putImageData(new ImageData(output, width, height), 0, 0);
+        }
+
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+
+        function performNoiseAnalysis() {
+            const canvas = document.getElementById('noiseCanvas');
+            const ctx = canvas.getContext('2d');
+            const amp = parseInt(document.getElementById('noiseAmp').value);
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Apply median filter to get "clean" version, then subtract
+            const output = new Uint8ClampedArray(width * height * 4);
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = (y * width + x) * 4;
+                    
+                    // Get 3x3 neighborhood for each channel
+                    for (let c = 0; c < 3; c++) {
+                        const neighbors = [];
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                neighbors.push(data[((y + dy) * width + (x + dx)) * 4 + c]);
+                            }
+                        }
+                        neighbors.sort((a, b) => a - b);
+                        const median = neighbors[4];
+                        
+                        // Noise = original - median, amplified
+                        const noise = (data[idx + c] - median) * amp + 128;
+                        output[idx + c] = Math.max(0, Math.min(255, noise));
+                    }
+                    output[idx + 3] = 255;
+                }
+            }
+            
+            ctx.putImageData(new ImageData(output, width, height), 0, 0);
+        }
+
+        function updateNoise() {
+            document.getElementById('noiseAmpValue').textContent = document.getElementById('noiseAmp').value;
+            performNoiseAnalysis();
+        }
+
+        function performJPEGGhost() {
+            const qualities = [60, 70, 80, 90];
+            
+            qualities.forEach(quality => {
+                const canvas = document.getElementById('ghostCanvas' + quality);
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = currentImage.width;
+                canvas.height = currentImage.height;
+                
+                // Get original image data
+                ctx.drawImage(currentImage, 0, 0);
+                const originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // Create compressed version
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = currentImage.width;
+                tempCanvas.height = currentImage.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(currentImage, 0, 0);
+                
+                const compressedUrl = tempCanvas.toDataURL('image/jpeg', quality / 100);
+                const compImg = new Image();
+                compImg.onload = () => {
+                    tempCtx.drawImage(compImg, 0, 0);
+                    const compData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // Calculate difference (ghost)
+                    const output = ctx.createImageData(canvas.width, canvas.height);
+                    for (let i = 0; i < originalData.data.length; i += 4) {
+                        const diffR = Math.abs(originalData.data[i] - compData.data[i]);
+                        const diffG = Math.abs(originalData.data[i + 1] - compData.data[i + 1]);
+                        const diffB = Math.abs(originalData.data[i + 2] - compData.data[i + 2]);
+                        const diff = (diffR + diffG + diffB) / 3;
+                        
+                        // Invert: lower difference = darker (region was at this quality)
+                        const val = 255 - Math.min(255, diff * 10);
+                        output.data[i] = val;
+                        output.data[i + 1] = val;
+                        output.data[i + 2] = val;
+                        output.data[i + 3] = 255;
+                    }
+                    ctx.putImageData(output, 0, 0);
+                };
+                compImg.src = compressedUrl;
+            });
+        }
+
+        function performBitPlaneExtraction() {
+            // Get original image data once
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = currentImage.width;
+            tempCanvas.height = currentImage.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(currentImage, 0, 0);
+            const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const data = imageData.data;
+            const width = tempCanvas.width;
+            const height = tempCanvas.height;
+            
+            // Convert to grayscale
+            const gray = new Uint8Array(width * height);
+            for (let i = 0; i < gray.length; i++) {
+                gray[i] = Math.round(0.299 * data[i*4] + 0.587 * data[i*4+1] + 0.114 * data[i*4+2]);
+            }
+            
+            // Extract each bit plane
+            for (let bit = 0; bit < 8; bit++) {
+                const canvas = document.getElementById('bitplane' + bit);
+                const ctx = canvas.getContext('2d');
+                canvas.width = width;
+                canvas.height = height;
+                
+                const output = ctx.createImageData(width, height);
+                const mask = 1 << bit;
+                
+                for (let i = 0; i < gray.length; i++) {
+                    const val = (gray[i] & mask) ? 255 : 0;
+                    output.data[i * 4] = val;
+                    output.data[i * 4 + 1] = val;
+                    output.data[i * 4 + 2] = val;
+                    output.data[i * 4 + 3] = 255;
+                }
+                
+                ctx.putImageData(output, 0, 0);
+            }
+        }
+
+        function performMinMaxRGB() {
+            const canvas = document.getElementById('minmaxCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            const output = ctx.createImageData(canvas.width, canvas.height);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                
+                // Highlight clipped values (near 0 or 255)
+                const threshold = 10;
+                let outR = 128, outG = 128, outB = 128;
+                
+                if (max >= 255 - threshold) {
+                    // Highlight overexposed in red
+                    outR = 255; outG = 0; outB = 0;
+                } else if (min <= threshold) {
+                    // Highlight underexposed in blue  
+                    outR = 0; outG = 0; outB = 255;
+                } else {
+                    // Show luminance difference
+                    const range = max - min;
+                    outR = outG = outB = range;
+                }
+                
+                output.data[i] = outR;
+                output.data[i+1] = outG;
+                output.data[i+2] = outB;
+                output.data[i+3] = 255;
+            }
+            
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function performBlockGrid() {
+            const canvas = document.getElementById('blockGridCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            // Draw original image
+            ctx.drawImage(currentImage, 0, 0);
+            
+            // Get image data for block artifact detection
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Calculate block boundary differences
+            const blockSize = 8;
+            
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.lineWidth = 1;
+            
+            // Draw grid and highlight strong boundaries
+            for (let y = 0; y < height; y += blockSize) {
+                for (let x = 0; x < width; x += blockSize) {
+                    // Check if this block boundary has strong artifact
+                    let boundaryStrength = 0;
+                    
+                    if (x > 0) {
+                        // Check left boundary
+                        for (let by = y; by < Math.min(y + blockSize, height); by++) {
+                            const idx1 = (by * width + x) * 4;
+                            const idx2 = (by * width + x - 1) * 4;
+                            boundaryStrength += Math.abs(data[idx1] - data[idx2]);
+                        }
+                    }
+                    
+                    // Draw grid with intensity based on boundary strength
+                    const intensity = Math.min(1, boundaryStrength / 500);
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${0.2 + intensity * 0.6})`;
+                    ctx.strokeRect(x, y, blockSize, blockSize);
+                }
+            }
+        }
+
+        function performSaturationMap() {
+            const canvas = document.getElementById('saturationCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            const output = ctx.createImageData(canvas.width, canvas.height);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                const l = (max + min) / 2;
+                
+                let s = 0;
+                if (max !== min) {
+                    s = l > 127 ? (max - min) / (510 - max - min) : (max - min) / (max + min);
+                }
+                
+                // Map saturation to heat colormap
+                const sat = Math.floor(s * 255);
+                if (sat < 85) {
+                    output.data[i] = 0;
+                    output.data[i+1] = 0;
+                    output.data[i+2] = sat * 3;
+                } else if (sat < 170) {
+                    output.data[i] = (sat - 85) * 3;
+                    output.data[i+1] = (sat - 85) * 3;
+                    output.data[i+2] = 255;
+                } else {
+                    output.data[i] = 255;
+                    output.data[i+1] = 255;
+                    output.data[i+2] = 255 - (sat - 170) * 3;
+                }
+                output.data[i+3] = 255;
+            }
+            
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function performContrastMap() {
+            const canvas = document.getElementById('contrastCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            const output = ctx.createImageData(width, height);
+            const windowSize = 3;
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let min = 255, max = 0;
+                    
+                    // Get local min/max in window
+                    for (let wy = -windowSize; wy <= windowSize; wy++) {
+                        for (let wx = -windowSize; wx <= windowSize; wx++) {
+                            const nx = Math.min(Math.max(x + wx, 0), width - 1);
+                            const ny = Math.min(Math.max(y + wy, 0), height - 1);
+                            const idx = (ny * width + nx) * 4;
+                            const lum = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                            min = Math.min(min, lum);
+                            max = Math.max(max, lum);
+                        }
+                    }
+                    
+                    const contrast = max - min;
+                    const idx = (y * width + x) * 4;
+                    output.data[idx] = contrast;
+                    output.data[idx+1] = contrast;
+                    output.data[idx+2] = contrast;
+                    output.data[idx+3] = 255;
+                }
+            }
+            
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function performInvertedView() {
+            const canvas = document.getElementById('invertedCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 - data[i];
+                data[i+1] = 255 - data[i+1];
+                data[i+2] = 255 - data[i+2];
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function performPCAProjection() {
+            const canvas = document.getElementById('pcaCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Calculate mean RGB
+            let sumR = 0, sumG = 0, sumB = 0;
+            const n = data.length / 4;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                sumR += data[i];
+                sumG += data[i+1];
+                sumB += data[i+2];
+            }
+            
+            const meanR = sumR / n, meanG = sumG / n, meanB = sumB / n;
+            
+            // Simple PCA approximation: project onto first principal component direction
+            // Use the dominant color variation direction
+            const output = ctx.createImageData(canvas.width, canvas.height);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i] - meanR;
+                const g = data[i+1] - meanG;
+                const b = data[i+2] - meanB;
+                
+                // Project onto approximate PC1 (weighted combination)
+                const pc1 = (r * 0.577 + g * 0.577 + b * 0.577);
+                const pc2 = (r * 0.707 - b * 0.707);
+                
+                // Map to visible range
+                const val1 = Math.floor(Math.min(255, Math.max(0, pc1 + 128)));
+                const val2 = Math.floor(Math.min(255, Math.max(0, pc2 + 128)));
+                
+                output.data[i] = val1;
+                output.data[i+1] = val2;
+                output.data[i+2] = Math.floor((val1 + val2) / 2);
+                output.data[i+3] = 255;
+            }
+            
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function performGrayscale() {
+            const canvas = document.getElementById('grayscaleCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                // Luminance-weighted grayscale (ITU-R BT.709)
+                const lum = data[i] * 0.2126 + data[i+1] * 0.7152 + data[i+2] * 0.0722;
+                data[i] = data[i+1] = data[i+2] = lum;
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function performSharpen() {
+            const canvas = document.getElementById('sharpenCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            const output = ctx.createImageData(width, height);
+            
+            // Sharpen kernel: [ 0, -1,  0]
+            //                 [-1,  5, -1]
+            //                 [ 0, -1,  0]
+            const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    for (let c = 0; c < 3; c++) {
+                        let sum = 0;
+                        let ki = 0;
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4 + c;
+                                sum += data[idx] * kernel[ki++];
+                            }
+                        }
+                        output.data[(y * width + x) * 4 + c] = Math.min(255, Math.max(0, sum));
+                    }
+                    output.data[(y * width + x) * 4 + 3] = 255;
+                }
+            }
+            
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function performEmboss() {
+            const canvas = document.getElementById('embossCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            const output = ctx.createImageData(width, height);
+            
+            // Emboss kernel: [-2, -1, 0]
+            //                [-1,  1, 1]
+            //                [ 0,  1, 2]
+            const kernel = [-2, -1, 0, -1, 1, 1, 0, 1, 2];
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    for (let c = 0; c < 3; c++) {
+                        let sum = 0;
+                        let ki = 0;
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4 + c;
+                                sum += data[idx] * kernel[ki++];
+                            }
+                        }
+                        output.data[(y * width + x) * 4 + c] = Math.min(255, Math.max(0, sum + 128));
+                    }
+                    output.data[(y * width + x) * 4 + 3] = 255;
+                }
+            }
+            
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function performLaplacian() {
+            const canvas = document.getElementById('laplacianCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            const output = ctx.createImageData(width, height);
+            
+            // Laplacian kernel: [ 0,  1,  0]
+            //                   [ 1, -4,  1]
+            //                   [ 0,  1,  0]
+            const kernel = [0, 1, 0, 1, -4, 1, 0, 1, 0];
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let sum = 0;
+                    let ki = 0;
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const idx = ((y + ky) * width + (x + kx)) * 4;
+                            const lum = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                            sum += lum * kernel[ki++];
+                        }
+                    }
+                    const val = Math.min(255, Math.max(0, Math.abs(sum)));
+                    const idx = (y * width + x) * 4;
+                    output.data[idx] = output.data[idx+1] = output.data[idx+2] = val;
+                    output.data[idx+3] = 255;
+                }
+            }
+            
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function performThreshold() {
+            const canvas = document.getElementById('thresholdCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            const threshold = 128;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const lum = (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+                const val = lum > threshold ? 255 : 0;
+                data[i] = data[i+1] = data[i+2] = val;
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function performPosterize() {
+            const canvas = document.getElementById('posterizeCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            const levels = 4;
+            const step = 255 / (levels - 1);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = Math.round(data[i] / step) * step;
+                data[i+1] = Math.round(data[i+1] / step) * step;
+                data[i+2] = Math.round(data[i+2] / step) * step;
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function performSolarize() {
+            const canvas = document.getElementById('solarizeCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            const threshold = 128;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = data[i] > threshold ? 255 - data[i] : data[i];
+                data[i+1] = data[i+1] > threshold ? 255 - data[i+1] : data[i+1];
+                data[i+2] = data[i+2] > threshold ? 255 - data[i+2] : data[i+2];
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function performStdDevMap() {
+            const canvas = document.getElementById('stddevCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            const output = ctx.createImageData(width, height);
+            const windowSize = 2;
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let sum = 0, sumSq = 0, count = 0;
+                    
+                    for (let wy = -windowSize; wy <= windowSize; wy++) {
+                        for (let wx = -windowSize; wx <= windowSize; wx++) {
+                            const nx = x + wx, ny = y + wy;
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                const idx = (ny * width + nx) * 4;
+                                const lum = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                                sum += lum;
+                                sumSq += lum * lum;
+                                count++;
+                            }
+                        }
+                    }
+                    
+                    const mean = sum / count;
+                    const variance = (sumSq / count) - (mean * mean);
+                    const stddev = Math.sqrt(Math.max(0, variance));
+                    
+                    const idx = (y * width + x) * 4;
+                    const val = Math.min(255, stddev * 3);
+                    output.data[idx] = output.data[idx+1] = output.data[idx+2] = val;
+                    output.data[idx+3] = 255;
+                }
+            }
+            
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function performGammaCorrection() {
+            const canvas = document.getElementById('gammaCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            ctx.drawImage(currentImage, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            const gamma = 3.0;
+            const gammaCorrection = 1 / gamma;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 * Math.pow(data[i] / 255, gammaCorrection);
+                data[i+1] = 255 * Math.pow(data[i+1] / 255, gammaCorrection);
+                data[i+2] = 255 * Math.pow(data[i+2] / 255, gammaCorrection);
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
         }
 
         function performELA() {
@@ -400,6 +1805,157 @@
             `;
         }
 
+        function calculateManipulationScore() {
+            let score = 0;
+            let factors = [];
+            
+            // Analyze ELA canvas for bright spots (potential manipulation)
+            try {
+                const elaCanvas = document.getElementById('elaCanvas');
+                const elaCtx = elaCanvas.getContext('2d');
+                const elaData = elaCtx.getImageData(0, 0, elaCanvas.width, elaCanvas.height).data;
+                
+                let brightPixels = 0;
+                let totalPixels = elaData.length / 4;
+                
+                for (let i = 0; i < elaData.length; i += 4) {
+                    const brightness = (elaData[i] + elaData[i+1] + elaData[i+2]) / 3;
+                    if (brightness > 100) brightPixels++;
+                }
+                
+                const elaBrightRatio = brightPixels / totalPixels;
+                if (elaBrightRatio > 0.15) {
+                    score += 25;
+                    factors.push('High ELA variation detected');
+                } else if (elaBrightRatio > 0.08) {
+                    score += 15;
+                    factors.push('Moderate ELA variation');
+                } else if (elaBrightRatio > 0.03) {
+                    score += 5;
+                }
+            } catch (e) {}
+            
+            // Check for missing EXIF (common in edited images)
+            try {
+                const metadataGrid = document.getElementById('metadataGrid').textContent;
+                if (metadataGrid.includes('No EXIF') || metadataGrid.includes('Could not extract')) {
+                    score += 15;
+                    factors.push('Missing or stripped EXIF metadata');
+                }
+                if (!metadataGrid.includes('Camera') && !metadataGrid.includes('Make')) {
+                    score += 10;
+                    factors.push('No camera information found');
+                }
+            } catch (e) {}
+            
+            // Analyze noise consistency
+            try {
+                const noiseCanvas = document.getElementById('noiseCanvas');
+                const noiseCtx = noiseCanvas.getContext('2d');
+                const noiseData = noiseCtx.getImageData(0, 0, noiseCanvas.width, noiseCanvas.height).data;
+                
+                let noiseSum = 0;
+                let noiseSumSq = 0;
+                const n = noiseData.length / 4;
+                
+                for (let i = 0; i < noiseData.length; i += 4) {
+                    const val = noiseData[i];
+                    noiseSum += val;
+                    noiseSumSq += val * val;
+                }
+                
+                const noiseMean = noiseSum / n;
+                const noiseVariance = (noiseSumSq / n) - (noiseMean * noiseMean);
+                
+                if (noiseVariance > 2000) {
+                    score += 20;
+                    factors.push('Inconsistent noise patterns');
+                } else if (noiseVariance > 1000) {
+                    score += 10;
+                }
+            } catch (e) {}
+            
+            // Check JPEG quality inconsistency from ghost analysis
+            try {
+                const ghostCanvases = ['ghostCanvas60', 'ghostCanvas70', 'ghostCanvas80', 'ghostCanvas90'];
+                let maxDiff = 0;
+                
+                ghostCanvases.forEach(id => {
+                    const canvas = document.getElementById(id);
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                        let sum = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            sum += data[i];
+                        }
+                        const avg = sum / (data.length / 4);
+                        maxDiff = Math.max(maxDiff, avg);
+                    }
+                });
+                
+                if (maxDiff > 50) {
+                    score += 15;
+                    factors.push('JPEG recompression artifacts detected');
+                }
+            } catch (e) {}
+            
+            // Check for clipped values (overexposure manipulation)
+            try {
+                const minmaxCanvas = document.getElementById('minmaxCanvas');
+                const ctx = minmaxCanvas.getContext('2d');
+                const data = ctx.getImageData(0, 0, minmaxCanvas.width, minmaxCanvas.height).data;
+                
+                let clippedCount = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i] === 255 || data[i+2] === 255) clippedCount++;
+                }
+                
+                const clippedRatio = clippedCount / (data.length / 4);
+                if (clippedRatio > 0.1) {
+                    score += 10;
+                    factors.push('Significant clipping detected');
+                }
+            } catch (e) {}
+            
+            // Cap score at 100
+            score = Math.min(100, Math.max(0, score));
+            
+            // Update UI
+            const scoreCircle = document.getElementById('scoreCircle');
+            const scoreValue = document.getElementById('scoreValue');
+            const verdictText = document.getElementById('verdictText');
+            const verdictDesc = document.getElementById('verdictDesc');
+            
+            scoreCircle.style.setProperty('--score', score);
+            scoreValue.textContent = score + '%';
+            
+            // Remove old classes
+            scoreCircle.classList.remove('score-low', 'score-medium', 'score-high');
+            
+            if (score < 25) {
+                scoreCircle.classList.add('score-low');
+                verdictText.textContent = '✓ Likely Authentic';
+                verdictText.style.color = '#00ff88';
+                verdictDesc.textContent = 'Low probability of manipulation. The image shows consistent compression artifacts, noise patterns, and metadata. ' + (factors.length > 0 ? 'Minor notes: ' + factors.join(', ') + '.' : '');
+            } else if (score < 50) {
+                scoreCircle.classList.add('score-medium');
+                verdictText.textContent = '⚠ Possibly Modified';
+                verdictText.style.color = '#ffaa00';
+                verdictDesc.textContent = 'Some indicators suggest possible editing. ' + factors.join('. ') + '. Further examination recommended.';
+            } else if (score < 75) {
+                scoreCircle.classList.add('score-high');
+                verdictText.textContent = '⚠ Likely Modified';
+                verdictText.style.color = '#ff6644';
+                verdictDesc.textContent = 'Multiple manipulation indicators detected. ' + factors.join('. ') + '. Professional analysis recommended.';
+            } else {
+                scoreCircle.classList.add('score-high');
+                verdictText.textContent = '✗ High Manipulation Probability';
+                verdictText.style.color = '#ff4444';
+                verdictDesc.textContent = 'Strong evidence of image manipulation. ' + factors.join('. ') + '. This image should be treated as potentially altered.';
+            }
+        }
+
         function copyHash(hash) {
             navigator.clipboard.writeText(hash);
             showToast('Hash copied to clipboard');
@@ -414,7 +1970,205 @@
         }
 
         function downloadReport() {
-            showToast('Report generation - Feature coming soon');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `forensic-report-${timestamp}.html`;
+            
+            // Gather all canvas data
+            const canvasIds = [
+                'elaCanvas', 'redChannel', 'greenChannel', 'blueChannel',
+                'edgeCanvas', 'histogramCanvas', 'gradientCanvas', 'noiseCanvas',
+                'ghostCanvas60', 'ghostCanvas70', 'ghostCanvas80', 'ghostCanvas90',
+                'bitplane0', 'bitplane1', 'bitplane2', 'bitplane3',
+                'bitplane4', 'bitplane5', 'bitplane6', 'bitplane7',
+                'minmaxCanvas', 'blockGridCanvas', 'saturationCanvas', 'contrastCanvas',
+                'invertedCanvas', 'pcaCanvas', 'grayscaleCanvas', 'sharpenCanvas',
+                'embossCanvas', 'laplacianCanvas', 'thresholdCanvas', 'posterizeCanvas',
+                'solarizeCanvas', 'stddevCanvas', 'gammaCanvas'
+            ];
+            
+            const canvasImages = {};
+            canvasIds.forEach(id => {
+                const canvas = document.getElementById(id);
+                if (canvas && canvas.width > 0) {
+                    try {
+                        canvasImages[id] = canvas.toDataURL('image/jpeg', 0.8);
+                    } catch (e) {
+                        canvasImages[id] = '';
+                    }
+                }
+            });
+            
+            const metadata = document.getElementById('metadataGrid').innerHTML;
+            const hashes = document.getElementById('hashResults').innerHTML;
+            const notes = document.getElementById('forensicNotes').innerHTML;
+            
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Forensic Analysis Report - ${imageFile.name}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 40px; }
+        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #00d4ff; padding-bottom: 20px; }
+        .header h1 { color: #00d4ff; font-size: 2rem; }
+        .header p { color: #888; margin-top: 10px; }
+        .section { background: #16213e; border-radius: 12px; padding: 25px; margin-bottom: 25px; }
+        .section h2 { color: #00d4ff; margin-bottom: 15px; font-size: 1.3rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .section h3 { color: #fff; margin: 15px 0 10px; font-size: 1.1rem; }
+        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .info-item { background: #1a1a2e; padding: 10px 15px; border-radius: 6px; }
+        .info-item strong { color: #00d4ff; }
+        .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
+        .image-item { text-align: center; }
+        .image-item img { max-width: 100%; border-radius: 8px; background: #000; }
+        .image-item p { margin-top: 8px; font-size: 0.85rem; color: #888; }
+        .metadata-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .hash-item { background: #1a1a2e; padding: 12px; border-radius: 6px; margin-bottom: 10px; word-break: break-all; }
+        .notes { background: #1a1a2e; padding: 15px; border-radius: 6px; line-height: 1.6; }
+        .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; color: #666; }
+        @media print { body { background: #fff; color: #000; } .section { background: #f5f5f5; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Image Forensic Analysis Report</h1>
+        <p>Generated: ${new Date().toLocaleString()}</p>
+        <p>Punjab Investigation Tools - Image Forensics</p>
+    </div>
+    
+    <div class="section">
+        <h2>📁 File Information</h2>
+        <div class="info-grid">
+            <div class="info-item"><strong>Filename:</strong> ${imageFile.name}</div>
+            <div class="info-item"><strong>Type:</strong> ${imageFile.type}</div>
+            <div class="info-item"><strong>Dimensions:</strong> ${currentImage.width} × ${currentImage.height} px</div>
+            <div class="info-item"><strong>File Size:</strong> ${formatFileSize(imageFile.size)}</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>📷 Original Image</h2>
+        <img src="${currentImage.src}" style="max-width: 100%; border-radius: 8px;">
+    </div>
+    
+    <div class="section">
+        <h2>⚡ Error Level Analysis (ELA)</h2>
+        <p style="margin-bottom: 15px; color: #888;">Brighter areas may indicate manipulation. Uniform brightness suggests original content.</p>
+        <img src="${canvasImages['elaCanvas'] || ''}" style="max-width: 100%; border-radius: 8px;">
+    </div>
+    
+    <div class="section">
+        <h2>🎨 Color Channel Analysis</h2>
+        <div class="image-grid">
+            <div class="image-item"><img src="${canvasImages['redChannel'] || ''}"><p>Red Channel</p></div>
+            <div class="image-item"><img src="${canvasImages['greenChannel'] || ''}"><p>Green Channel</p></div>
+            <div class="image-item"><img src="${canvasImages['blueChannel'] || ''}"><p>Blue Channel</p></div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🔲 Edge & Gradient Analysis</h2>
+        <div class="image-grid">
+            <div class="image-item"><img src="${canvasImages['edgeCanvas'] || ''}"><p>Sobel Edge Detection</p></div>
+            <div class="image-item"><img src="${canvasImages['gradientCanvas'] || ''}"><p>Luminance Gradient</p></div>
+            <div class="image-item"><img src="${canvasImages['laplacianCanvas'] || ''}"><p>Laplacian Edges</p></div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>📊 Statistical Analysis</h2>
+        <div class="image-grid">
+            <div class="image-item"><img src="${canvasImages['histogramCanvas'] || ''}"><p>RGB Histogram</p></div>
+            <div class="image-item"><img src="${canvasImages['noiseCanvas'] || ''}"><p>Noise Analysis</p></div>
+            <div class="image-item"><img src="${canvasImages['stddevCanvas'] || ''}"><p>Std Deviation Map</p></div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>👻 JPEG Ghost Detection</h2>
+        <p style="margin-bottom: 15px; color: #888;">Different quality levels reveal compression artifacts from editing.</p>
+        <div class="image-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="image-item"><img src="${canvasImages['ghostCanvas60'] || ''}"><p>Q60</p></div>
+            <div class="image-item"><img src="${canvasImages['ghostCanvas70'] || ''}"><p>Q70</p></div>
+            <div class="image-item"><img src="${canvasImages['ghostCanvas80'] || ''}"><p>Q80</p></div>
+            <div class="image-item"><img src="${canvasImages['ghostCanvas90'] || ''}"><p>Q90</p></div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🔢 Bit Plane Analysis</h2>
+        <div class="image-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="image-item"><img src="${canvasImages['bitplane0'] || ''}"><p>Bit 0 (LSB)</p></div>
+            <div class="image-item"><img src="${canvasImages['bitplane1'] || ''}"><p>Bit 1</p></div>
+            <div class="image-item"><img src="${canvasImages['bitplane2'] || ''}"><p>Bit 2</p></div>
+            <div class="image-item"><img src="${canvasImages['bitplane3'] || ''}"><p>Bit 3</p></div>
+            <div class="image-item"><img src="${canvasImages['bitplane4'] || ''}"><p>Bit 4</p></div>
+            <div class="image-item"><img src="${canvasImages['bitplane5'] || ''}"><p>Bit 5</p></div>
+            <div class="image-item"><img src="${canvasImages['bitplane6'] || ''}"><p>Bit 6</p></div>
+            <div class="image-item"><img src="${canvasImages['bitplane7'] || ''}"><p>Bit 7 (MSB)</p></div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🎭 Enhancement Filters</h2>
+        <div class="image-grid">
+            <div class="image-item"><img src="${canvasImages['sharpenCanvas'] || ''}"><p>Sharpened</p></div>
+            <div class="image-item"><img src="${canvasImages['embossCanvas'] || ''}"><p>Emboss</p></div>
+            <div class="image-item"><img src="${canvasImages['contrastCanvas'] || ''}"><p>Local Contrast</p></div>
+            <div class="image-item"><img src="${canvasImages['saturationCanvas'] || ''}"><p>Saturation Map</p></div>
+            <div class="image-item"><img src="${canvasImages['gammaCanvas'] || ''}"><p>High Gamma</p></div>
+            <div class="image-item"><img src="${canvasImages['invertedCanvas'] || ''}"><p>Inverted</p></div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🔍 Additional Analysis</h2>
+        <div class="image-grid">
+            <div class="image-item"><img src="${canvasImages['grayscaleCanvas'] || ''}"><p>Grayscale</p></div>
+            <div class="image-item"><img src="${canvasImages['thresholdCanvas'] || ''}"><p>Threshold Binary</p></div>
+            <div class="image-item"><img src="${canvasImages['posterizeCanvas'] || ''}"><p>Posterized</p></div>
+            <div class="image-item"><img src="${canvasImages['solarizeCanvas'] || ''}"><p>Solarize</p></div>
+            <div class="image-item"><img src="${canvasImages['minmaxCanvas'] || ''}"><p>Min/Max RGB</p></div>
+            <div class="image-item"><img src="${canvasImages['blockGridCanvas'] || ''}"><p>JPEG Block Grid</p></div>
+            <div class="image-item"><img src="${canvasImages['pcaCanvas'] || ''}"><p>PCA Projection</p></div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>📋 Image Metadata (EXIF)</h2>
+        <div class="metadata-grid">${metadata}</div>
+    </div>
+    
+    <div class="section">
+        <h2>🔐 Hash Values</h2>
+        <div class="hash-results">${hashes}</div>
+    </div>
+    
+    <div class="section">
+        <h2>📝 Forensic Analysis Notes</h2>
+        <div class="notes">${notes}</div>
+    </div>
+    
+    <div class="footer">
+        <p>Generated by Punjab Investigation Tools - Image Forensics Analyzer</p>
+        <p>This report is for investigative purposes only.</p>
+    </div>
+</body>
+</html>`;
+            
+            // Download the report
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('Report downloaded successfully!');
         }
 
         function formatFileSize(bytes) {
