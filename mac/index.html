@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAC Address Lookup | Punjab Investigation Tools</title>
-    <meta name="description" content="Identify device manufacturer from MAC address and verify format validity.">
+    <meta name="description" content="Identify device manufacturer from MAC address using IEEE OUI database with 56,000+ vendor records.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,8 +12,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 15, 26, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(34, 211, 238, 0.2);
+            border-top-color: #22d3ee;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: var(--text-secondary, #a0a0b0);
+        }
+        .loading-progress {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #22d3ee;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .lookup-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text"><i class="fas fa-database"></i> Loading OUI Database...</div>
+        <div class="loading-progress" id="loadingProgress">Initializing...</div>
+    </div>
+
     <header class="header">
         <div class="header-container">
             <a href="/" class="logo" style="text-decoration: none; color: inherit;">
@@ -37,7 +94,7 @@
         <section class="hero-section">
             <div class="hero-content">
                 <h1><i class="fas fa-network-wired"></i> MAC Address Lookup</h1>
-                <p>Identify device manufacturer from MAC address and verify format validity</p>
+                <p>Identify device manufacturer from MAC address using IEEE OUI database</p>
             </div>
         </section>
 
@@ -45,14 +102,17 @@
             <div class="input-group">
                 <h3><i class="fas fa-keyboard"></i> Enter MAC Address</h3>
                 <div class="input-row">
-                    <input type="text" id="macInput" class="input-field" placeholder="XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX" maxlength="17">
-                    <button class="verify-btn" onclick="lookupMAC()">
+                    <input type="text" id="macInput" class="input-field" placeholder="XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX" maxlength="17" disabled>
+                    <button class="verify-btn" id="lookupBtn" onclick="lookupMAC()" disabled>
                         <i class="fas fa-search"></i> Lookup
                     </button>
                 </div>
                 <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px;">
                     <i class="fas fa-info-circle"></i> Formats accepted: AA:BB:CC:DD:EE:FF, AA-BB-CC-DD-EE-FF, or AABBCCDDEEFF
                 </p>
+                <div id="dbStatus" style="margin-top: 15px; padding: 10px 15px; background: rgba(34, 211, 238, 0.1); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); border: 1px solid rgba(34, 211, 238, 0.2);">
+                    <i class="fas fa-spinner fa-spin"></i> Loading OUI database...
+                </div>
             </div>
         </section>
 
@@ -91,6 +151,9 @@
             <div class="action-buttons">
                 <button class="action-btn" onclick="copyResult()">
                     <i class="fas fa-copy"></i> Copy Result
+                </button>
+                <button class="action-btn" onclick="downloadPDF()">
+                    <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
                 <button class="action-btn" onclick="resetForm()">
                     <i class="fas fa-redo"></i> Check Another
@@ -135,104 +198,88 @@
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        // OUI Database (sample - in production, use a complete database)
-        const ouiDatabase = {
-            '00:00:0C': { vendor: 'Cisco Systems', country: 'USA' },
-            '00:1A:2B': { vendor: 'Hewlett-Packard', country: 'USA' },
-            '00:1E:C2': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:1F:F3': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:23:12': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:25:00': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:26:BB': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:50:56': { vendor: 'VMware, Inc.', country: 'USA' },
-            '08:00:27': { vendor: 'Oracle VirtualBox', country: 'USA' },
-            '00:0C:29': { vendor: 'VMware, Inc.', country: 'USA' },
-            '00:15:5D': { vendor: 'Microsoft Hyper-V', country: 'USA' },
-            '00:1C:42': { vendor: 'Parallels, Inc.', country: 'USA' },
-            'AC:DE:48': { vendor: 'Apple, Inc.', country: 'USA' },
-            '3C:06:30': { vendor: 'Apple, Inc.', country: 'USA' },
-            'F0:18:98': { vendor: 'Apple, Inc.', country: 'USA' },
-            '88:E9:FE': { vendor: 'Apple, Inc.', country: 'USA' },
-            'FC:FC:48': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:1A:11': { vendor: 'Google, Inc.', country: 'USA' },
-            '94:EB:2C': { vendor: 'Google, Inc.', country: 'USA' },
-            'F4:F5:D8': { vendor: 'Google, Inc.', country: 'USA' },
-            'E8:6A:64': { vendor: 'Samsung Electronics', country: 'South Korea' },
-            '00:26:37': { vendor: 'Samsung Electronics', country: 'South Korea' },
-            '50:01:BB': { vendor: 'Samsung Electronics', country: 'South Korea' },
-            '34:23:87': { vendor: 'Samsung Electronics', country: 'South Korea' },
-            'AC:5F:3E': { vendor: 'Samsung Electronics', country: 'South Korea' },
-            '94:35:0A': { vendor: 'Samsung Electronics', country: 'South Korea' },
-            '28:6C:07': { vendor: 'XIAOMI Communications', country: 'China' },
-            '64:B4:73': { vendor: 'XIAOMI Communications', country: 'China' },
-            '74:23:44': { vendor: 'XIAOMI Communications', country: 'China' },
-            'C4:0B:CB': { vendor: 'XIAOMI Communications', country: 'China' },
-            '50:64:2B': { vendor: 'OnePlus Technology', country: 'China' },
-            '94:65:2D': { vendor: 'OnePlus Technology', country: 'China' },
-            'C0:EE:FB': { vendor: 'OnePlus Technology', country: 'China' },
-            '00:1D:0F': { vendor: 'TP-Link Technologies', country: 'China' },
-            '14:CC:20': { vendor: 'TP-Link Technologies', country: 'China' },
-            '50:C7:BF': { vendor: 'TP-Link Technologies', country: 'China' },
-            '00:E0:4C': { vendor: 'Realtek Semiconductor', country: 'Taiwan' },
-            '52:54:00': { vendor: 'QEMU/KVM Virtual', country: 'Virtual' },
-            'B4:2E:99': { vendor: 'OPPO Electronics', country: 'China' },
-            '58:2A:F7': { vendor: 'OPPO Electronics', country: 'China' },
-            '18:F0:E4': { vendor: 'Vivo Mobile', country: 'China' },
-            'DC:6A:EA': { vendor: 'Vivo Mobile', country: 'China' },
-            '00:16:EA': { vendor: 'Intel Corporate', country: 'USA' },
-            '00:1B:21': { vendor: 'Intel Corporate', country: 'USA' },
-            '00:1E:65': { vendor: 'Intel Corporate', country: 'USA' },
-            '3C:A9:F4': { vendor: 'Intel Corporate', country: 'USA' },
-            '00:24:D7': { vendor: 'Intel Corporate', country: 'USA' },
-            'F8:0F:41': { vendor: 'Wistron InfoComm', country: 'Taiwan' },
-            'EC:0E:C4': { vendor: 'Hon Hai Precision (Foxconn)', country: 'Taiwan' },
-            '90:61:AE': { vendor: 'Huawei Technologies', country: 'China' },
-            '00:E0:FC': { vendor: 'Huawei Technologies', country: 'China' },
-            '24:09:95': { vendor: 'Huawei Technologies', country: 'China' },
-            '70:72:3C': { vendor: 'Huawei Technologies', country: 'China' },
-            '00:18:82': { vendor: 'Huawei Technologies', country: 'China' },
-            'B0:E5:ED': { vendor: 'Ubiquiti Networks', country: 'USA' },
-            '00:27:22': { vendor: 'Ubiquiti Networks', country: 'USA' },
-            '78:8A:20': { vendor: 'Ubiquiti Networks', country: 'USA' },
-            '00:1F:33': { vendor: 'Netgear', country: 'USA' },
-            '00:26:F2': { vendor: 'Netgear', country: 'USA' },
-            'C4:3D:C7': { vendor: 'Netgear', country: 'USA' },
-            'E4:F4:C6': { vendor: 'Netgear', country: 'USA' },
-            '00:22:6B': { vendor: 'Cisco-Linksys', country: 'USA' },
-            '00:1E:58': { vendor: 'D-Link Corporation', country: 'Taiwan' },
-            '00:22:B0': { vendor: 'D-Link Corporation', country: 'Taiwan' },
-            'F0:7D:68': { vendor: 'D-Link Corporation', country: 'Taiwan' },
-            '00:17:9A': { vendor: 'D-Link Corporation', country: 'Taiwan' },
-            '00:0F:3D': { vendor: 'D-Link Corporation', country: 'Taiwan' },
-            '00:11:50': { vendor: 'Belkin International', country: 'USA' },
-            '00:17:3F': { vendor: 'Belkin International', country: 'USA' },
-            'B4:75:0E': { vendor: 'Belkin International', country: 'USA' },
-            'C0:56:27': { vendor: 'Belkin International', country: 'USA' },
-            '00:1B:63': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:1C:B3': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:21:E9': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:22:41': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:23:32': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:23:6C': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:23:DF': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:24:36': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:25:4B': { vendor: 'Apple, Inc.', country: 'USA' },
-            '00:25:BC': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:0C:CE': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:15:52': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:1E:64': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:26:65': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:48:9A': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:52:F3': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:54:53': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:D3:CF': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:DB:56': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:E5:36': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:F1:3E': { vendor: 'Apple, Inc.', country: 'USA' },
-            '04:F7:E4': { vendor: 'Apple, Inc.', country: 'USA' },
-            '08:66:98': { vendor: 'Apple, Inc.', country: 'USA' },
-            '08:6D:41': { vendor: 'Apple, Inc.', country: 'USA' },
-        };
+        // OUI Database - will be loaded from JSON file
+        let ouiDatabase = {};
+        let dbLoaded = false;
+        let dbEntryCount = 0;
+
+        // Load OUI database
+        async function loadOUIDatabase() {
+            const loadingProgress = document.getElementById('loadingProgress');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const dbStatus = document.getElementById('dbStatus');
+            const macInput = document.getElementById('macInput');
+            const lookupBtn = document.getElementById('lookupBtn');
+
+            try {
+                loadingProgress.textContent = 'Fetching OUI database...';
+                
+                const response = await fetch('ouiDB.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load database');
+                }
+
+                loadingProgress.textContent = 'Parsing database...';
+                ouiDatabase = await response.json();
+                dbEntryCount = Object.keys(ouiDatabase).length;
+                
+                loadingProgress.textContent = `Loaded ${dbEntryCount.toLocaleString()} vendor records`;
+                
+                // Enable input and button
+                dbLoaded = true;
+                macInput.disabled = false;
+                lookupBtn.disabled = false;
+                
+                dbStatus.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color);"></i> OUI Database loaded: <strong>${dbEntryCount.toLocaleString()}</strong> vendor records from IEEE registry`;
+                dbStatus.style.background = 'rgba(16, 185, 129, 0.1)';
+                dbStatus.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+
+                // Hide loading overlay
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                    macInput.focus();
+                }, 500);
+
+            } catch (error) {
+                console.error('Error loading OUI database:', error);
+                loadingProgress.textContent = 'Error loading database';
+                dbStatus.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: var(--warning-color);"></i> Failed to load OUI database. Using limited fallback.`;
+                dbStatus.style.background = 'rgba(245, 158, 11, 0.1)';
+                dbStatus.style.borderColor = 'rgba(245, 158, 11, 0.2)';
+                
+                // Use fallback database
+                ouiDatabase = getFallbackDatabase();
+                dbEntryCount = Object.keys(ouiDatabase).length;
+                dbLoaded = true;
+                macInput.disabled = false;
+                lookupBtn.disabled = false;
+                
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                }, 500);
+            }
+        }
+
+        // Fallback database with common vendors
+        function getFallbackDatabase() {
+            return {
+                '00000C': { vendor: 'Cisco Systems', type: 'MA-L' },
+                '001E58': { vendor: 'D-Link Corporation', type: 'MA-L' },
+                '001EC2': { vendor: 'Apple, Inc.', type: 'MA-L' },
+                '00505E': { vendor: 'VMware, Inc.', type: 'MA-L' },
+                '080027': { vendor: 'Oracle VirtualBox', type: 'MA-L' },
+                '000C29': { vendor: 'VMware, Inc.', type: 'MA-L' },
+                '00155D': { vendor: 'Microsoft Hyper-V', type: 'MA-L' },
+                'ACDE48': { vendor: 'Apple, Inc.', type: 'MA-L' },
+                'E86A64': { vendor: 'Samsung Electronics', type: 'MA-L' },
+                '286C07': { vendor: 'XIAOMI Communications', type: 'MA-L' },
+                '00E04C': { vendor: 'Realtek Semiconductor', type: 'MA-L' },
+                '525400': { vendor: 'QEMU/KVM Virtual', type: 'MA-L' },
+            };
+        }
+
+        // Load database on page load
+        loadOUIDatabase();
 
         function normalizeMAC(mac) {
             // Remove all separators and convert to uppercase
@@ -264,7 +311,37 @@
             return (firstByte & 0x01) === 1;
         }
 
+        function lookupVendor(mac) {
+            // Remove colons for lookup
+            const cleanMac = mac.replace(/:/g, '');
+            
+            // Try different prefix lengths (MA-L: 6, MA-M: 7, MA-S: 9)
+            const prefixes = [
+                cleanMac.substring(0, 9), // MA-S (OUI-36)
+                cleanMac.substring(0, 7), // MA-M
+                cleanMac.substring(0, 6)  // MA-L (Standard OUI)
+            ];
+
+            for (const prefix of prefixes) {
+                if (ouiDatabase[prefix]) {
+                    return {
+                        ...ouiDatabase[prefix],
+                        prefix: prefix,
+                        prefixFormatted: prefix.length === 6 ? 
+                            prefix.match(/.{2}/g).join(':') : 
+                            prefix
+                    };
+                }
+            }
+            return null;
+        }
+
         function lookupMAC() {
+            if (!dbLoaded) {
+                showToast('Database is still loading, please wait...');
+                return;
+            }
+
             const input = document.getElementById('macInput').value.trim();
             const mac = normalizeMAC(input);
             
@@ -273,10 +350,10 @@
                 return;
             }
 
-            const oui = mac.substring(0, 8);
-            const vendorInfo = ouiDatabase[oui];
+            const vendorInfo = lookupVendor(mac);
             const isLocal = isLocallyAdministered(mac);
             const isMulti = isMulticast(mac);
+            const oui = mac.substring(0, 8);
 
             document.getElementById('resultsSection').style.display = 'block';
             
@@ -288,7 +365,7 @@
                 resultIcon.className = 'result-icon valid';
                 resultIcon.innerHTML = '<i class="fas fa-building"></i>';
                 resultTitle.textContent = vendorInfo.vendor;
-                resultSubtitle.textContent = `Manufacturer identified from OUI database`;
+                resultSubtitle.textContent = `Manufacturer identified from IEEE OUI database`;
             } else if (isLocal) {
                 resultIcon.className = 'result-icon warning';
                 resultIcon.innerHTML = '<i class="fas fa-shuffle"></i>';
@@ -319,22 +396,34 @@
                         <div class="detail-value">${vendorInfo.vendor}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Country</div>
-                        <div class="detail-value">${vendorInfo.country}</div>
+                        <div class="detail-label">Assignment Type</div>
+                        <div class="detail-value">${getBlockTypeDescription(vendorInfo.type)}</div>
                     </div>
                 `;
+                if (vendorInfo.updated) {
+                    detailsHTML += `
+                        <div class="detail-item">
+                            <div class="detail-label">Registry Updated</div>
+                            <div class="detail-value">${vendorInfo.updated}</div>
+                        </div>
+                    `;
+                }
             }
 
             detailsHTML += `
                 <div class="detail-item">
                     <div class="detail-label">Address Type</div>
                     <div class="detail-value" style="color: ${isLocal ? 'var(--warning-color)' : 'var(--success-color)'}">
-                        ${isLocal ? 'Locally Administered (Possibly Randomized)' : 'Universally Administered (Real MAC)'}
+                        ${isLocal ? 'Locally Administered (Possibly Randomized)' : 'Universally Administered (Hardware MAC)'}
                     </div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Cast Type</div>
                     <div class="detail-value">${isMulti ? 'Multicast' : 'Unicast'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Lookup Time</div>
+                    <div class="detail-value">${new Date().toLocaleString()}</div>
                 </div>
             `;
 
@@ -345,7 +434,7 @@
             document.getElementById('macBreakdown').innerHTML = `
                 <h4 style="margin-bottom: 15px; color: var(--text-primary);"><i class="fas fa-puzzle-piece"></i> MAC Address Structure</h4>
                 <div style="display: flex; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; flex-wrap: wrap; justify-content: center;">
-                    <div style="background: rgba(99, 102, 241, 0.3); padding: 15px; border-radius: 8px; border: 2px solid rgba(99, 102, 241, 0.5); text-align: center;">
+                    <div style="background: rgba(34, 211, 238, 0.3); padding: 15px; border-radius: 8px; border: 2px solid rgba(34, 211, 238, 0.5); text-align: center;">
                         <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px;">OUI (Vendor)</div>
                         ${parts.slice(0, 3).join(':')}
                     </div>
@@ -360,27 +449,123 @@
                     <span style="color: var(--warning-color); margin-left: 10px;">This MAC address has the locally administered bit set, indicating it may be randomized by the device for privacy.</span>
                 </div>
                 ` : ''}
+                <div style="margin-top: 15px; padding: 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
+                    <i class="fas fa-database"></i> Database contains <strong>${dbEntryCount.toLocaleString()}</strong> vendor records from IEEE OUI registry
+                </div>
             `;
 
             document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
         }
 
+        function getBlockTypeDescription(type) {
+            const types = {
+                'MA-L': 'MAC Address Block Large (OUI) - 16M addresses',
+                'MA-M': 'MAC Address Block Medium - 1M addresses',
+                'MA-S': 'MAC Address Block Small (OUI-36) - 4K addresses',
+                'CID': 'Company Identifier - For internal use'
+            };
+            return types[type] || type;
+        }
+
         function copyResult() {
             const mac = normalizeMAC(document.getElementById('macInput').value);
-            const oui = mac.substring(0, 8);
-            const vendorInfo = ouiDatabase[oui];
+            const vendorInfo = lookupVendor(mac);
             const isLocal = isLocallyAdministered(mac);
+            const oui = mac.substring(0, 8);
             
             let text = `MAC Address Lookup Report\n`;
             text += `=========================\n`;
+            text += `Generated: ${new Date().toLocaleString()}\n\n`;
             text += `MAC Address: ${mac}\n`;
             text += `OUI: ${oui}\n`;
             text += `Manufacturer: ${vendorInfo ? vendorInfo.vendor : 'Unknown'}\n`;
-            text += `Type: ${isLocal ? 'Locally Administered (Possibly Random)' : 'Universally Administered'}\n`;
-            text += `\nGenerated by Punjab Investigation Tools`;
+            if (vendorInfo) {
+                text += `Assignment Type: ${vendorInfo.type}\n`;
+                if (vendorInfo.updated) text += `Registry Updated: ${vendorInfo.updated}\n`;
+            }
+            text += `Address Type: ${isLocal ? 'Locally Administered (Possibly Random)' : 'Universally Administered'}\n`;
+            text += `\n--------------------------\n`;
+            text += `Generated by Punjab Investigation Tools\n`;
+            text += `Database: ${dbEntryCount.toLocaleString()} IEEE OUI records`;
             
             navigator.clipboard.writeText(text);
             showToast('Result copied to clipboard');
+        }
+
+        async function downloadPDF() {
+            showToast('Generating PDF...');
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const mac = normalizeMAC(document.getElementById('macInput').value);
+            const vendorInfo = lookupVendor(mac);
+            const isLocal = isLocallyAdministered(mac);
+            const oui = mac.substring(0, 8);
+            
+            // Header
+            doc.setFillColor(26, 26, 46);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('MAC Address Lookup Report', 20, 25);
+            
+            doc.setFontSize(10);
+            doc.text('Punjab Investigation Tools', 150, 15);
+            doc.text(new Date().toLocaleString(), 150, 22);
+            
+            // Content
+            doc.setTextColor(0, 0, 0);
+            let y = 55;
+            
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('MAC Address Details', 20, y);
+            y += 15;
+            
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'normal');
+            
+            const addLine = (label, value) => {
+                doc.setFont(undefined, 'bold');
+                doc.text(`${label}:`, 20, y);
+                doc.setFont(undefined, 'normal');
+                doc.text(value, 70, y);
+                y += 8;
+            };
+            
+            addLine('MAC Address', mac);
+            addLine('OUI (Prefix)', oui);
+            addLine('Manufacturer', vendorInfo ? vendorInfo.vendor : 'Unknown');
+            if (vendorInfo) {
+                addLine('Assignment Type', vendorInfo.type);
+                if (vendorInfo.updated) addLine('Registry Updated', vendorInfo.updated);
+            }
+            addLine('Address Type', isLocal ? 'Locally Administered' : 'Universally Administered');
+            
+            y += 10;
+            
+            // Warning box
+            if (isLocal) {
+                doc.setFillColor(255, 243, 205);
+                doc.rect(15, y, 180, 25, 'F');
+                doc.setTextColor(133, 77, 14);
+                doc.setFontSize(10);
+                doc.text('Warning: This MAC address has the locally administered bit set,', 20, y + 10);
+                doc.text('indicating it may be randomized by the device for privacy protection.', 20, y + 18);
+                y += 35;
+            }
+            
+            // Footer
+            doc.setTextColor(128, 128, 128);
+            doc.setFontSize(9);
+            doc.text(`Database: ${dbEntryCount.toLocaleString()} IEEE OUI records | Generated by Punjab Investigation Tools`, 20, 275);
+            doc.setTextColor(59, 130, 246);
+            doc.textWithLink('https://punjab.pages.dev', 20, 282, { url: 'https://punjab.pages.dev' });
+            
+            doc.save(`MAC_Lookup_${mac.replace(/:/g, '')}.pdf`);
+            showToast('PDF downloaded successfully');
         }
 
         function resetForm() {
