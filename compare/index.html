@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
     <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <header class="header">
@@ -92,6 +93,9 @@
             <div class="action-buttons">
                 <button class="action-btn" onclick="copyResult()">
                     <i class="fas fa-copy"></i> Copy Report
+                </button>
+                <button class="action-btn" onclick="downloadPDF()">
+                    <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
                 <button class="action-btn" onclick="resetComparison()">
                     <i class="fas fa-redo"></i> Compare New Files
@@ -201,14 +205,16 @@
             const arrayBuffer = await file.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
 
-            const [md5, sha1, sha256, sha512] = await Promise.all([
+            const [md5, sha1, sha256, sha512, sha3_256, blake2b] = await Promise.all([
                 hashwasm.md5(uint8Array),
                 hashwasm.sha1(uint8Array),
                 hashwasm.sha256(uint8Array),
-                hashwasm.sha512(uint8Array)
+                hashwasm.sha512(uint8Array),
+                hashwasm.sha3(uint8Array, 256),
+                hashwasm.blake2b(uint8Array, 256)
             ]);
 
-            return { md5, sha1, sha256, sha512 };
+            return { md5, sha1, sha256, sha512, sha3_256, blake2b };
         }
 
         async function compareFiles() {
@@ -285,6 +291,15 @@
             `;
 
             // Hash comparison table
+            const hashAlgorithms = [
+                { key: 'md5', name: 'MD5' },
+                { key: 'sha1', name: 'SHA-1' },
+                { key: 'sha256', name: 'SHA-256' },
+                { key: 'sha512', name: 'SHA-512' },
+                { key: 'sha3_256', name: 'SHA3-256' },
+                { key: 'blake2b', name: 'BLAKE2b-256' }
+            ];
+            
             document.getElementById('hashComparison').innerHTML = `
                 <div class="result-card">
                     <h3 style="margin-bottom: 20px; color: var(--accent-secondary);"><i class="fas fa-fingerprint"></i> Hash Value Comparison</h3>
@@ -299,13 +314,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${['md5', 'sha1', 'sha256', 'sha512'].map(algo => {
-                                    const match = file1Hashes[algo] === file2Hashes[algo];
+                                ${hashAlgorithms.map(algo => {
+                                    const match = file1Hashes[algo.key] === file2Hashes[algo.key];
                                     return `
                                         <tr>
-                                            <td><strong>${algo.toUpperCase()}</strong></td>
-                                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; word-break: break-all;">${file1Hashes[algo]}</td>
-                                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; word-break: break-all;">${file2Hashes[algo]}</td>
+                                            <td><strong>${algo.name}</strong></td>
+                                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; word-break: break-all;">${file1Hashes[algo.key]}</td>
+                                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; word-break: break-all;">${file2Hashes[algo.key]}</td>
                                             <td style="color: ${match ? 'var(--success-color)' : '#ef4444'}">
                                                 ${match ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'}
                                             </td>
@@ -329,15 +344,155 @@
             text += `Result: ${isIdentical ? 'FILES ARE IDENTICAL' : 'FILES ARE DIFFERENT'}\n\n`;
             text += `File 1: ${file1.name}\n`;
             text += `Size: ${formatFileSize(file1.size)}\n`;
-            text += `SHA-256: ${file1Hashes.sha256}\n\n`;
+            text += `MD5: ${file1Hashes.md5}\n`;
+            text += `SHA-1: ${file1Hashes.sha1}\n`;
+            text += `SHA-256: ${file1Hashes.sha256}\n`;
+            text += `SHA-512: ${file1Hashes.sha512}\n`;
+            text += `SHA3-256: ${file1Hashes.sha3_256}\n`;
+            text += `BLAKE2b-256: ${file1Hashes.blake2b}\n\n`;
             text += `File 2: ${file2.name}\n`;
             text += `Size: ${formatFileSize(file2.size)}\n`;
-            text += `SHA-256: ${file2Hashes.sha256}\n\n`;
+            text += `MD5: ${file2Hashes.md5}\n`;
+            text += `SHA-1: ${file2Hashes.sha1}\n`;
+            text += `SHA-256: ${file2Hashes.sha256}\n`;
+            text += `SHA-512: ${file2Hashes.sha512}\n`;
+            text += `SHA3-256: ${file2Hashes.sha3_256}\n`;
+            text += `BLAKE2b-256: ${file2Hashes.blake2b}\n\n`;
             text += `Comparison Timestamp: ${new Date().toLocaleString()}\n`;
-            text += `\nGenerated by Punjab Investigation Tools`;
+            text += `\nGenerated by Punjab Investigation Tools\n`;
+            text += `https://punjab.pages.dev`;
             
             navigator.clipboard.writeText(text);
             showToast('Report copied to clipboard');
+        }
+
+        async function downloadPDF() {
+            showToast('Generating PDF...');
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const isIdentical = file1Hashes.sha256 === file2Hashes.sha256;
+            const sizeMatch = file1.size === file2.size;
+            
+            // Header
+            doc.setFillColor(26, 26, 46);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('File Comparison Report', 20, 25);
+            
+            doc.setFontSize(10);
+            doc.text('Punjab Investigation Tools', 150, 15);
+            doc.text(new Date().toLocaleString(), 150, 22);
+            
+            // Result Banner
+            doc.setFillColor(isIdentical ? 16 : 239, isIdentical ? 185 : 68, isIdentical ? 129 : 68);
+            doc.rect(0, 40, 210, 15, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(isIdentical ? 'RESULT: FILES ARE IDENTICAL' : 'RESULT: FILES ARE DIFFERENT', 105, 50, { align: 'center' });
+            
+            // Content
+            doc.setTextColor(0, 0, 0);
+            let y = 70;
+            
+            const addLine = (label, value, isMono = false) => {
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(10);
+                doc.text(`${label}:`, 20, y);
+                doc.setFont(undefined, 'normal');
+                if (isMono) {
+                    doc.setFontSize(7);
+                    doc.text(value, 55, y);
+                } else {
+                    doc.setFontSize(10);
+                    doc.text(value, 55, y);
+                }
+                y += 6;
+            };
+            
+            // File 1 Section
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(34, 211, 238);
+            doc.text('File 1', 20, y);
+            doc.setTextColor(0, 0, 0);
+            y += 8;
+            
+            addLine('Name', file1.name);
+            addLine('Size', formatFileSize(file1.size));
+            addLine('MD5', file1Hashes.md5, true);
+            addLine('SHA-1', file1Hashes.sha1, true);
+            addLine('SHA-256', file1Hashes.sha256, true);
+            addLine('SHA-512', file1Hashes.sha512.substring(0, 64) + '...', true);
+            addLine('SHA3-256', file1Hashes.sha3_256, true);
+            addLine('BLAKE2b', file1Hashes.blake2b, true);
+            
+            y += 5;
+            
+            // File 2 Section
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(34, 211, 238);
+            doc.text('File 2', 20, y);
+            doc.setTextColor(0, 0, 0);
+            y += 8;
+            
+            addLine('Name', file2.name);
+            addLine('Size', formatFileSize(file2.size));
+            addLine('MD5', file2Hashes.md5, true);
+            addLine('SHA-1', file2Hashes.sha1, true);
+            addLine('SHA-256', file2Hashes.sha256, true);
+            addLine('SHA-512', file2Hashes.sha512.substring(0, 64) + '...', true);
+            addLine('SHA3-256', file2Hashes.sha3_256, true);
+            addLine('BLAKE2b', file2Hashes.blake2b, true);
+            
+            y += 10;
+            
+            // Hash Comparison Summary
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(34, 211, 238);
+            doc.text('Hash Comparison Summary', 20, y);
+            doc.setTextColor(0, 0, 0);
+            y += 8;
+            
+            const hashAlgos = [
+                { name: 'MD5', match: file1Hashes.md5 === file2Hashes.md5 },
+                { name: 'SHA-1', match: file1Hashes.sha1 === file2Hashes.sha1 },
+                { name: 'SHA-256', match: file1Hashes.sha256 === file2Hashes.sha256 },
+                { name: 'SHA-512', match: file1Hashes.sha512 === file2Hashes.sha512 },
+                { name: 'SHA3-256', match: file1Hashes.sha3_256 === file2Hashes.sha3_256 },
+                { name: 'BLAKE2b-256', match: file1Hashes.blake2b === file2Hashes.blake2b }
+            ];
+            
+            doc.setFontSize(10);
+            hashAlgos.forEach(algo => {
+                doc.setFont(undefined, 'normal');
+                doc.text(`${algo.name}:`, 20, y);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(algo.match ? 16 : 239, algo.match ? 185 : 68, algo.match ? 129 : 68);
+                doc.text(algo.match ? 'MATCH' : 'DIFFERENT', 55, y);
+                doc.setTextColor(0, 0, 0);
+                y += 6;
+            });
+            
+            // Footer
+            doc.setFillColor(240, 240, 240);
+            doc.rect(0, 270, 210, 27, 'F');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text('This report was generated by Punjab Investigation Tools', 105, 278, { align: 'center' });
+            doc.text('All processing was done locally in the browser. No files were uploaded to any server.', 105, 284, { align: 'center' });
+            doc.text('https://punjab.pages.dev', 105, 290, { align: 'center' });
+            
+            // Save
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+            doc.save(`file-comparison-report-${timestamp}.pdf`);
+            showToast('PDF downloaded successfully');
         }
 
         function resetComparison() {
