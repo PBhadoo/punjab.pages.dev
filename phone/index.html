@@ -368,7 +368,9 @@
                 document.getElementById('lookupBtn').disabled = false;
                 document.getElementById('dbStatus').innerHTML = `<i class="fas fa-check-circle"></i> Database loaded: ${dbEntryCount.toLocaleString()} Indian mobile prefix records`;
                 document.getElementById('dbStatus').style.color = 'var(--success-color)';
-                document.getElementById('phoneInput').focus();
+                
+                // Check for URL parameter ?phone=
+                checkUrlParams();
             } catch (error) {
                 console.error('Error loading database:', error);
                 document.getElementById('loadingOverlay').classList.add('hidden');
@@ -376,6 +378,19 @@
                 document.getElementById('lookupBtn').disabled = false;
                 document.getElementById('dbStatus').innerHTML = `<i class="fas fa-exclamation-triangle"></i> Database load failed. Using basic lookup.`;
                 document.getElementById('dbStatus').style.color = 'var(--warning-color)';
+                checkUrlParams();
+            }
+        }
+
+        // Check URL parameters for pre-filled phone number
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const phoneParam = urlParams.get('phone');
+            if (phoneParam) {
+                document.getElementById('phoneInput').value = phoneParam;
+                lookupPhone();
+            } else {
+                document.getElementById('phoneInput').focus();
             }
         }
 
