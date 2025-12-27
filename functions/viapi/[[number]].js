@@ -161,23 +161,13 @@ async function checkViNumber(phoneNumber) {
     
     const body = 'mobile=' + JSON.stringify(encrypted);
     
-    // Debug: return the request details along with response
     const response = await fetch('https://www.myvi.in/bin/selected/prepaidrechargevalidation', {
         method: 'POST',
         headers: headers,
         body: body
     });
     
-    const result = await response.json();
-    
-    // Add debug info
-    result._debug = {
-        payload: payload,
-        encryptedParams: encrypted.params.substring(0, 30) + '...',
-        bodyPrefix: body.substring(0, 100) + '...'
-    };
-    
-    return result;
+    return await response.json();
 }
 
 export async function onRequest(context) {
@@ -222,8 +212,7 @@ export async function onRequest(context) {
             custStatus: data.cust_status || null,
             isMigrated: data.isMigrated || null,
             timestamp: new Date().toISOString(),
-            source: 'vi-api',
-            _debug: data._debug // Include debug info
+            source: 'vi-api'
         };
         
         return new Response(JSON.stringify(result), { headers: corsHeaders });
