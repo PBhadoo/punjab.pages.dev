@@ -95,7 +95,7 @@ async function pbkdf2(password, salt, iterations, keyLength) {
 }
 
 // AES-CBC encryption using Web Crypto
-// Web Crypto automatically applies PKCS7 padding for AES-CBC
+// Web Crypto AES-CBC adds PKCS7 padding, but we need to verify output matches Python
 async function aesEncrypt(plaintext, key, iv) {
     const cryptoKey = await crypto.subtle.importKey(
         'raw',
@@ -105,9 +105,9 @@ async function aesEncrypt(plaintext, key, iv) {
         ['encrypt']
     );
     
-    // Do NOT manually pad - Web Crypto handles PKCS7 padding automatically
     const plaintextBytes = new TextEncoder().encode(plaintext);
     
+    // Web Crypto adds PKCS7 padding automatically
     const ciphertext = await crypto.subtle.encrypt(
         { name: 'AES-CBC', iv: iv },
         cryptoKey,
@@ -144,7 +144,7 @@ async function encryptViPayload(dataToEncrypt) {
 
 // Call Vi API
 async function checkViNumber(phoneNumber) {
-    // Prepare payload
+    // Prepare payload - JSON.stringify produces no spaces by default
     const payload = JSON.stringify({ mobNumber: phoneNumber });
     
     // Encrypt
@@ -161,13 +161,23 @@ async function checkViNumber(phoneNumber) {
     
     const body = 'mobile=' + JSON.stringify(encrypted);
     
+    // Debug: return the request details along with response
     const response = await fetch('https://www.myvi.in/bin/selected/prepaidrechargevalidation', {
         method: 'POST',
         headers: headers,
         body: body
     });
     
-    return await response.json();
+    const result = await response.json();
+    
+    // Add debug info
+    result._debug = {
+        payload: payload,
+        encryptedParams: encrypted.params.substring(0, 30) + '...',
+        bodyPrefix: body.substring(0, 100) + '...'
+    };
+    
+    return result;
 }
 
 export async function onRequest(context) {
@@ -211,7 +221,8 @@ export async function onRequest(context) {
             custStatus: data.cust_status || null,
             isMigrated: data.isMigrated || null,
             timestamp: new Date().toISOString(),
-            source: 'vi-api'
+            source: 'vi-api',
+            _debug: data._debug // Include debug info
         };
         
         return new Response(JSON.stringify(result), { headers: corsHeaders });
