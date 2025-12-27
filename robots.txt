@@ -1,0 +1,24 @@
+# Punjab Investigation Tools - robots.txt
+# https://punjab.pages.dev
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://punjab.pages.dev/sitemap.xml
+
+# Disallow data files
+Disallow: /imei/tacdb.json
+
+# Allow all crawlers to index all pages
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Crawl-delay for polite crawling (optional)
+Crawl-delay: 1
