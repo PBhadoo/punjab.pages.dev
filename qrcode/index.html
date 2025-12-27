@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Tools | Punjab Investigation Tools</title>
+    <meta name="description" content="Generate and scan QR codes. Create UPI payment QR codes, read QR codes from images or camera.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+    
+    <!-- QR Code Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    
+    <style>
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        .tab-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-color: transparent;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* QR Display */
+        .qr-display {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            max-width: 300px;
+        }
+        .qr-display canvas, .qr-display img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Generate Button */
+        .generate-btn {
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        
+        /* Scanner */
+        .scanner-container {
+            position: relative;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        #scannerVideo {
+            width: 100%;
+            border-radius: 16px;
+            background: #000;
+        }
+        .scanner-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px solid var(--accent-blue);
+            border-radius: 16px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+        .scanner-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+            animation: scan 2s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0; }
+            50% { top: calc(100% - 3px); }
+            100% { top: 0; }
+        }
+        
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--card-border);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .upload-zone:hover {
+            border-color: var(--accent-blue);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .upload-zone.dragover {
+            border-color: var(--accent-blue);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        .upload-zone i {
+            font-size: 3rem;
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+        }
+        .upload-zone p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        .upload-zone input {
+            display: none;
+        }
+        
+        /* Result Card */
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .result-card h4 {
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .result-content {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            word-break: break-all;
+            font-family: monospace;
+            color: var(--text-primary);
+        }
+        .result-type {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--accent-blue);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            border-color: var(--accent-blue);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        /* UPI Preview */
+        .upi-preview {
+            background: linear-gradient(135deg, #5f259f, #e91e63);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            margin-top: 20px;
+        }
+        .upi-preview h5 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .upi-details {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .upi-details p {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .upi-details strong {
+            opacity: 0.8;
+        }
+        
+        /* QR Type Selector */
+        .qr-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .qr-type-btn {
+            padding: 20px 15px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .qr-type-btn:hover {
+            border-color: var(--accent-blue);
+        }
+        .qr-type-btn.active {
+            border-color: var(--accent-blue);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        .qr-type-btn i {
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+            margin-bottom: 8px;
+            display: block;
+        }
+        .qr-type-btn span {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        /* Camera Controls */
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .camera-btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        .camera-btn.start {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        .camera-btn.stop {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        .camera-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <header class="tool-header">
+        <div class="header-container">
+            <a href="../" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Tools</span>
+            </a>
+            <div class="tool-title">
+                <div class="tool-icon">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <div>
+                    <h1>QR Code Tools</h1>
+                    <p>Generate, Scan & Read QR Codes</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="tool-main">
+        <div class="tool-container">
+            <!-- Tabs -->
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchTab('generate')">
+                    <i class="fas fa-plus-circle"></i> Generate QR
+                </button>
+                <button class="tab-btn" onclick="switchTab('scan')">
+                    <i class="fas fa-camera"></i> Scan QR
+                </button>
+                <button class="tab-btn" onclick="switchTab('upload')">
+                    <i class="fas fa-upload"></i> Read from Image
+                </button>
+                <button class="tab-btn" onclick="switchTab('upi')">
+                    <i class="fas fa-indian-rupee-sign"></i> UPI Payment
+                </button>
+            </div>
+
+            <!-- Generate QR Tab -->
+            <div id="generateTab" class="tab-content active">
+                <div class="card">
+                    <h3><i class="fas fa-wand-magic-sparkles"></i> Create QR Code</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Select the type of QR code you want to create</p>
+                    
+                    <div class="qr-type-grid">
+                        <div class="qr-type-btn active" onclick="selectQRType('text')">
+                            <i class="fas fa-font"></i>
+                            <span>Text</span>
+                        </div>
+                        <div class="qr-type-btn" onclick="selectQRType('url')">
+                            <i class="fas fa-link"></i>
+                            <span>URL</span>
+                        </div>
+                        <div class="qr-type-btn" onclick="selectQRType('email')">
+                            <i class="fas fa-envelope"></i>
+                            <span>Email</span>
+                        </div>
+                        <div class="qr-type-btn" onclick="selectQRType('phone')">
+                            <i class="fas fa-phone"></i>
+                            <span>Phone</span>
+                        </div>
+                        <div class="qr-type-btn" onclick="selectQRType('sms')">
+                            <i class="fas fa-comment-sms"></i>
+                            <span>SMS</span>
+                        </div>
+                        <div class="qr-type-btn" onclick="selectQRType('wifi')">
+                            <i class="fas fa-wifi"></i>
+                            <span>WiFi</span>
+                        </div>
+                        <div class="qr-type-btn" onclick="selectQRType('vcard')">
+                            <i class="fas fa-address-card"></i>
+                            <span>vCard</span>
+                        </div>
+                        <div class="qr-type-btn" onclick="selectQRType('location')">
+                            <i class="fas fa-location-dot"></i>
+                            <span>Location</span>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Form Fields -->
+                    <div id="qrFormFields">
+                        <!-- Text (default) -->
+                        <div class="form-group">
+                            <label for="qrText">Enter Text</label>
+                            <textarea id="qrText" placeholder="Enter any text to encode..."></textarea>
+                        </div>
+                    </div>
+
+                    <button class="generate-btn" onclick="generateQR()">
+                        <i class="fas fa-qrcode"></i> Generate QR Code
+                    </button>
+
+                    <div id="qrResult" style="display: none;">
+                        <div class="qr-display">
+                            <canvas id="qrCanvas"></canvas>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="downloadQR('png')">
+                                <i class="fas fa-download"></i> PNG
+                            </button>
+                            <button class="action-btn" onclick="downloadQR('svg')">
+                                <i class="fas fa-file-code"></i> SVG
+                            </button>
+                            <button class="action-btn" onclick="copyQRData()">
+                                <i class="fas fa-copy"></i> Copy Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scan QR Tab -->
+            <div id="scanTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-camera"></i> Scan QR Code</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Use your camera to scan QR codes in real-time</p>
+                    
+                    <div class="scanner-container">
+                        <video id="scannerVideo" playsinline></video>
+                        <div class="scanner-overlay" id="scannerOverlay" style="display: none;">
+                            <div class="scanner-line"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="camera-controls">
+                        <button class="camera-btn start" id="startScanBtn" onclick="startScanner()">
+                            <i class="fas fa-play"></i> Start Camera
+                        </button>
+                        <button class="camera-btn stop" id="stopScanBtn" onclick="stopScanner()" style="display: none;">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                    </div>
+
+                    <div id="scanResult" class="result-card" style="display: none;">
+                        <h4><i class="fas fa-check-circle"></i> QR Code Detected</h4>
+                        <span class="result-type" id="scanResultType">Text</span>
+                        <div class="result-content" id="scanResultContent"></div>
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="copyScanResult()">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button class="action-btn" id="openLinkBtn" onclick="openScannedLink()" style="display: none;">
+                                <i class="fas fa-external-link"></i> Open Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Tab -->
+            <div id="uploadTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-image"></i> Read QR from Image</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Upload an image containing a QR code to decode it</p>
+                    
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('qrImageInput').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to upload or drag & drop image here</p>
+                        <p style="font-size: 0.85rem; margin-top: 8px;">Supports PNG, JPG, GIF, BMP</p>
+                        <input type="file" id="qrImageInput" accept="image/*" onchange="readQRFromImage(event)">
+                    </div>
+
+                    <div id="uploadPreview" style="display: none;">
+                        <img id="uploadedImage" style="max-width: 100%; border-radius: 12px; margin-bottom: 20px;">
+                    </div>
+
+                    <div id="uploadResult" class="result-card" style="display: none;">
+                        <h4><i class="fas fa-check-circle"></i> QR Code Decoded</h4>
+                        <span class="result-type" id="uploadResultType">Text</span>
+                        <div class="result-content" id="uploadResultContent"></div>
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="copyUploadResult()">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button class="action-btn" id="openUploadLinkBtn" onclick="openUploadedLink()" style="display: none;">
+                                <i class="fas fa-external-link"></i> Open Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UPI Payment Tab -->
+            <div id="upiTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-indian-rupee-sign"></i> UPI Payment QR Code</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Generate UPI payment QR codes for receiving payments</p>
+                    
+                    <div class="form-group">
+                        <label for="upiId">UPI ID *</label>
+                        <input type="text" id="upiId" placeholder="example@upi, example@paytm, etc.">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="upiName">Payee Name *</label>
+                        <input type="text" id="upiName" placeholder="Your Name or Business Name">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="upiAmount">Amount (₹)</label>
+                            <input type="number" id="upiAmount" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="upiCurrency">Currency</label>
+                            <select id="upiCurrency">
+                                <option value="INR" selected>INR - Indian Rupee</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="upiNote">Transaction Note (Optional)</label>
+                        <input type="text" id="upiNote" placeholder="Payment for...">
+                    </div>
+
+                    <button class="generate-btn" onclick="generateUPIQR()">
+                        <i class="fas fa-qrcode"></i> Generate UPI QR Code
+                    </button>
+
+                    <div id="upiResult" style="display: none;">
+                        <div class="upi-preview">
+                            <h5><i class="fas fa-mobile-screen"></i> Payment Details</h5>
+                            <div class="upi-details">
+                                <p><strong>UPI ID:</strong> <span id="upiPreviewId"></span></p>
+                                <p><strong>Name:</strong> <span id="upiPreviewName"></span></p>
+                                <p><strong>Amount:</strong> <span id="upiPreviewAmount"></span></p>
+                                <p><strong>Note:</strong> <span id="upiPreviewNote"></span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="qr-display">
+                            <canvas id="upiQrCanvas"></canvas>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="downloadUPIQR('png')">
+                                <i class="fas fa-download"></i> Download PNG
+                            </button>
+                            <button class="action-btn" onclick="copyUPIString()">
+                                <i class="fas fa-copy"></i> Copy UPI String
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="tool-footer">
+        <p>Punjab Investigation Tools - QR Code Tools</p>
+        <p>All processing done locally in your browser</p>
+    </footer>
+
+    <script>
+        // Current state
+        let currentQRType = 'text';
+        let currentQRData = '';
+        let currentUPIString = '';
+        let scannerStream = null;
+        let scannerInterval = null;
+        let scannedData = '';
+        let uploadedData = '';
+
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            // Stop scanner when switching away
+            if (tab !== 'scan' && scannerStream) {
+                stopScanner();
+            }
+        }
+
+        // QR Type Selection
+        function selectQRType(type) {
+            currentQRType = type;
+            document.querySelectorAll('.qr-type-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.qr-type-btn').classList.add('active');
+            
+            updateFormFields(type);
+        }
+
+        function updateFormFields(type) {
+            const container = document.getElementById('qrFormFields');
+            let html = '';
+
+            switch(type) {
+                case 'text':
+                    html = `
+                        <div class="form-group">
+                            <label for="qrText">Enter Text</label>
+                            <textarea id="qrText" placeholder="Enter any text to encode..."></textarea>
+                        </div>`;
+                    break;
+                case 'url':
+                    html = `
+                        <div class="form-group">
+                            <label for="qrUrl">Website URL</label>
+                            <input type="url" id="qrUrl" placeholder="https://example.com">
+                        </div>`;
+                    break;
+                case 'email':
+                    html = `
+                        <div class="form-group">
+                            <label for="qrEmail">Email Address</label>
+                            <input type="email" id="qrEmail" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrEmailSubject">Subject (Optional)</label>
+                            <input type="text" id="qrEmailSubject" placeholder="Email subject">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrEmailBody">Message (Optional)</label>
+                            <textarea id="qrEmailBody" placeholder="Email message..."></textarea>
+                        </div>`;
+                    break;
+                case 'phone':
+                    html = `
+                        <div class="form-group">
+                            <label for="qrPhone">Phone Number</label>
+                            <input type="tel" id="qrPhone" placeholder="+91 98765 43210">
+                        </div>`;
+                    break;
+                case 'sms':
+                    html = `
+                        <div class="form-group">
+                            <label for="qrSmsNumber">Phone Number</label>
+                            <input type="tel" id="qrSmsNumber" placeholder="+91 98765 43210">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrSmsMessage">Message (Optional)</label>
+                            <textarea id="qrSmsMessage" placeholder="SMS message..."></textarea>
+                        </div>`;
+                    break;
+                case 'wifi':
+                    html = `
+                        <div class="form-group">
+                            <label for="qrWifiSsid">Network Name (SSID)</label>
+                            <input type="text" id="qrWifiSsid" placeholder="WiFi Network Name">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrWifiPassword">Password</label>
+                            <input type="text" id="qrWifiPassword" placeholder="WiFi Password">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrWifiType">Security Type</label>
+                            <select id="qrWifiType">
+                                <option value="WPA">WPA/WPA2</option>
+                                <option value="WEP">WEP</option>
+                                <option value="nopass">None (Open)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="qrWifiHidden"> Hidden Network
+                            </label>
+                        </div>`;
+                    break;
+                case 'vcard':
+                    html = `
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="qrVcardFname">First Name</label>
+                                <input type="text" id="qrVcardFname" placeholder="First Name">
+                            </div>
+                            <div class="form-group">
+                                <label for="qrVcardLname">Last Name</label>
+                                <input type="text" id="qrVcardLname" placeholder="Last Name">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="qrVcardOrg">Organization</label>
+                            <input type="text" id="qrVcardOrg" placeholder="Company Name">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrVcardTitle">Title</label>
+                            <input type="text" id="qrVcardTitle" placeholder="Job Title">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrVcardPhone">Phone</label>
+                            <input type="tel" id="qrVcardPhone" placeholder="+91 98765 43210">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrVcardEmail">Email</label>
+                            <input type="email" id="qrVcardEmail" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="qrVcardUrl">Website</label>
+                            <input type="url" id="qrVcardUrl" placeholder="https://website.com">
+                        </div>`;
+                    break;
+                case 'location':
+                    html = `
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="qrLat">Latitude</label>
+                                <input type="number" id="qrLat" placeholder="30.7333" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label for="qrLng">Longitude</label>
+                                <input type="number" id="qrLng" placeholder="76.7794" step="any">
+                            </div>
+                        </div>
+                        <button type="button" class="action-btn" onclick="getCurrentLocation()" style="margin-bottom: 20px;">
+                            <i class="fas fa-location-crosshairs"></i> Use Current Location
+                        </button>`;
+                    break;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Generate QR Code
+        function generateQR() {
+            const data = getQRData();
+            if (!data) {
+                alert('Please fill in the required fields');
+                return;
+            }
+
+            currentQRData = data;
+            const canvas = document.getElementById('qrCanvas');
+            
+            QRCode.toCanvas(canvas, data, {
+                width: 250,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff'
+                }
+            }, function(error) {
+                if (error) {
+                    console.error(error);
+                    alert('Error generating QR code');
+                    return;
+                }
+                document.getElementById('qrResult').style.display = 'block';
+            });
+        }
+
+        function getQRData() {
+            switch(currentQRType) {
+                case 'text':
+                    return document.getElementById('qrText')?.value || '';
+                case 'url':
+                    return document.getElementById('qrUrl')?.value || '';
+                case 'email':
+                    const email = document.getElementById('qrEmail')?.value;
+                    const subject = document.getElementById('qrEmailSubject')?.value;
+                    const body = document.getElementById('qrEmailBody')?.value;
+                    if (!email) return '';
+                    let mailto = `mailto:${email}`;
+                    const params = [];
+                    if (subject) params.push(`subject=${encodeURIComponent(subject)}`);
+                    if (body) params.push(`body=${encodeURIComponent(body)}`);
+                    if (params.length) mailto += '?' + params.join('&');
+                    return mailto;
+                case 'phone':
+                    const phone = document.getElementById('qrPhone')?.value;
+                    return phone ? `tel:${phone.replace(/\s/g, '')}` : '';
+                case 'sms':
+                    const smsNum = document.getElementById('qrSmsNumber')?.value;
+                    const smsMsg = document.getElementById('qrSmsMessage')?.value;
+                    if (!smsNum) return '';
+                    return `sms:${smsNum.replace(/\s/g, '')}${smsMsg ? '?body=' + encodeURIComponent(smsMsg) : ''}`;
+                case 'wifi':
+                    const ssid = document.getElementById('qrWifiSsid')?.value;
+                    const password = document.getElementById('qrWifiPassword')?.value;
+                    const type = document.getElementById('qrWifiType')?.value;
+                    const hidden = document.getElementById('qrWifiHidden')?.checked;
+                    if (!ssid) return '';
+                    return `WIFI:T:${type};S:${ssid};P:${password};H:${hidden ? 'true' : 'false'};;`;
+                case 'vcard':
+                    const fname = document.getElementById('qrVcardFname')?.value || '';
+                    const lname = document.getElementById('qrVcardLname')?.value || '';
+                    const org = document.getElementById('qrVcardOrg')?.value || '';
+                    const title = document.getElementById('qrVcardTitle')?.value || '';
+                    const vphone = document.getElementById('qrVcardPhone')?.value || '';
+                    const vemail = document.getElementById('qrVcardEmail')?.value || '';
+                    const vurl = document.getElementById('qrVcardUrl')?.value || '';
+                    if (!fname && !lname) return '';
+                    return `BEGIN:VCARD\nVERSION:3.0\nN:${lname};${fname}\nFN:${fname} ${lname}\n${org ? 'ORG:' + org + '\n' : ''}${title ? 'TITLE:' + title + '\n' : ''}${vphone ? 'TEL:' + vphone + '\n' : ''}${vemail ? 'EMAIL:' + vemail + '\n' : ''}${vurl ? 'URL:' + vurl + '\n' : ''}END:VCARD`;
+                case 'location':
+                    const lat = document.getElementById('qrLat')?.value;
+                    const lng = document.getElementById('qrLng')?.value;
+                    if (!lat || !lng) return '';
+                    return `geo:${lat},${lng}`;
+                default:
+                    return '';
+            }
+        }
+
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('qrLat').value = position.coords.latitude.toFixed(6);
+                    document.getElementById('qrLng').value = position.coords.longitude.toFixed(6);
+                }, function(error) {
+                    alert('Unable to get location: ' + error.message);
+                });
+            } else {
+                alert('Geolocation is not supported by this browser');
+            }
+        }
+
+        // Download QR Code
+        function downloadQR(format) {
+            const canvas = document.getElementById('qrCanvas');
+            const link = document.createElement('a');
+            
+            if (format === 'png') {
+                link.download = 'qrcode.png';
+                link.href = canvas.toDataURL('image/png');
+            } else if (format === 'svg') {
+                QRCode.toString(currentQRData, { type: 'svg' }, function(err, svg) {
+                    if (err) return;
+                    const blob = new Blob([svg], { type: 'image/svg+xml' });
+                    link.download = 'qrcode.svg';
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                });
+                return;
+            }
+            link.click();
+        }
+
+        function copyQRData() {
+            navigator.clipboard.writeText(currentQRData).then(() => {
+                alert('QR data copied to clipboard!');
+            });
+        }
+
+        // Scanner Functions
+        async function startScanner() {
+            try {
+                scannerStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                
+                const video = document.getElementById('scannerVideo');
+                video.srcObject = scannerStream;
+                video.play();
+                
+                document.getElementById('startScanBtn').style.display = 'none';
+                document.getElementById('stopScanBtn').style.display = 'inline-flex';
+                document.getElementById('scannerOverlay').style.display = 'block';
+                
+                // Start scanning
+                scannerInterval = setInterval(scanFrame, 200);
+            } catch (err) {
+                alert('Unable to access camera: ' + err.message);
+            }
+        }
+
+        function stopScanner() {
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+            }
+            if (scannerInterval) {
+                clearInterval(scannerInterval);
+                scannerInterval = null;
+            }
+            
+            document.getElementById('scannerVideo').srcObject = null;
+            document.getElementById('startScanBtn').style.display = 'inline-flex';
+            document.getElementById('stopScanBtn').style.display = 'none';
+            document.getElementById('scannerOverlay').style.display = 'none';
+        }
+
+        function scanFrame() {
+            const video = document.getElementById('scannerVideo');
+            if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code) {
+                scannedData = code.data;
+                displayScanResult(code.data);
+                stopScanner();
+            }
+        }
+
+        function displayScanResult(data) {
+            const type = detectDataType(data);
+            document.getElementById('scanResultType').textContent = type;
+            document.getElementById('scanResultContent').textContent = data;
+            document.getElementById('scanResult').style.display = 'block';
+            
+            if (type === 'URL') {
+                document.getElementById('openLinkBtn').style.display = 'inline-flex';
+            } else {
+                document.getElementById('openLinkBtn').style.display = 'none';
+            }
+        }
+
+        function detectDataType(data) {
+            if (data.startsWith('http://') || data.startsWith('https://')) return 'URL';
+            if (data.startsWith('mailto:')) return 'Email';
+            if (data.startsWith('tel:')) return 'Phone';
+            if (data.startsWith('sms:')) return 'SMS';
+            if (data.startsWith('WIFI:')) return 'WiFi';
+            if (data.startsWith('BEGIN:VCARD')) return 'vCard';
+            if (data.startsWith('geo:')) return 'Location';
+            if (data.startsWith('upi://')) return 'UPI Payment';
+            return 'Text';
+        }
+
+        function copyScanResult() {
+            navigator.clipboard.writeText(scannedData).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+
+        function openScannedLink() {
+            if (scannedData.startsWith('http')) {
+                window.open(scannedData, '_blank');
+            }
+        }
+
+        // Upload Functions
+        function readQRFromImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Show preview
+                    document.getElementById('uploadedImage').src = e.target.result;
+                    document.getElementById('uploadPreview').style.display = 'block';
+                    
+                    // Decode QR
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        uploadedData = code.data;
+                        displayUploadResult(code.data);
+                    } else {
+                        alert('No QR code found in the image');
+                        document.getElementById('uploadResult').style.display = 'none';
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function displayUploadResult(data) {
+            const type = detectDataType(data);
+            document.getElementById('uploadResultType').textContent = type;
+            document.getElementById('uploadResultContent').textContent = data;
+            document.getElementById('uploadResult').style.display = 'block';
+            
+            if (type === 'URL') {
+                document.getElementById('openUploadLinkBtn').style.display = 'inline-flex';
+            } else {
+                document.getElementById('openUploadLinkBtn').style.display = 'none';
+            }
+        }
+
+        function copyUploadResult() {
+            navigator.clipboard.writeText(uploadedData).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+
+        function openUploadedLink() {
+            if (uploadedData.startsWith('http')) {
+                window.open(uploadedData, '_blank');
+            }
+        }
+
+        // Drag and drop
+        const uploadZone = document.getElementById('uploadZone');
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                document.getElementById('qrImageInput').files = e.dataTransfer.files;
+                readQRFromImage({ target: { files: [file] } });
+            }
+        });
+
+        // UPI QR Code
+        function generateUPIQR() {
+            const upiId = document.getElementById('upiId').value.trim();
+            const name = document.getElementById('upiName').value.trim();
+            const amount = document.getElementById('upiAmount').value;
+            const note = document.getElementById('upiNote').value.trim();
+            
+            if (!upiId || !name) {
+                alert('Please enter UPI ID and Payee Name');
+                return;
+            }
+            
+            // Build UPI URL
+            let upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(name)}`;
+            if (amount && parseFloat(amount) > 0) {
+                upiUrl += `&am=${amount}&cu=INR`;
+            }
+            if (note) {
+                upiUrl += `&tn=${encodeURIComponent(note)}`;
+            }
+            
+            currentUPIString = upiUrl;
+            
+            // Update preview
+            document.getElementById('upiPreviewId').textContent = upiId;
+            document.getElementById('upiPreviewName').textContent = name;
+            document.getElementById('upiPreviewAmount').textContent = amount ? `₹${parseFloat(amount).toFixed(2)}` : 'Not specified';
+            document.getElementById('upiPreviewNote').textContent = note || 'None';
+            
+            // Generate QR
+            const canvas = document.getElementById('upiQrCanvas');
+            QRCode.toCanvas(canvas, upiUrl, {
+                width: 250,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff'
+                }
+            }, function(error) {
+                if (error) {
+                    console.error(error);
+                    alert('Error generating UPI QR code');
+                    return;
+                }
+                document.getElementById('upiResult').style.display = 'block';
+            });
+        }
+
+        function downloadUPIQR(format) {
+            const canvas = document.getElementById('upiQrCanvas');
+            const link = document.createElement('a');
+            link.download = 'upi-qr.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function copyUPIString() {
+            navigator.clipboard.writeText(currentUPIString).then(() => {
+                alert('UPI string copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
