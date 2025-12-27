@@ -35,12 +35,18 @@ export async function onRequestPost(context) {
             }
         );
 
-        const data = await response.json();
+        const uidaiData = await response.json();
         
-        // Add our transaction ID to the response
-        data.transactionId = requestId;
+        // Build response with proper field mapping
+        // UIDAI returns: captchaBase64String, audioCaptchaBase64String, captchaTxnId
+        const responseData = {
+            imageBase64: uidaiData.captchaBase64String || uidaiData.imageBase64,
+            audioBase64: uidaiData.audioCaptchaBase64String || uidaiData.audioBase64,
+            captchaTxnId: uidaiData.captchaTxnId,  // This is crucial for verification
+            transactionId: requestId
+        };
 
-        return new Response(JSON.stringify(data), {
+        return new Response(JSON.stringify(responseData), {
             status: 200,
             headers: {
                 'Content-Type': 'application/json',
