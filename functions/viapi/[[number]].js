@@ -161,7 +161,7 @@ async function checkViNumber(phoneNumber) {
     
     const body = 'mobile=' + JSON.stringify(encrypted);
     
-    const response = await fetch('https://www.myvi.in/bin/selected/prepaidrechargevalidation', {
+    const response = await fetch('https://www.myvi.in/bin/selected/prepaidrechargevalidation?timestamp=' + Date.now(), {
         method: 'POST',
         headers: headers,
         body: body
