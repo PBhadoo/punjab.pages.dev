@@ -1090,6 +1090,12 @@
                             <div style="margin-top: 15px; padding: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; text-align: center; font-size: 0.8rem; color: var(--text-secondary);">
                                 <i class="fas fa-info-circle"></i> This is live data from Vi network. The number is <strong>currently active</strong> on Vi (${viData.brand || 'Vodafone Idea'}).
                             </div>
+                            <details style="margin-top: 15px;">
+                                <summary style="cursor: pointer; padding: 10px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                                    <i class="fas fa-code"></i> Raw API Response (Click to expand)
+                                </summary>
+                                <pre style="margin-top: 10px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.75rem; color: var(--text-secondary); overflow-x: auto; white-space: pre-wrap; word-break: break-all;">${JSON.stringify(viData, null, 2)}</pre>
+                            </details>
                         `;
                         
                         // Show current operator as Vi
