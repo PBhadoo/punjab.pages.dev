@@ -212,8 +212,7 @@ export async function onRequest(context) {
             custStatus: data.cust_status || null,
             isMigrated: data.isMigrated || null,
             timestamp: new Date().toISOString(),
-            source: 'vi-api',
-            main_response: data  // Raw response from official Vi API
+            source: 'vi-api'
         };
         
         return new Response(JSON.stringify(result), { headers: corsHeaders });

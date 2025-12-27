@@ -1048,11 +1048,16 @@
                         const viResponse = await fetch(`/viapi/${parsed.nationalNumber}?t=${Date.now()}`);
                         const responseData = await viResponse.json();
                         
-                        // Check if it's an actual success response (not an API failure)
-                        if (viResponse.ok && responseData && !responseData.error) {
+                        // Check if it's an actual success response (not an API failure from Vi)
+                        // Retry if: HTTP error, has error field, OR status is FAILURE (Vi API returned failure)
+                        if (viResponse.ok && responseData && !responseData.error && responseData.status !== 'FAILURE') {
                             viData = responseData;
                             lastViResult = viData;
                             break; // Success, exit retry loop
+                        } else if (responseData.status === 'FAILURE') {
+                            // Vi API returned FAILURE - retry
+                            console.warn(`Vi API attempt ${attempt}: Vi returned FAILURE, retrying...`);
+                            lastError = new Error('Vi API returned FAILURE');
                         } else {
                             lastError = new Error(responseData.error || 'API returned error');
                         }
