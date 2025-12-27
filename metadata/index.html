@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../css/tool-common.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <header class="header">
@@ -133,8 +134,8 @@
                 <button class="action-btn" onclick="copyMetadata()">
                     <i class="fas fa-copy"></i> Copy Metadata
                 </button>
-                <button class="action-btn" onclick="downloadReport()">
-                    <i class="fas fa-download"></i> Download Report
+                <button class="action-btn" onclick="downloadPDF()">
+                    <i class="fas fa-file-pdf"></i> Download PDF Report
                 </button>
                 <button class="action-btn" onclick="resetTool()">
                     <i class="fas fa-redo"></i> Analyze New File
@@ -634,26 +635,102 @@
             showToast('Metadata copied to clipboard');
         }
 
-        function downloadReport() {
-            const report = {
-                file: {
-                    name: currentFile.name,
-                    type: currentFile.type,
-                    size: currentFile.size,
-                    sizeFormatted: formatFileSize(currentFile.size)
-                },
-                metadata: extractedMetadata,
-                extractedAt: new Date().toISOString()
+        function downloadPDF() {
+            showToast('Generating PDF report...');
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFillColor(26, 26, 46);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(18);
+            doc.text('Document Metadata Report', 20, 20);
+            
+            doc.setFontSize(10);
+            doc.text('Punjab Investigation Tools', 20, 30);
+            doc.text(new Date().toLocaleString(), 140, 30);
+            
+            // Content
+            doc.setTextColor(0, 0, 0);
+            let y = 55;
+            
+            // Helper function to add a section
+            const addSection = (title, data) => {
+                if (!data || Object.keys(data).length === 0) return;
+                
+                // Check if we need a new page
+                if (y > 260) {
+                    doc.addPage();
+                    y = 20;
+                }
+                
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(99, 102, 241);
+                doc.text(title, 20, y);
+                y += 8;
+                
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(0, 0, 0);
+                
+                for (const [key, value] of Object.entries(data)) {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    
+                    const displayValue = String(value || 'N/A');
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${key}:`, 25, y);
+                    doc.setFont(undefined, 'normal');
+                    
+                    // Handle long values
+                    const maxWidth = 130;
+                    const splitValue = doc.splitTextToSize(displayValue, maxWidth);
+                    doc.text(splitValue, 70, y);
+                    y += splitValue.length * 5 + 3;
+                }
+                y += 5;
             };
             
-            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `metadata_${currentFile.name.replace(/\.[^/.]+$/, '')}_${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showToast('Report downloaded');
+            // File Information
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('File Information', 20, y);
+            y += 10;
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`File Name: ${currentFile.name}`, 25, y); y += 6;
+            doc.text(`File Type: ${currentFile.type || 'Unknown'}`, 25, y); y += 6;
+            doc.text(`File Size: ${formatFileSize(currentFile.size)}`, 25, y); y += 10;
+            
+            // Metadata Sections
+            addSection('Basic Information', extractedMetadata.basic);
+            addSection('Timestamps', extractedMetadata.timestamps);
+            addSection('Author & Creator', extractedMetadata.author);
+            addSection('Technical Details', extractedMetadata.technical);
+            addSection('Camera & EXIF Data', extractedMetadata.exif);
+            addSection('GPS Location', extractedMetadata.gps);
+            
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Page ${i} of ${pageCount}`, 100, 290);
+                doc.text('Generated by Punjab Investigation Tools | https://punjab.pages.dev', 20, 290);
+            }
+            
+            // Save
+            const fileName = currentFile.name.replace(/\.[^/.]+$/, '');
+            doc.save(`metadata_report_${fileName}.pdf`);
+            showToast('PDF report downloaded');
         }
 
         function resetTool() {
