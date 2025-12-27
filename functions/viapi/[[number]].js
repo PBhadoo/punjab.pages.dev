@@ -95,6 +95,7 @@ async function pbkdf2(password, salt, iterations, keyLength) {
 }
 
 // AES-CBC encryption using Web Crypto
+// Web Crypto automatically applies PKCS7 padding for AES-CBC
 async function aesEncrypt(plaintext, key, iv) {
     const cryptoKey = await crypto.subtle.importKey(
         'raw',
@@ -104,12 +105,13 @@ async function aesEncrypt(plaintext, key, iv) {
         ['encrypt']
     );
     
-    const padded = pkcs7Pad(new TextEncoder().encode(plaintext), 16);
+    // Do NOT manually pad - Web Crypto handles PKCS7 padding automatically
+    const plaintextBytes = new TextEncoder().encode(plaintext);
     
     const ciphertext = await crypto.subtle.encrypt(
         { name: 'AES-CBC', iv: iv },
         cryptoKey,
-        padded
+        plaintextBytes
     );
     
     return new Uint8Array(ciphertext);
