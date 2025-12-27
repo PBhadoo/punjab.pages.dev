@@ -171,7 +171,7 @@ export async function onRequest(context) {
             'googleCookie': 'airtel.com',
         };
 
-        const url = `https://digi-api.airtel.in/airtel-selfcare/rest/home/v1/getaccounts?siNumber=${number}&lob=PREPAID&timestamp=${Date.now()}`;
+        const url = `https://digi-api.airtel.in/airtel-selfcare/rest/home/v1/getaccounts?siNumber=${number}&lob=PREPAID`;
         const response = await fetch(url, { headers: apiHeaders });
         
         const decryptKey = response.headers.get('googleCookie') || 'airtel.com';
