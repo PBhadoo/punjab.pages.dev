@@ -471,6 +471,11 @@
                 return;
             }
 
+            // Update URL with phone parameter
+            const url = new URL(window.location);
+            url.searchParams.set('phone', input);
+            window.history.replaceState({}, '', url);
+
             // Reset API results
             lastJioResult = null;
             lastBsnlResult = null;
