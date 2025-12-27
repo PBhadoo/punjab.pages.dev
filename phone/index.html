@@ -921,7 +921,7 @@
                 
                 // Call Airtel API
                 try {
-                    const airtelResponse = await fetch(`/airtelapi/${parsed.nationalNumber}`);
+                    const airtelResponse = await fetch(`/airtelapi/${parsed.nationalNumber}?t=${Date.now()}`);
                     const airtelData = await airtelResponse.json();
                     lastAirtelResult = airtelData;
                     
@@ -1029,7 +1029,7 @@
                 
                 // Call Vi API
                 try {
-                    const viResponse = await fetch(`/viapi/${parsed.nationalNumber}`);
+                    const viResponse = await fetch(`/viapi/${parsed.nationalNumber}?t=${Date.now()}`);
                     const viData = await viResponse.json();
                     lastViResult = viData;
                     
