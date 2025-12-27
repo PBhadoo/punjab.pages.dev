@@ -1,4 +1,4 @@
-/**
+    /**
  * Aadhaar Verification API
  * Cloudflare Pages Function
  * 
@@ -37,7 +37,7 @@ export async function onRequestPost(context) {
             'Referer': 'https://myaadhaar.uidai.gov.in/',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'appid': 'MYAADHAAR',
-            'x-request-id': transactionId,
+            'x-request-id': captchaTxnId,  // Use the captchaTxnId from UIDAI captcha response
         };
 
         const response = await fetch(
@@ -49,7 +49,7 @@ export async function onRequestPost(context) {
                     uid: uid,
                     captchaTxnId: captchaTxnId,
                     captcha: captcha,
-                    transactionId: transactionId,
+                    transactionId: captchaTxnId,  // Use same ID - this is UIDAI's transaction ID
                     captchaLogic: 'V3'
                 })
             }

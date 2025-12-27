@@ -38,12 +38,13 @@ export async function onRequestPost(context) {
         const uidaiData = await response.json();
         
         // Build response with proper field mapping
-        // UIDAI returns: captchaBase64String, audioCaptchaBase64String, captchaTxnId
+        // UIDAI returns: imageBase64, audioBase64, transactionId
+        // The transactionId from UIDAI is used as captchaTxnId for verification
         const responseData = {
             imageBase64: uidaiData.captchaBase64String || uidaiData.imageBase64,
             audioBase64: uidaiData.audioCaptchaBase64String || uidaiData.audioBase64,
-            captchaTxnId: uidaiData.captchaTxnId,  // This is crucial for verification
-            transactionId: requestId
+            captchaTxnId: uidaiData.transactionId,  // UIDAI's transactionId IS the captchaTxnId
+            transactionId: uidaiData.transactionId  // Use same ID for both
         };
 
         return new Response(JSON.stringify(responseData), {
