@@ -24,6 +24,15 @@
         </div>
     </div>
 
+    <!-- Lookup Spinner Overlay -->
+    <div class="loading-overlay hidden" id="lookupSpinner">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3 id="lookupSpinnerTitle">Looking up phone number...</h3>
+            <p id="lookupSpinnerStatus">Checking carrier databases...</p>
+        </div>
+    </div>
+
     <header class="header">
         <div class="header-container">
             <a href="/" class="logo" style="text-decoration: none; color: inherit;">
@@ -488,6 +497,22 @@
         let lastAirtelResult = null;
         let lastViResult = null;
 
+        // Helper functions for lookup spinner
+        function showLookupSpinner(title, status) {
+            document.getElementById('lookupSpinnerTitle').textContent = title || 'Looking up phone number...';
+            document.getElementById('lookupSpinnerStatus').textContent = status || 'Checking carrier databases...';
+            document.getElementById('lookupSpinner').classList.remove('hidden');
+        }
+        
+        function updateLookupSpinner(title, status) {
+            if (title) document.getElementById('lookupSpinnerTitle').textContent = title;
+            if (status) document.getElementById('lookupSpinnerStatus').textContent = status;
+        }
+        
+        function hideLookupSpinner() {
+            document.getElementById('lookupSpinner').classList.add('hidden');
+        }
+
         async function lookupPhone() {
             const input = document.getElementById('phoneInput').value.trim();
             
@@ -502,6 +527,9 @@
                 showToast('Please enter a valid phone number');
                 return;
             }
+
+            // Show full-screen spinner
+            showLookupSpinner('Looking up phone number...', 'Analyzing number format...');
 
             // Update URL with phone parameter
             const url = new URL(window.location);
@@ -684,6 +712,7 @@
             const jioCheckContent = document.getElementById('jioCheckContent');
             
             if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && parsed.nationalNumber.match(/^[6-9]/)) {
+                updateLookupSpinner('Verifying carrier...', 'Checking Jio network status...');
                 jioLiveSection.style.display = 'block';
                 jioCheckContent.innerHTML = `
                     <div style="text-align: center; padding: 20px;">
@@ -783,6 +812,7 @@
             
             // Skip BSNL check if Jio is already confirmed
             if (lastJioResult && lastJioResult.isJio) {
+                hideLookupSpinner();
                 document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
                 return;
             }
@@ -792,6 +822,7 @@
             const bsnlCheckContent = document.getElementById('bsnlCheckContent');
             
             if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && parsed.nationalNumber.match(/^[6-9]/)) {
+                updateLookupSpinner('Verifying carrier...', 'Checking BSNL network status...');
                 bsnlLiveSection.style.display = 'block';
                 bsnlCheckContent.innerHTML = `
                     <div style="text-align: center; padding: 20px;">
@@ -902,6 +933,7 @@
             
             // Skip Airtel check if Jio or BSNL is already confirmed
             if ((lastJioResult && lastJioResult.isJio) || (lastBsnlResult && lastBsnlResult.isBsnl)) {
+                hideLookupSpinner();
                 document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
                 return;
             }
@@ -911,6 +943,7 @@
             const airtelCheckContent = document.getElementById('airtelCheckContent');
             
             if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && parsed.nationalNumber.match(/^[6-9]/)) {
+                updateLookupSpinner('Verifying carrier...', 'Checking Airtel network status...');
                 airtelLiveSection.style.display = 'block';
                 airtelCheckContent.innerHTML = `
                     <div style="text-align: center; padding: 20px;">
@@ -1010,6 +1043,7 @@
             
             // Skip Vi check if Jio, BSNL or Airtel is already confirmed
             if ((lastJioResult && lastJioResult.isJio) || (lastBsnlResult && lastBsnlResult.isBsnl) || (lastAirtelResult && lastAirtelResult.isAirtel)) {
+                hideLookupSpinner();
                 document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
                 return;
             }
@@ -1019,6 +1053,7 @@
             const viCheckContent = document.getElementById('viCheckContent');
             
             if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && parsed.nationalNumber.match(/^[6-9]/)) {
+                updateLookupSpinner('Verifying carrier...', 'Checking Vi network status...');
                 viLiveSection.style.display = 'block';
                 viCheckContent.innerHTML = `
                     <div style="text-align: center; padding: 20px;">
@@ -1178,6 +1213,9 @@
                     `;
                 }
             }
+            
+            // Hide the lookup spinner when all checks are complete
+            hideLookupSpinner();
             
             document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
         }
