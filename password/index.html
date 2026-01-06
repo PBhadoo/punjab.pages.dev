@@ -610,26 +610,32 @@
             const entropyEl = document.getElementById('entropyValue');
             const crackTime = document.getElementById('crackTime');
             
-            let strength, color, crackText;
+            // Calculate crack time at 10 billion guesses per second (classical computer)
+            const guessesPerSecond = 10000000000; // 10 billion
+            const totalCombinations = Math.pow(2, entropy);
+            const secondsToCrack = totalCombinations / guessesPerSecond / 2; // Average is half
             
+            // Quantum computer: Grover's algorithm effectively halves the bit strength
+            // Assume 1 million quantum operations per second (optimistic future estimate)
+            const quantumOpsPerSecond = 1000000; // 1 million (futuristic quantum computer)
+            const quantumCombinations = Math.pow(2, entropy / 2); // Grover halves entropy
+            const quantumSecondsToCrack = quantumCombinations / quantumOpsPerSecond / 2;
+            
+            let strength, color;
+            
+            // Strength based on quantum resistance (need 128+ bits for quantum-safe)
             if (entropy < 28) {
                 strength = 'Very Weak'; color = '#ef4444';
-                crackText = 'Crackable instantly';
             } else if (entropy < 36) {
                 strength = 'Weak'; color = '#f97316';
-                crackText = 'Crackable in seconds to minutes';
             } else if (entropy < 60) {
                 strength = 'Fair'; color = '#eab308';
-                crackText = 'Crackable in hours to days';
             } else if (entropy < 80) {
                 strength = 'Strong'; color = '#22c55e';
-                crackText = 'Crackable in years';
-            } else if (entropy < 100) {
+            } else if (entropy < 128) {
                 strength = 'Very Strong'; color = '#10b981';
-                crackText = 'Crackable in centuries';
             } else {
-                strength = 'Excellent'; color = '#06b6d4';
-                crackText = 'Practically uncrackable';
+                strength = 'Quantum-Safe'; color = '#06b6d4';
             }
             
             fill.style.width = Math.min(100, (entropy / 128) * 100) + '%';
@@ -637,7 +643,55 @@
             label.textContent = strength;
             label.style.color = color;
             entropyEl.textContent = Math.round(entropy) + ' bits entropy';
-            crackTime.innerHTML = `<i class="fas fa-clock"></i> <span>${crackText} (at 10 billion guesses/sec)</span>`;
+            
+            // Show both classical and quantum crack times
+            const classicalTime = formatCrackTime(secondsToCrack, false);
+            const quantumTime = formatCrackTime(quantumSecondsToCrack, true);
+            crackTime.innerHTML = `
+                <div style="margin-bottom:5px"><i class="fas fa-desktop"></i> <strong>Classical:</strong> ${classicalTime}</div>
+                <div><i class="fas fa-atom"></i> <strong>Quantum:</strong> ${quantumTime}</div>
+            `;
+        }
+        
+        // Format crack time in human readable format
+        function formatCrackTime(seconds, isQuantum = false) {
+            const prefix = isQuantum ? '' : '';
+            if (seconds < 0.001) return `⚡ Instant`;
+            if (seconds < 1) return `⚡ Less than a second`;
+            if (seconds < 60) return `⚡ ${Math.round(seconds)} seconds`;
+            if (seconds < 3600) return `⚡ ${Math.round(seconds / 60)} minutes`;
+            if (seconds < 86400) return `⚡ ${Math.round(seconds / 3600)} hours`;
+            if (seconds < 2592000) return `${Math.round(seconds / 86400)} days`;
+            if (seconds < 31536000) return `${Math.round(seconds / 2592000)} months`;
+            
+            const years = seconds / 31536000;
+            if (years < 100) return `~${Math.round(years)} years`;
+            if (years < 1000) return `~${Math.round(years)} years`;
+            if (years < 1000000) return `~${formatNumber(years)} years`;
+            if (years < 1000000000) return `~${formatNumber(years)} years`;
+            if (years < 1000000000000) return `~${formatNumber(years)} years`;
+            if (years < 1e15) return `~${formatNumber(years)} years`;
+            
+            // Beyond this, use scientific notation or descriptive text
+            const universeAge = 13.8e9; // Age of universe in years
+            if (years > universeAge * 1e6) {
+                return `🔒 ${formatScientific(years)} years`;
+            }
+            return `🔒 ${formatNumber(years / universeAge)}× age of universe`;
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1e12) return (num / 1e12).toFixed(1) + ' trillion';
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + ' billion';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + ' million';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + ' thousand';
+            return Math.round(num).toLocaleString();
+        }
+        
+        function formatScientific(num) {
+            const exp = Math.floor(Math.log10(num));
+            const mantissa = num / Math.pow(10, exp);
+            return `${mantissa.toFixed(1)} × 10^${exp}`;
         }
         
         // Generate passphrase
@@ -674,14 +728,26 @@
             const entropyEl = document.getElementById('entropyValue');
             const crackTime = document.getElementById('crackTime');
             
-            let strength, color, crackText;
+            // Calculate crack time at 10 billion guesses per second (classical)
+            const guessesPerSecond = 10000000000;
+            const totalCombinations = Math.pow(2, entropy);
+            const secondsToCrack = totalCombinations / guessesPerSecond / 2;
+            
+            // Quantum computer estimate
+            const quantumOpsPerSecond = 1000000;
+            const quantumCombinations = Math.pow(2, entropy / 2);
+            const quantumSecondsToCrack = quantumCombinations / quantumOpsPerSecond / 2;
+            
+            let strength, color;
             
             if (entropy < 40) {
-                strength = 'Fair'; color = '#eab308'; crackText = 'Crackable in days';
+                strength = 'Fair'; color = '#eab308';
             } else if (entropy < 60) {
-                strength = 'Strong'; color = '#22c55e'; crackText = 'Crackable in years';
+                strength = 'Strong'; color = '#22c55e';
+            } else if (entropy < 128) {
+                strength = 'Very Strong'; color = '#10b981';
             } else {
-                strength = 'Very Strong'; color = '#10b981'; crackText = 'Practically uncrackable';
+                strength = 'Quantum-Safe'; color = '#06b6d4';
             }
             
             fill.style.width = Math.min(100, (entropy / 80) * 100) + '%';
@@ -689,7 +755,13 @@
             label.textContent = strength + ' (Passphrase)';
             label.style.color = color;
             entropyEl.textContent = Math.round(entropy) + ' bits entropy';
-            crackTime.innerHTML = `<i class="fas fa-clock"></i> <span>${crackText}</span>`;
+            
+            const classicalTime = formatCrackTime(secondsToCrack, false);
+            const quantumTime = formatCrackTime(quantumSecondsToCrack, true);
+            crackTime.innerHTML = `
+                <div style="margin-bottom:5px"><i class="fas fa-desktop"></i> <strong>Classical:</strong> ${classicalTime}</div>
+                <div><i class="fas fa-atom"></i> <strong>Quantum:</strong> ${quantumTime}</div>
+            `;
         }
         
         // Bulk generate
