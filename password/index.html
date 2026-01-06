@@ -423,6 +423,66 @@
         let passwordHistory = [];
         let isPasswordVisible = true;
         
+        // Save options to localStorage
+        function saveOptions() {
+            const options = {
+                length: document.getElementById('lengthSlider').value,
+                uppercase: document.getElementById('uppercase').checked,
+                lowercase: document.getElementById('lowercase').checked,
+                numbers: document.getElementById('numbers').checked,
+                symbols: document.getElementById('symbols').checked,
+                excludeChars: document.getElementById('excludeChars').value,
+                customChars: document.getElementById('customChars').value,
+                excludeSimilar: document.getElementById('excludeSimilar').checked,
+                excludeAmbiguous: document.getElementById('excludeAmbiguous').checked,
+                requireAll: document.getElementById('requireAll').checked,
+                noSequential: document.getElementById('noSequential').checked,
+                wordCount: document.getElementById('wordCount').value,
+                separator: document.getElementById('separator').value,
+                capitalize: document.getElementById('capitalize').checked,
+                includeNumber: document.getElementById('includeNumber').checked,
+                bulkCount: document.getElementById('bulkCount').value
+            };
+            localStorage.setItem('passwordOptions', JSON.stringify(options));
+        }
+        
+        // Load options from localStorage
+        function loadOptions() {
+            const saved = localStorage.getItem('passwordOptions');
+            if (!saved) return;
+            
+            try {
+                const options = JSON.parse(saved);
+                if (options.length) {
+                    document.getElementById('lengthSlider').value = options.length;
+                    document.getElementById('lengthValue').textContent = options.length;
+                }
+                if (options.uppercase !== undefined) document.getElementById('uppercase').checked = options.uppercase;
+                if (options.lowercase !== undefined) document.getElementById('lowercase').checked = options.lowercase;
+                if (options.numbers !== undefined) document.getElementById('numbers').checked = options.numbers;
+                if (options.symbols !== undefined) document.getElementById('symbols').checked = options.symbols;
+                if (options.excludeChars) document.getElementById('excludeChars').value = options.excludeChars;
+                if (options.customChars) document.getElementById('customChars').value = options.customChars;
+                if (options.excludeSimilar !== undefined) document.getElementById('excludeSimilar').checked = options.excludeSimilar;
+                if (options.excludeAmbiguous !== undefined) document.getElementById('excludeAmbiguous').checked = options.excludeAmbiguous;
+                if (options.requireAll !== undefined) document.getElementById('requireAll').checked = options.requireAll;
+                if (options.noSequential !== undefined) document.getElementById('noSequential').checked = options.noSequential;
+                if (options.wordCount) {
+                    document.getElementById('wordCount').value = options.wordCount;
+                    document.getElementById('wordCountValue').textContent = options.wordCount;
+                }
+                if (options.separator) document.getElementById('separator').value = options.separator;
+                if (options.capitalize !== undefined) document.getElementById('capitalize').checked = options.capitalize;
+                if (options.includeNumber !== undefined) document.getElementById('includeNumber').checked = options.includeNumber;
+                if (options.bulkCount) {
+                    document.getElementById('bulkCount').value = options.bulkCount;
+                    document.getElementById('bulkCountValue').textContent = options.bulkCount;
+                }
+            } catch (e) {
+                console.error('Failed to load options:', e);
+            }
+        }
+        
         // Cryptographically secure random number
         function secureRandom(max) {
             const array = new Uint32Array(1);
@@ -740,8 +800,27 @@
         }
         
         // Initialize
+        loadOptions();
         renderHistory();
         generatePassword();
+        
+        // Add event listeners to save options on change
+        document.getElementById('lengthSlider').addEventListener('input', saveOptions);
+        document.getElementById('uppercase').addEventListener('change', saveOptions);
+        document.getElementById('lowercase').addEventListener('change', saveOptions);
+        document.getElementById('numbers').addEventListener('change', saveOptions);
+        document.getElementById('symbols').addEventListener('change', saveOptions);
+        document.getElementById('excludeChars').addEventListener('input', saveOptions);
+        document.getElementById('customChars').addEventListener('input', saveOptions);
+        document.getElementById('excludeSimilar').addEventListener('change', saveOptions);
+        document.getElementById('excludeAmbiguous').addEventListener('change', saveOptions);
+        document.getElementById('requireAll').addEventListener('change', saveOptions);
+        document.getElementById('noSequential').addEventListener('change', saveOptions);
+        document.getElementById('wordCount').addEventListener('input', saveOptions);
+        document.getElementById('separator').addEventListener('input', saveOptions);
+        document.getElementById('capitalize').addEventListener('change', saveOptions);
+        document.getElementById('includeNumber').addEventListener('change', saveOptions);
+        document.getElementById('bulkCount').addEventListener('input', saveOptions);
     </script>
 </body>
 </html>
