@@ -258,6 +258,11 @@
     color: #fbbf24;
 }
 
+.tool-icon.signature {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(219, 39, 119, 0.2));
+    color: #ec4899;
+}
+
 .tool-icon.more {
     background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(100, 116, 139, 0.2));
     color: #94a3b8;

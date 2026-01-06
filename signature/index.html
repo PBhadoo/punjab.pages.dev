@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signature Checksum Service | Punjab Investigation Tools</title>
+    <meta name="description" content="Generate and verify secure daily signature codes using SHA-256 checksums. Perfect for daily attendance, verification codes, and secure time-based authentication.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+    
+    <style>
+        .signature-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .setup-section, .generate-section, .verify-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pin-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .pin-input {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .pin-input:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .pin-input::placeholder {
+            letter-spacing: 5px;
+            color: var(--text-muted);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .current-date-display {
+            text-align: center;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .date-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .date-value {
+            font-size: 1.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+
+        .time-value {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .result-display {
+            margin-top: 20px;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .result-display.show {
+            display: block;
+        }
+
+        .result-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .result-code {
+            font-size: 3rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: #10b981;
+            font-weight: 700;
+            letter-spacing: 15px;
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .result-meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 15px;
+        }
+
+        .verification-result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .verification-result.show {
+            display: block;
+        }
+
+        .verification-result.valid {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .verification-result.invalid {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .verification-result i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .verification-result.valid i {
+            color: #10b981;
+        }
+
+        .verification-result.invalid i {
+            color: #ef4444;
+        }
+
+        .verification-result h4 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .verification-result.valid h4 {
+            color: #10b981;
+        }
+
+        .verification-result.invalid h4 {
+            color: #ef4444;
+        }
+
+        .verification-result p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .date-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .date-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .date-field label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .date-field input {
+            padding: 12px;
+            font-size: 1.1rem;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+        }
+
+        .date-field input:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+        }
+
+        .pin-status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .pin-status.saved {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .pin-status.not-saved {
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        .info-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-box h4 {
+            color: var(--accent-secondary);
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border-color: transparent;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .pin-input {
+                font-size: 1.2rem;
+                letter-spacing: 5px;
+            }
+
+            .result-code {
+                font-size: 2rem;
+                letter-spacing: 10px;
+            }
+
+            .date-input-group {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Signature Checksum Service</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>Online</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-signature"></i> Signature Checksum Service</h1>
+                <p>Generate and verify secure daily signature codes using SHA-256 based checksums</p>
+            </div>
+        </section>
+
+        <div class="signature-container">
+            <!-- PIN Setup Section -->
+            <div class="setup-section">
+                <h3 class="section-title"><i class="fas fa-key"></i> Your Secret PIN</h3>
+                
+                <div id="pinStatus" class="pin-status not-saved">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>No PIN saved. Enter a 4-digit PIN to get started.</span>
+                </div>
+
+                <div class="pin-input-group">
+                    <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" pattern="\d{4}" inputmode="numeric">
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="savePin()">
+                        <i class="fas fa-save"></i> Save PIN
+                    </button>
+                    <button class="btn btn-danger" onclick="clearPin()">
+                        <i class="fas fa-trash"></i> Clear PIN
+                    </button>
+                </div>
+            </div>
+
+            <!-- Current Date Display -->
+            <div class="current-date-display">
+                <div class="date-label">Current Date (IST)</div>
+                <div class="date-value" id="currentDate">--/--/----</div>
+                <div class="time-value" id="currentTime">--:--:-- IST</div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('generate')">
+                    <i class="fas fa-plus-circle"></i> Generate Code
+                </button>
+                <button class="tab" onclick="switchTab('verify')">
+                    <i class="fas fa-check-circle"></i> Verify Code
+                </button>
+            </div>
+
+            <!-- Generate Tab -->
+            <div id="generateTab" class="tab-content active">
+                <div class="generate-section">
+                    <h3 class="section-title"><i class="fas fa-bolt"></i> Generate Today's Code</h3>
+                    
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                        Generate a unique 4-digit signature code for today using your saved PIN. 
+                        This code is valid only for the current date.
+                    </p>
+
+                    <button class="btn btn-primary" id="generateBtn" onclick="generateCode()" style="width: 100%;">
+                        <i class="fas fa-wand-magic-sparkles"></i> Generate Signature Code
+                    </button>
+
+                    <div class="result-display" id="generateResult">
+                        <div class="result-label">Your Signature Code for Today</div>
+                        <div class="result-code" id="generatedCode">----</div>
+                        <div class="result-meta" id="generatedMeta">Generated for: --/--/----</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verify Tab -->
+            <div id="verifyTab" class="tab-content">
+                <div class="verify-section">
+                    <h3 class="section-title"><i class="fas fa-shield-check"></i> Verify a Code</h3>
+                    
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                        Enter the date and signature code to verify. You can verify codes from past dates but not future dates.
+                    </p>
+
+                    <div class="date-input-group">
+                        <div class="date-field">
+                            <label>Day (DD)</label>
+                            <input type="text" id="verifyDay" maxlength="2" placeholder="DD" inputmode="numeric">
+                        </div>
+                        <div class="date-field">
+                            <label>Month (MM)</label>
+                            <input type="text" id="verifyMonth" maxlength="2" placeholder="MM" inputmode="numeric">
+                        </div>
+                        <div class="date-field">
+                            <label>Year (YYYY)</label>
+                            <input type="text" id="verifyYear" maxlength="4" placeholder="YYYY" inputmode="numeric">
+                        </div>
+                    </div>
+
+                    <div class="pin-input-group">
+                        <input type="text" id="verifyCode" class="pin-input" maxlength="4" placeholder="CODE" inputmode="numeric">
+                    </div>
+
+                    <button class="btn btn-primary" id="verifyBtn" onclick="verifyCode()" style="width: 100%;">
+                        <i class="fas fa-check-double"></i> Verify Signature Code
+                    </button>
+
+                    <div class="verification-result" id="verifyResult">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>Valid Code</h4>
+                        <p id="verifyMessage">The signature code is valid.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <h4><i class="fas fa-info-circle"></i> How It Works</h4>
+                <ul>
+                    <li>Your 4-digit PIN is stored locally in your browser</li>
+                    <li>The signature code is generated using the current date + your PIN + a server-side secret key</li>
+                    <li>SHA-256 hash ensures the code cannot be reverse-engineered</li>
+                    <li>Each day generates a unique code that cannot be backdated</li>
+                    <li>Verification confirms the code was generated with the correct PIN on the specified date</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024-<span id="currentYear"></span> Punjab Investigation Tools. All processing is secure.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Update current date/time display
+        function updateDateTime() {
+            const now = new Date();
+            // Convert to IST
+            const istOptions = { timeZone: 'Asia/Kolkata' };
+            
+            const day = now.toLocaleString('en-IN', { ...istOptions, day: '2-digit' });
+            const month = now.toLocaleString('en-IN', { ...istOptions, month: '2-digit' });
+            const year = now.toLocaleString('en-IN', { ...istOptions, year: 'numeric' });
+            const time = now.toLocaleString('en-IN', { ...istOptions, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            
+            document.getElementById('currentDate').textContent = `${day}/${month}/${year}`;
+            document.getElementById('currentTime').textContent = `${time} IST`;
+        }
+
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // Check for saved PIN on load
+        function checkPinStatus() {
+            const savedPin = localStorage.getItem('signaturePin');
+            const statusEl = document.getElementById('pinStatus');
+            const pinInput = document.getElementById('pinInput');
+            
+            if (savedPin) {
+                statusEl.className = 'pin-status saved';
+                statusEl.innerHTML = '<i class="fas fa-check-circle"></i><span>PIN saved and ready to use</span>';
+                pinInput.value = savedPin;
+            } else {
+                statusEl.className = 'pin-status not-saved';
+                statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>No PIN saved. Enter a 4-digit PIN to get started.</span>';
+            }
+        }
+
+        checkPinStatus();
+
+        // Save PIN
+        function savePin() {
+            const pin = document.getElementById('pinInput').value;
+            
+            if (!/^\d{4}$/.test(pin)) {
+                alert('Please enter exactly 4 digits');
+                return;
+            }
+            
+            localStorage.setItem('signaturePin', pin);
+            checkPinStatus();
+            alert('PIN saved successfully!');
+        }
+
+        // Clear PIN
+        function clearPin() {
+            if (confirm('Are you sure you want to clear your saved PIN?')) {
+                localStorage.removeItem('signaturePin');
+                document.getElementById('pinInput').value = '';
+                checkPinStatus();
+                document.getElementById('generateResult').classList.remove('show');
+            }
+        }
+
+        // Switch tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'generate') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('generateTab').classList.add('active');
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('verifyTab').classList.add('active');
+            }
+        }
+
+        // Generate code
+        async function generateCode() {
+            const pin = localStorage.getItem('signaturePin');
+            
+            if (!pin) {
+                alert('Please save a PIN first');
+                return;
+            }
+            
+            const btn = document.getElementById('generateBtn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="loading"></span> Generating...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/signature/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pin: pin })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('generatedCode').textContent = data.signatureCode;
+                    document.getElementById('generatedMeta').textContent = `Generated for: ${data.formattedDate}`;
+                    document.getElementById('generateResult').classList.add('show');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error generating code: ' + error.message);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        // Verify code
+        async function verifyCode() {
+            const pin = localStorage.getItem('signaturePin');
+            
+            if (!pin) {
+                alert('Please save a PIN first');
+                return;
+            }
+            
+            const day = document.getElementById('verifyDay').value.padStart(2, '0');
+            const month = document.getElementById('verifyMonth').value.padStart(2, '0');
+            const year = document.getElementById('verifyYear').value;
+            const code = document.getElementById('verifyCode').value;
+            
+            if (!day || !month || !year || !code) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (!/^\d{2}$/.test(day) || parseInt(day) < 1 || parseInt(day) > 31) {
+                alert('Invalid day');
+                return;
+            }
+            
+            if (!/^\d{2}$/.test(month) || parseInt(month) < 1 || parseInt(month) > 12) {
+                alert('Invalid month');
+                return;
+            }
+            
+            if (!/^\d{4}$/.test(year)) {
+                alert('Invalid year');
+                return;
+            }
+            
+            if (!/^\d{4}$/.test(code)) {
+                alert('Code must be exactly 4 digits');
+                return;
+            }
+            
+            const dateStr = `${day}${month}${year}`;
+            
+            const btn = document.getElementById('verifyBtn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="loading"></span> Verifying...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/signature/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        pin: pin,
+                        date: dateStr,
+                        code: code
+                    })
+                });
+                
+                const data = await response.json();
+                
+                const resultEl = document.getElementById('verifyResult');
+                const messageEl = document.getElementById('verifyMessage');
+                
+                resultEl.classList.remove('valid', 'invalid');
+                
+                if (data.success) {
+                    if (data.valid) {
+                        resultEl.classList.add('valid');
+                        resultEl.querySelector('i').className = 'fas fa-check-circle';
+                        resultEl.querySelector('h4').textContent = 'Valid Code';
+                        messageEl.textContent = `The signature code is valid for ${data.verifiedDate}`;
+                    } else {
+                        resultEl.classList.add('invalid');
+                        resultEl.querySelector('i').className = 'fas fa-times-circle';
+                        resultEl.querySelector('h4').textContent = 'Invalid Code';
+                        messageEl.textContent = data.message;
+                    }
+                } else {
+                    resultEl.classList.add('invalid');
+                    resultEl.querySelector('i').className = 'fas fa-exclamation-circle';
+                    resultEl.querySelector('h4').textContent = 'Error';
+                    messageEl.textContent = data.message;
+                }
+                
+                resultEl.classList.add('show');
+            } catch (error) {
+                alert('Error verifying code: ' + error.message);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        // Only allow digits in PIN inputs
+        document.getElementById('pinInput').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
+        });
+
+        document.getElementById('verifyCode').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
+        });
+
+        document.getElementById('verifyDay').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 2);
+        });
+
+        document.getElementById('verifyMonth').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 2);
+        });
+
+        document.getElementById('verifyYear').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
+        });
+
+        // Pre-fill verify date with current date
+        function prefillCurrentDate() {
+            const now = new Date();
+            const istOptions = { timeZone: 'Asia/Kolkata' };
+            
+            document.getElementById('verifyDay').value = now.toLocaleString('en-IN', { ...istOptions, day: '2-digit' });
+            document.getElementById('verifyMonth').value = now.toLocaleString('en-IN', { ...istOptions, month: '2-digit' });
+            document.getElementById('verifyYear').value = now.toLocaleString('en-IN', { ...istOptions, year: 'numeric' });
+        }
+
+        prefillCurrentDate();
+    </script>
+</body>
+</html>

@@ -1173,26 +1173,80 @@
                         `;
                     }
                 } else {
-                    // All retries failed
+                    // All retries failed - but since Jio, BSNL, Airtel all said NO, 
+                    // and Vi API failed, it's probably Vi (only major operator left)
                     console.error('Vi API error after all retries:', lastError);
-                    viCheckContent.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #ef4444;"></i>
-                            <div>
-                                <div style="font-weight: 600; color: var(--text-primary);">Could not check Vi status</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">API unavailable after ${maxRetries} attempts. Try again later.</div>
+                    
+                    // Check if all other operators explicitly said NOT their number
+                    const jioSaidNo = lastJioResult && !lastJioResult.isJio;
+                    const bsnlSaidNo = lastBsnlResult && !lastBsnlResult.isBsnl;
+                    const airtelSaidNo = lastAirtelResult && !lastAirtelResult.isAirtel;
+                    
+                    if (jioSaidNo && bsnlSaidNo && airtelSaidNo) {
+                        // All other operators said NO, Vi API failed - Probable Vi
+                        viCheckContent.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255, 0, 102, 0.15); border-radius: 8px; border: 1px solid rgba(255, 0, 102, 0.4);">
+                                <i class="fas fa-question-circle" style="font-size: 2rem; color: #ff0066;"></i>
+                                <div>
+                                    <div style="font-weight: 600; color: #ff0066;">Probable Vi Number</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Vi API unavailable, but number is NOT on Jio, BSNL, or Airtel. This is likely a Vi number.</div>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                        
+                        // Mark as probable Vi
+                        lastViResult = { isVi: false, isProbableVi: true, apiError: true };
+                        
+                        // Show current operator as Probable Vi
+                        const currentOpRow = document.getElementById('currentOperatorRow');
+                        if (currentOpRow) {
+                            currentOpRow.style.display = 'grid';
+                            document.getElementById('currentOperatorValue').innerHTML = `
+                                <span class="operator-logo vi" style="background: linear-gradient(135deg, rgba(255, 0, 102, 0.7), rgba(153, 0, 204, 0.7));">
+                                    <i class="fas fa-question-circle"></i> Probable Vi
+                                </span>
+                            `;
+                        }
+                        
+                        // Hide other sections
+                        document.getElementById('jioLiveCheck').style.display = 'none';
+                        document.getElementById('bsnlLiveCheck').style.display = 'none';
+                        document.getElementById('airtelLiveCheck').style.display = 'none';
+                        
+                        // Update warning box
+                        document.getElementById('mnpWarningBox').innerHTML = `
+                            <h4 style="color: #ff0066;"><i class="fas fa-question-circle"></i> Probable Vi Number</h4>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li><strong>Deduction-based identification</strong> - This number is NOT active on Jio, BSNL, or Airtel</li>
+                                <li>Vi API verification failed, but by process of elimination, this is likely a <strong>Vi (Vodafone Idea)</strong> number</li>
+                                <li>India has 4 major private operators: Jio, Airtel, Vi, and BSNL</li>
+                                <li>Since the other 3 operators confirmed this is NOT their number, Vi is the most probable carrier</li>
+                                <li><strong>Note:</strong> This is not 100% confirmed - could be MVNO, virtual number, or inactive</li>
+                            </ul>
+                        `;
+                        document.getElementById('mnpWarningBox').style.borderColor = '#ff0066';
+                        document.getElementById('mnpWarningBox').style.background = 'rgba(255, 0, 102, 0.1)';
+                    } else {
+                        // Not all operators checked or some API calls failed
+                        viCheckContent.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #ef4444;"></i>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">Could not check Vi status</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">API unavailable after ${maxRetries} attempts. Try again later.</div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 }
             } else {
                 viLiveSection.style.display = 'none';
             }
             
-            // If none of the operators are confirmed, show as Other/MVNO
+            // If none of the operators are confirmed (and not probable Vi), show as Other/MVNO
             if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && 
                 (!lastJioResult || !lastJioResult.isJio) && (!lastBsnlResult || !lastBsnlResult.isBsnl) && 
-                (!lastAirtelResult || !lastAirtelResult.isAirtel) && (!lastViResult || !lastViResult.isVi)) {
+                (!lastAirtelResult || !lastAirtelResult.isAirtel) && (!lastViResult || (!lastViResult.isVi && !lastViResult.isProbableVi))) {
                 
                 const currentOpRow = document.getElementById('currentOperatorRow');
                 if (currentOpRow) {
@@ -1259,6 +1313,11 @@
                 text += `Circle: ${lastViResult.circleName || lastViResult.circle || 'Unknown'}\n`;
                 text += `Type: ${lastViResult.subscriberType || 'Unknown'}\n`;
                 text += `Brand: ${lastViResult.brand || 'Vodafone Idea'}\n`;
+            } else if (lastViResult && lastViResult.isProbableVi) {
+                text += `Current Operator: Vi (Probable - Not Verified)\n`;
+                text += `\n--- Probable Vi ---\n`;
+                text += `Note: Vi API unavailable, but NOT found on Jio, BSNL, or Airtel.\n`;
+                text += `By process of elimination, this is likely a Vi number.\n`;
             } else if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
                 text += `Current Operator: Other/MVNO/Invalid (Not Jio/BSNL/Airtel/Vi)\n`;
             }
@@ -1363,6 +1422,10 @@
                     addLine('Vi Circle', lastViResult.circleName || lastViResult.circle || 'Unknown');
                     addLine('Type', lastViResult.subscriberType || 'Unknown');
                     addLine('Brand', lastViResult.brand || 'Vodafone Idea');
+                } else if (lastViResult && lastViResult.isProbableVi) {
+                    addLine('Current Operator', 'Vi (Probable - Not Verified)');
+                    addLine('Note', 'Vi API unavailable, but NOT on Jio/BSNL/Airtel');
+                    addLine('Deduction', 'Likely Vi by process of elimination');
                 } else {
                     addLine('Current Operator', 'Other/MVNO/Invalid');
                     addLine('Note', 'Not Jio/BSNL/Airtel/Vi');
@@ -1408,6 +1471,16 @@
                 doc.text('Verified Vi Number:', 20, y + 10);
                 doc.setFontSize(9);
                 doc.text('This number is CONFIRMED to be currently active on Vi network (Live API check).', 20, y + 18);
+            } else if (lastViResult && lastViResult.isProbableVi) {
+                // Probable Vi - show lighter pink box
+                doc.setFillColor(252, 231, 243);
+                doc.rect(15, y, 180, 30, 'F');
+                doc.setTextColor(157, 23, 77);
+                doc.setFontSize(10);
+                doc.text('Probable Vi Number:', 20, y + 10);
+                doc.setFontSize(9);
+                doc.text('Vi API unavailable, but NOT found on Jio, BSNL, or Airtel.', 20, y + 18);
+                doc.text('By process of elimination, this is likely a Vi (Vodafone Idea) number.', 20, y + 24);
             } else if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
                 // Indian number not any operator
                 doc.setFillColor(229, 231, 235);
