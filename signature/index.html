@@ -245,15 +245,17 @@
 
         .date-input-group {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-bottom: 15px;
+            max-width: 100%;
         }
 
         .date-field {
             display: flex;
             flex-direction: column;
             gap: 5px;
+            min-width: 0;
         }
 
         .date-field label {
@@ -262,14 +264,16 @@
         }
 
         .date-field input {
-            padding: 12px;
-            font-size: 1.1rem;
+            padding: 12px 8px;
+            font-size: 1rem;
             text-align: center;
             font-family: 'JetBrains Mono', monospace;
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--card-border);
             border-radius: 8px;
             color: var(--text-primary);
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .date-field input:focus {
@@ -444,16 +448,21 @@
                     <span>No PIN saved. Enter a 4-digit PIN to get started.</span>
                 </div>
 
-                <div class="pin-input-group">
-                    <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" pattern="\d{4}" inputmode="numeric">
+                <div id="pinInputSection">
+                    <div class="pin-input-group">
+                        <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" pattern="\d{4}" inputmode="numeric">
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" onclick="savePin()">
+                            <i class="fas fa-save"></i> Save PIN
+                        </button>
+                    </div>
                 </div>
 
-                <div class="btn-row">
-                    <button class="btn btn-primary" onclick="savePin()">
-                        <i class="fas fa-save"></i> Save PIN
-                    </button>
-                    <button class="btn btn-danger" onclick="clearPin()">
-                        <i class="fas fa-trash"></i> Clear PIN
+                <div id="pinSavedSection" style="display: none;">
+                    <button class="btn btn-danger" onclick="clearPin()" style="width: 100%;">
+                        <i class="fas fa-trash"></i> Clear Saved PIN
                     </button>
                 </div>
             </div>
@@ -585,14 +594,22 @@
             const savedPin = localStorage.getItem('signaturePin');
             const statusEl = document.getElementById('pinStatus');
             const pinInput = document.getElementById('pinInput');
+            const pinInputSection = document.getElementById('pinInputSection');
+            const pinSavedSection = document.getElementById('pinSavedSection');
             
             if (savedPin) {
                 statusEl.className = 'pin-status saved';
                 statusEl.innerHTML = '<i class="fas fa-check-circle"></i><span>PIN saved and ready to use</span>';
                 pinInput.value = savedPin;
+                // Hide input section, show clear button
+                pinInputSection.style.display = 'none';
+                pinSavedSection.style.display = 'block';
             } else {
                 statusEl.className = 'pin-status not-saved';
                 statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>No PIN saved. Enter a 4-digit PIN to get started.</span>';
+                // Show input section, hide clear button
+                pinInputSection.style.display = 'block';
+                pinSavedSection.style.display = 'none';
             }
         }
 

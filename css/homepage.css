@@ -263,6 +263,11 @@
     color: #ec4899;
 }
 
+.tool-icon.password {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(6, 182, 212, 0.2));
+    color: #22d3ee;
+}
+
 .tool-icon.more {
     background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(100, 116, 139, 0.2));
     color: #94a3b8;

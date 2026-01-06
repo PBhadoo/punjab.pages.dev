@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator | Punjab Investigation Tools</title>
+    <meta name="description" content="Generate cryptographically secure passwords with advanced options. Multiple generation modes, entropy calculation, and strength analysis.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Password Generator</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn"><i class="fas fa-home"></i> All Tools</a>
+                <div class="status-badge"><span class="status-dot"></span><span>Secure</span></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-key"></i> Secure Password Generator</h1>
+                <p>Generate cryptographically secure passwords using Web Crypto API</p>
+            </div>
+        </section>
+
+        <div class="password-container">
+            <!-- Generated Password Display -->
+            <div class="password-display-section">
+                <div class="password-output">
+                    <input type="text" id="passwordOutput" readonly placeholder="Click Generate to create password">
+                    <div class="password-actions">
+                        <button onclick="toggleVisibility()" title="Toggle visibility" class="icon-btn">
+                            <i class="fas fa-eye" id="visibilityIcon"></i>
+                        </button>
+                        <button onclick="copyPassword()" title="Copy to clipboard" class="icon-btn">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button onclick="generatePassword()" title="Regenerate" class="icon-btn primary">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Strength Meter -->
+                <div class="strength-meter">
+                    <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                    <div class="strength-info">
+                        <span id="strengthLabel">No password</span>
+                        <span id="entropyValue">0 bits entropy</span>
+                    </div>
+                </div>
+                
+                <!-- Crack Time Estimate -->
+                <div class="crack-time" id="crackTime">
+                    <i class="fas fa-clock"></i> <span>Generate a password to see crack time estimate</span>
+                </div>
+            </div>
+
+            <!-- Generation Options -->
+            <div class="options-section">
+                <h3><i class="fas fa-sliders-h"></i> Password Options</h3>
+                
+                <!-- Length Slider -->
+                <div class="option-group">
+                    <label>Password Length: <span id="lengthValue" class="value-display">16</span></label>
+                    <div class="slider-container">
+                        <input type="range" id="lengthSlider" min="4" max="128" value="16" oninput="updateLength()">
+                        <div class="slider-marks">
+                            <span>4</span><span>32</span><span>64</span><span>128</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Character Types -->
+                <div class="option-group">
+                    <label>Character Types</label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="uppercase" checked>
+                            <span class="checkmark"></span>
+                            <span>Uppercase (A-Z)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="lowercase" checked>
+                            <span class="checkmark"></span>
+                            <span>Lowercase (a-z)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="numbers" checked>
+                            <span class="checkmark"></span>
+                            <span>Numbers (0-9)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="symbols" checked>
+                            <span class="checkmark"></span>
+                            <span>Symbols (!@#$%...)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Advanced Options -->
+                <div class="option-group">
+                    <label>Advanced Options</label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="excludeSimilar">
+                            <span class="checkmark"></span>
+                            <span>Exclude similar (i, l, 1, L, o, 0, O)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="excludeAmbiguous">
+                            <span class="checkmark"></span>
+                            <span>Exclude ambiguous ({ } [ ] ( ) / \ ' " ` ~)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="requireAll">
+                            <span class="checkmark"></span>
+                            <span>Require at least one of each type</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="noSequential">
+                            <span class="checkmark"></span>
+                            <span>No sequential characters (abc, 123)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Custom Characters -->
+                <div class="option-group">
+                    <label>Custom Characters (optional)</label>
+                    <input type="text" id="customChars" class="text-input" placeholder="Add custom characters to include">
+                    <small>These characters will be added to the character pool</small>
+                </div>
+
+                <!-- Exclude Characters -->
+                <div class="option-group">
+                    <label>Exclude Characters (optional)</label>
+                    <input type="text" id="excludeChars" class="text-input" placeholder="Characters to exclude from password">
+                    <small>These characters will be removed from the character pool</small>
+                </div>
+
+                <!-- Generate Button -->
+                <button class="generate-btn" onclick="generatePassword()">
+                    <i class="fas fa-key"></i> Generate Secure Password
+                </button>
+            </div>
+
+            <!-- Passphrase Generator -->
+            <div class="passphrase-section">
+                <h3><i class="fas fa-quote-left"></i> Passphrase Generator</h3>
+                <p class="section-desc">Generate memorable passphrases using random words</p>
+                
+                <div class="option-group">
+                    <label>Number of Words: <span id="wordCountValue" class="value-display">4</span></label>
+                    <input type="range" id="wordCount" min="3" max="10" value="4" oninput="updateWordCount()">
+                </div>
+                
+                <div class="option-group">
+                    <label>Word Separator</label>
+                    <select id="separator" class="select-input">
+                        <option value="-">Hyphen (-)</option>
+                        <option value="_">Underscore (_)</option>
+                        <option value=".">Period (.)</option>
+                        <option value=" ">Space</option>
+                        <option value="">None</option>
+                    </select>
+                </div>
+                
+                <div class="checkbox-grid">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="capitalizeWords" checked>
+                        <span class="checkmark"></span>
+                        <span>Capitalize first letter</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="includeNumber">
+                        <span class="checkmark"></span>
+                        <span>Include a number</span>
+                    </label>
+                </div>
+                
+                <button class="generate-btn secondary" onclick="generatePassphrase()">
+                    <i class="fas fa-quote-right"></i> Generate Passphrase
+                </button>
+            </div>
+
+            <!-- Bulk Generator -->
+            <div class="bulk-section">
+                <h3><i class="fas fa-list"></i> Bulk Generator</h3>
+                <p class="section-desc">Generate multiple passwords at once</p>
+                
+                <div class="option-group">
+                    <label>Number of Passwords: <span id="bulkCountValue" class="value-display">5</span></label>
+                    <input type="range" id="bulkCount" min="1" max="100" value="5" oninput="updateBulkCount()">
+                </div>
+                
+                <button class="generate-btn secondary" onclick="generateBulk()">
+                    <i class="fas fa-layer-group"></i> Generate Multiple
+                </button>
+                
+                <div id="bulkResults" class="bulk-results" style="display:none;">
+                    <div class="bulk-header">
+                        <span id="bulkResultCount">0 passwords generated</span>
+                        <button onclick="copyAllBulk()" class="small-btn"><i class="fas fa-copy"></i> Copy All</button>
+                    </div>
+                    <div id="bulkList" class="bulk-list"></div>
+                </div>
+            </div>
+
+            <!-- Password History -->
+            <div class="history-section">
+                <h3><i class="fas fa-history"></i> Recent Passwords</h3>
+                <p class="section-desc">Your last 10 generated passwords (stored locally)</p>
+                <div id="historyList" class="history-list">
+                    <p class="empty-history">No passwords generated yet</p>
+                </div>
+                <button onclick="clearHistory()" class="small-btn danger" style="margin-top:10px;">
+                    <i class="fas fa-trash"></i> Clear History
+                </button>
+            </div>
+
+            <!-- Info Section -->
+            <div class="info-section-box">
+                <h4><i class="fas fa-shield-alt"></i> Security Information</h4>
+                <ul>
+                    <li>All passwords are generated locally using the Web Crypto API</li>
+                    <li>No passwords are sent to any server</li>
+                    <li>History is stored only in your browser's localStorage</li>
+                    <li>Recommended: Use at least 16 characters with mixed types</li>
+                    <li>For maximum security, use 20+ characters or passphrases</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-lock"></i> 100% Client-Side Generation | No data sent to servers</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMessage">Copied!</span></div>
+
+    <style>
+        .password-container { max-width: 700px; margin: 0 auto; }
+        
+        .password-display-section, .options-section, .passphrase-section, .bulk-section, .history-section, .info-section-box {
+            background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 25px; margin-bottom: 20px;
+        }
+        
+        .password-output {
+            display: flex; gap: 10px; background: rgba(0,0,0,0.4); border-radius: 12px; padding: 15px; align-items: center;
+        }
+        
+        .password-output input {
+            flex: 1; background: transparent; border: none; color: var(--text-primary); font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem; outline: none; letter-spacing: 1px;
+        }
+        
+        .password-actions { display: flex; gap: 8px; }
+        
+        .icon-btn {
+            width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05);
+            color: var(--text-secondary); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        
+        .icon-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+        .icon-btn.primary { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+        .icon-btn.primary:hover { background: var(--accent-secondary); }
+        
+        .strength-meter { margin-top: 15px; }
+        .strength-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .strength-fill { height: 100%; width: 0; transition: all 0.3s; border-radius: 3px; }
+        .strength-info { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); }
+        
+        .crack-time {
+            margin-top: 12px; padding: 12px; background: rgba(99,102,241,0.1); border-radius: 8px;
+            font-size: 0.85rem; color: var(--text-secondary); text-align: center;
+        }
+        
+        .option-group { margin-bottom: 20px; }
+        .option-group label { display: block; margin-bottom: 8px; color: var(--text-primary); font-weight: 500; }
+        .option-group small { display: block; margin-top: 5px; color: var(--text-muted); font-size: 0.8rem; }
+        .value-display { color: var(--accent-secondary); font-family: 'JetBrains Mono', monospace; }
+        
+        .slider-container { position: relative; }
+        .slider-marks { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
+        
+        input[type="range"] {
+            width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; outline: none;
+            -webkit-appearance: none; appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 18px; height: 18px; background: var(--accent-primary);
+            border-radius: 50%; cursor: pointer; border: 2px solid white;
+        }
+        
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+        
+        .checkbox-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.2);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        
+        .checkbox-item:hover { background: rgba(0,0,0,0.3); }
+        .checkbox-item input { display: none; }
+        
+        .checkmark {
+            width: 20px; height: 20px; border: 2px solid var(--card-border); border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        
+        .checkbox-item input:checked + .checkmark {
+            background: var(--accent-primary); border-color: var(--accent-primary);
+        }
+        
+        .checkbox-item input:checked + .checkmark::after {
+            content: '✓'; color: white; font-size: 12px;
+        }
+        
+        .text-input, .select-input {
+            width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
+            border-radius: 8px; color: var(--text-primary); font-size: 0.95rem; outline: none;
+        }
+        
+        .text-input:focus, .select-input:focus { border-color: var(--accent-secondary); }
+        .select-input { cursor: pointer; }
+        .select-input option { background: var(--bg-primary); }
+        
+        .generate-btn {
+            width: 100%; padding: 15px 25px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none; border-radius: 10px; color: white; font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        
+        .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(99,102,241,0.4); }
+        .generate-btn.secondary { background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); }
+        .generate-btn.secondary:hover { background: rgba(255,255,255,0.15); box-shadow: none; }
+        
+        .section-desc { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px; }
+        
+        h3 { color: var(--accent-secondary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        
+        .bulk-results { margin-top: 15px; }
+        .bulk-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .bulk-list { max-height: 300px; overflow-y: auto; }
+        
+        .bulk-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 10px;
+            background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 5px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+        }
+        
+        .small-btn {
+            padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);
+            border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; transition: all 0.2s;
+        }
+        
+        .small-btn:hover { background: rgba(255,255,255,0.15); color: var(--text-primary); }
+        .small-btn.danger { border-color: rgba(239,68,68,0.3); color: #ef4444; }
+        .small-btn.danger:hover { background: rgba(239,68,68,0.1); }
+        
+        .history-list { max-height: 250px; overflow-y: auto; }
+        
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 10px;
+            background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 5px;
+        }
+        
+        .history-item code { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-primary); }
+        .history-item small { color: var(--text-muted); font-size: 0.75rem; }
+        .empty-history { color: var(--text-muted); text-align: center; padding: 20px; }
+        
+        .info-section-box { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.2); }
+        .info-section-box h4 { color: var(--accent-secondary); margin-bottom: 10px; }
+        .info-section-box ul { margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 0.85rem; }
+        .info-section-box li { margin-bottom: 5px; }
+        
+        @media (max-width: 600px) {
+            .checkbox-grid { grid-template-columns: 1fr; }
+            .password-output { flex-direction: column; }
+            .password-output input { text-align: center; font-size: 1rem; }
+            .password-actions { width: 100%; justify-content: center; }
+        }
+    </style>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Character sets
+        const CHARS = {
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            numbers: '0123456789',
+            symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?',
+            similar: 'il1LoO0',
+            ambiguous: '{}[]()/\\\'"`~,;:.<>'
+        };
+        
+        // Word list for passphrases (common English words)
+        const WORDS = ['apple','brave','chair','dance','eagle','flame','grape','heart','ivory','jewel','knife','lemon','maple','noble','ocean','peace','quest','river','storm','tiger','unity','vivid','water','xenon','youth','zebra','alpha','beach','cloud','dream','earth','frost','giant','honey','image','jolly','karma','light','magic','night','olive','piano','queen','royal','stone','train','ultra','valor','wheat','xray','yacht','zesty','amber','blaze','coral','delta','ember','flora','glide','haven','inlet','joker','kites','lunar','mango','nexus','orbit','prism','quilt','radar','solar','tempo','urban','viper','woven','xerox','yearn','zones','acorn','bison','crest','dunes','equip','fable','gloom','haste','ideal','jumbo','kayak','latch','merit','niche','oasis','panda','quirk','reign','swift','thorn','umbra','vault','waltz','xenon','yield','zonal'];
+        
+        let passwordHistory = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+        let isPasswordVisible = false;
+        
+        // Cryptographically secure random number
+        function secureRandom(max) {
+            const array = new Uint32Array(1);
+            crypto.getRandomValues(array);
+            return array[0] % max;
+        }
+        
+        // Secure shuffle (Fisher-Yates)
+        function secureShuffle(str) {
+            const arr = str.split('');
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = secureRandom(i + 1);
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr.join('');
+        }
+        
+        // Build character pool based on options
+        function buildCharPool() {
+            let pool = '';
+            if (document.getElementById('uppercase').checked) pool += CHARS.uppercase;
+            if (document.getElementById('lowercase').checked) pool += CHARS.lowercase;
+            if (document.getElementById('numbers').checked) pool += CHARS.numbers;
+            if (document.getElementById('symbols').checked) pool += CHARS.symbols;
+            
+            // Add custom chars
+            const custom = document.getElementById('customChars').value;
+            if (custom) pool += custom;
+            
+            // Remove excluded chars
+            const exclude = document.getElementById('excludeChars').value;
+            if (exclude) {
+                for (const c of exclude) pool = pool.split(c).join('');
+            }
+            
+            // Remove similar chars
+            if (document.getElementById('excludeSimilar').checked) {
+                for (const c of CHARS.similar) pool = pool.split(c).join('');
+            }
+            
+            // Remove ambiguous chars
+            if (document.getElementById('excludeAmbiguous').checked) {
+                for (const c of CHARS.ambiguous) pool = pool.split(c).join('');
+            }
+            
+            // Remove duplicates
+            pool = [...new Set(pool)].join('');
+            return pool;
+        }
+        
+        // Check for sequential characters
+        function hasSequential(password) {
+            for (let i = 0; i < password.length - 2; i++) {
+                const c1 = password.charCodeAt(i);
+                const c2 = password.charCodeAt(i + 1);
+                const c3 = password.charCodeAt(i + 2);
+                if (c2 === c1 + 1 && c3 === c2 + 1) return true;
+                if (c2 === c1 - 1 && c3 === c2 - 1) return true;
+            }
+            return false;
+        }
+        
+        // Generate password
+        function generatePassword() {
+            const length = parseInt(document.getElementById('lengthSlider').value);
+            const pool = buildCharPool();
+            
+            if (pool.length === 0) {
+                showToast('Please select at least one character type');
+                return;
+            }
+            
+            const requireAll = document.getElementById('requireAll').checked;
+            const noSequential = document.getElementById('noSequential').checked;
+            let password = '';
+            let attempts = 0;
+            const maxAttempts = 1000;
+            
+            do {
+                password = '';
+                
+                // If require all types, ensure at least one of each selected type
+                if (requireAll) {
+                    if (document.getElementById('uppercase').checked && pool.match(/[A-Z]/)) {
+                        const chars = pool.match(/[A-Z]/g).join('');
+                        password += chars[secureRandom(chars.length)];
+                    }
+                    if (document.getElementById('lowercase').checked && pool.match(/[a-z]/)) {
+                        const chars = pool.match(/[a-z]/g).join('');
+                        password += chars[secureRandom(chars.length)];
+                    }
+                    if (document.getElementById('numbers').checked && pool.match(/[0-9]/)) {
+                        const chars = pool.match(/[0-9]/g).join('');
+                        password += chars[secureRandom(chars.length)];
+                    }
+                    if (document.getElementById('symbols').checked && pool.match(/[^A-Za-z0-9]/)) {
+                        const chars = pool.match(/[^A-Za-z0-9]/g).join('');
+                        password += chars[secureRandom(chars.length)];
+                    }
+                }
+                
+                // Fill rest randomly
+                while (password.length < length) {
+                    password += pool[secureRandom(pool.length)];
+                }
+                
+                // Shuffle to randomize required char positions
+                password = secureShuffle(password);
+                attempts++;
+                
+            } while (noSequential && hasSequential(password) && attempts < maxAttempts);
+            
+            document.getElementById('passwordOutput').value = password;
+            document.getElementById('passwordOutput').type = isPasswordVisible ? 'text' : 'password';
+            
+            updateStrength(password, pool.length);
+            addToHistory(password);
+        }
+        
+        // Calculate and display strength
+        function updateStrength(password, poolSize) {
+            const entropy = password.length * Math.log2(poolSize);
+            const fill = document.getElementById('strengthFill');
+            const label = document.getElementById('strengthLabel');
+            const entropyEl = document.getElementById('entropyValue');
+            const crackTime = document.getElementById('crackTime');
+            
+            let strength, color, crackText;
+            
+            if (entropy < 28) {
+                strength = 'Very Weak'; color = '#ef4444';
+                crackText = 'Crackable instantly';
+            } else if (entropy < 36) {
+                strength = 'Weak'; color = '#f97316';
+                crackText = 'Crackable in seconds to minutes';
+            } else if (entropy < 60) {
+                strength = 'Fair'; color = '#eab308';
+                crackText = 'Crackable in hours to days';
+            } else if (entropy < 80) {
+                strength = 'Strong'; color = '#22c55e';
+                crackText = 'Crackable in years';
+            } else if (entropy < 100) {
+                strength = 'Very Strong'; color = '#10b981';
+                crackText = 'Crackable in centuries';
+            } else {
+                strength = 'Excellent'; color = '#06b6d4';
+                crackText = 'Practically uncrackable';
+            }
+            
+            fill.style.width = Math.min(100, (entropy / 128) * 100) + '%';
+            fill.style.background = color;
+            label.textContent = strength;
+            label.style.color = color;
+            entropyEl.textContent = Math.round(entropy) + ' bits entropy';
+            crackTime.innerHTML = `<i class="fas fa-clock"></i> <span>${crackText} (at 10 billion guesses/sec)</span>`;
+        }
+        
+        // Generate passphrase
+        function generatePassphrase() {
+            const count = parseInt(document.getElementById('wordCount').value);
+            const separator = document.getElementById('separator').value;
+            const capitalize = document.getElementById('capitalizeWords').checked;
+            const includeNum = document.getElementById('includeNumber').checked;
+            
+            let words = [];
+            for (let i = 0; i < count; i++) {
+                let word = WORDS[secureRandom(WORDS.length)];
+                if (capitalize) word = word.charAt(0).toUpperCase() + word.slice(1);
+                words.push(word);
+            }
+            
+            let passphrase = words.join(separator);
+            if (includeNum) passphrase += separator + secureRandom(1000);
+            
+            document.getElementById('passwordOutput').value = passphrase;
+            document.getElementById('passwordOutput').type = 'text';
+            isPasswordVisible = true;
+            document.getElementById('visibilityIcon').className = 'fas fa-eye-slash';
+            
+            // Calculate entropy for passphrase
+            const entropy = count * Math.log2(WORDS.length) + (includeNum ? Math.log2(1000) : 0);
+            updateStrengthPassphrase(passphrase, entropy);
+            addToHistory(passphrase);
+        }
+        
+        function updateStrengthPassphrase(passphrase, entropy) {
+            const fill = document.getElementById('strengthFill');
+            const label = document.getElementById('strengthLabel');
+            const entropyEl = document.getElementById('entropyValue');
+            const crackTime = document.getElementById('crackTime');
+            
+            let strength, color, crackText;
+            
+            if (entropy < 40) {
+                strength = 'Fair'; color = '#eab308'; crackText = 'Crackable in days';
+            } else if (entropy < 60) {
+                strength = 'Strong'; color = '#22c55e'; crackText = 'Crackable in years';
+            } else {
+                strength = 'Very Strong'; color = '#10b981'; crackText = 'Practically uncrackable';
+            }
+            
+            fill.style.width = Math.min(100, (entropy / 80) * 100) + '%';
+            fill.style.background = color;
+            label.textContent = strength + ' (Passphrase)';
+            label.style.color = color;
+            entropyEl.textContent = Math.round(entropy) + ' bits entropy';
+            crackTime.innerHTML = `<i class="fas fa-clock"></i> <span>${crackText}</span>`;
+        }
+        
+        // Bulk generate
+        function generateBulk() {
+            const count = parseInt(document.getElementById('bulkCount').value);
+            const pool = buildCharPool();
+            const length = parseInt(document.getElementById('lengthSlider').value);
+            
+            if (pool.length === 0) {
+                showToast('Please select at least one character type');
+                return;
+            }
+            
+            const passwords = [];
+            for (let i = 0; i < count; i++) {
+                let pwd = '';
+                for (let j = 0; j < length; j++) {
+                    pwd += pool[secureRandom(pool.length)];
+                }
+                passwords.push(pwd);
+            }
+            
+            const bulkList = document.getElementById('bulkList');
+            bulkList.innerHTML = passwords.map((p, i) => `
+                <div class="bulk-item">
+                    <code>${p}</code>
+                    <button onclick="copyText('${p}')" class="small-btn"><i class="fas fa-copy"></i></button>
+                </div>
+            `).join('');
+            
+            document.getElementById('bulkResults').style.display = 'block';
+            document.getElementById('bulkResultCount').textContent = `${count} passwords generated`;
+        }
+        
+        function copyAllBulk() {
+            const items = document.querySelectorAll('.bulk-item code');
+            const text = Array.from(items).map(el => el.textContent).join('\n');
+            navigator.clipboard.writeText(text);
+            showToast('All passwords copied!');
+        }
+        
+        // History management
+        function addToHistory(password) {
+            const entry = { password, timestamp: new Date().toLocaleString() };
+            passwordHistory.unshift(entry);
+            if (passwordHistory.length > 10) passwordHistory.pop();
+            localStorage.setItem('passwordHistory', JSON.stringify(passwordHistory));
+            renderHistory();
+        }
+        
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            if (passwordHistory.length === 0) {
+                list.innerHTML = '<p class="empty-history">No passwords generated yet</p>';
+                return;
+            }
+            list.innerHTML = passwordHistory.map(h => `
+                <div class="history-item">
+                    <div><code>${h.password.substring(0, 30)}${h.password.length > 30 ? '...' : ''}</code><br><small>${h.timestamp}</small></div>
+                    <button onclick="copyText('${h.password.replace(/'/g, "\\'")}')" class="small-btn"><i class="fas fa-copy"></i></button>
+                </div>
+            `).join('');
+        }
+        
+        function clearHistory() {
+            passwordHistory = [];
+            localStorage.removeItem('passwordHistory');
+            renderHistory();
+            showToast('History cleared');
+        }
+        
+        // Utility functions
+        function toggleVisibility() {
+            const input = document.getElementById('passwordOutput');
+            const icon = document.getElementById('visibilityIcon');
+            isPasswordVisible = !isPasswordVisible;
+            input.type = isPasswordVisible ? 'text' : 'password';
+            icon.className = isPasswordVisible ? 'fas fa-eye-slash' : 'fas fa-eye';
+        }
+        
+        function copyPassword() {
+            const password = document.getElementById('passwordOutput').value;
+            if (!password) { showToast('No password to copy'); return; }
+            navigator.clipboard.writeText(password);
+            showToast('Password copied!');
+        }
+        
+        function copyText(text) {
+            navigator.clipboard.writeText(text);
+            showToast('Copied!');
+        }
+        
+        function updateLength() {
+            document.getElementById('lengthValue').textContent = document.getElementById('lengthSlider').value;
+        }
+        
+        function updateWordCount() {
+            document.getElementById('wordCountValue').textContent = document.getElementById('wordCount').value;
+        }
+        
+        function updateBulkCount() {
+            document.getElementById('bulkCountValue').textContent = document.getElementById('bulkCount').value;
+        }
+        
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+        
+        // Initialize
+        renderHistory();
+        generatePassword();
+    </script>
+</body>
+</html>
