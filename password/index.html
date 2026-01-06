@@ -45,7 +45,7 @@
                     <input type="text" id="passwordOutput" readonly placeholder="Click Generate to create password">
                     <div class="password-actions">
                         <button onclick="toggleVisibility()" title="Toggle visibility" class="icon-btn">
-                            <i class="fas fa-eye" id="visibilityIcon"></i>
+                            <i class="fas fa-eye-slash" id="visibilityIcon"></i>
                         </button>
                         <button onclick="copyPassword()" title="Copy to clipboard" class="icon-btn">
                             <i class="fas fa-copy"></i>
@@ -69,6 +69,10 @@
                 <div class="crack-time" id="crackTime">
                     <i class="fas fa-clock"></i> <span>Generate a password to see crack time estimate</span>
                 </div>
+                
+                <button class="generate-btn" onclick="generatePassword()" style="margin-top: 15px; width: 100%;">
+                    <i class="fas fa-shield-alt"></i> Generate Secure Password
+                </button>
             </div>
 
             <!-- Generation Options -->
@@ -194,7 +198,7 @@
                     </label>
                 </div>
                 
-                <button class="generate-btn secondary" onclick="generatePassphrase()">
+                <button class="generate-btn secondary" onclick="generatePassphrase()" style="margin-top: 15px;">
                     <i class="fas fa-quote-right"></i> Generate Passphrase
                 </button>
             </div>
@@ -225,7 +229,7 @@
             <!-- Password History -->
             <div class="history-section">
                 <h3><i class="fas fa-history"></i> Recent Passwords</h3>
-                <p class="section-desc">Your last 10 generated passwords (stored locally)</p>
+                <p class="section-desc">Your last 10 generated passwords (this session only)</p>
                 <div id="historyList" class="history-list">
                     <p class="empty-history">No passwords generated yet</p>
                 </div>
@@ -240,7 +244,7 @@
                 <ul>
                     <li>All passwords are generated locally using the Web Crypto API</li>
                     <li>No passwords are sent to any server</li>
-                    <li>History is stored only in your browser's localStorage</li>
+                    <li>History is session-only and clears on page refresh</li>
                     <li>Recommended: Use at least 16 characters with mixed types</li>
                     <li>For maximum security, use 20+ characters or passphrases</li>
                 </ul>
@@ -416,8 +420,8 @@
         // Word list for passphrases (common English words)
         const WORDS = ['apple','brave','chair','dance','eagle','flame','grape','heart','ivory','jewel','knife','lemon','maple','noble','ocean','peace','quest','river','storm','tiger','unity','vivid','water','xenon','youth','zebra','alpha','beach','cloud','dream','earth','frost','giant','honey','image','jolly','karma','light','magic','night','olive','piano','queen','royal','stone','train','ultra','valor','wheat','xray','yacht','zesty','amber','blaze','coral','delta','ember','flora','glide','haven','inlet','joker','kites','lunar','mango','nexus','orbit','prism','quilt','radar','solar','tempo','urban','viper','woven','xerox','yearn','zones','acorn','bison','crest','dunes','equip','fable','gloom','haste','ideal','jumbo','kayak','latch','merit','niche','oasis','panda','quirk','reign','swift','thorn','umbra','vault','waltz','xenon','yield','zonal'];
         
-        let passwordHistory = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
-        let isPasswordVisible = false;
+        let passwordHistory = [];
+        let isPasswordVisible = true;
         
         // Cryptographically secure random number
         function secureRandom(max) {
@@ -672,7 +676,6 @@
             const entry = { password, timestamp: new Date().toLocaleString() };
             passwordHistory.unshift(entry);
             if (passwordHistory.length > 10) passwordHistory.pop();
-            localStorage.setItem('passwordHistory', JSON.stringify(passwordHistory));
             renderHistory();
         }
         
@@ -692,7 +695,6 @@
         
         function clearHistory() {
             passwordHistory = [];
-            localStorage.removeItem('passwordHistory');
             renderHistory();
             showToast('History cleared');
         }
