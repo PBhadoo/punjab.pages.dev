@@ -697,6 +697,8 @@
             const count = parseInt(document.getElementById('bulkCount').value);
             const pool = buildCharPool();
             const length = parseInt(document.getElementById('lengthSlider').value);
+            const requireAll = document.getElementById('requireAll').checked;
+            const noSequential = document.getElementById('noSequential').checked;
             
             if (pool.length === 0) {
                 showToast('Please select at least one character type');
@@ -705,11 +707,45 @@
             
             const passwords = [];
             for (let i = 0; i < count; i++) {
-                let pwd = '';
-                for (let j = 0; j < length; j++) {
-                    pwd += pool[secureRandom(pool.length)];
-                }
-                passwords.push(pwd);
+                let password = '';
+                let attempts = 0;
+                const maxAttempts = 1000;
+                
+                do {
+                    password = '';
+                    
+                    // If require all types, ensure at least one of each selected type
+                    if (requireAll) {
+                        if (document.getElementById('uppercase').checked && pool.match(/[A-Z]/)) {
+                            const chars = pool.match(/[A-Z]/g).join('');
+                            password += chars[secureRandom(chars.length)];
+                        }
+                        if (document.getElementById('lowercase').checked && pool.match(/[a-z]/)) {
+                            const chars = pool.match(/[a-z]/g).join('');
+                            password += chars[secureRandom(chars.length)];
+                        }
+                        if (document.getElementById('numbers').checked && pool.match(/[0-9]/)) {
+                            const chars = pool.match(/[0-9]/g).join('');
+                            password += chars[secureRandom(chars.length)];
+                        }
+                        if (document.getElementById('symbols').checked && pool.match(/[^A-Za-z0-9]/)) {
+                            const chars = pool.match(/[^A-Za-z0-9]/g).join('');
+                            password += chars[secureRandom(chars.length)];
+                        }
+                    }
+                    
+                    // Fill rest randomly
+                    while (password.length < length) {
+                        password += pool[secureRandom(pool.length)];
+                    }
+                    
+                    // Shuffle to randomize required char positions
+                    password = secureShuffle(password);
+                    attempts++;
+                    
+                } while (noSequential && hasSequential(password) && attempts < maxAttempts);
+                
+                passwords.push(password);
             }
             
             const bulkList = document.getElementById('bulkList');

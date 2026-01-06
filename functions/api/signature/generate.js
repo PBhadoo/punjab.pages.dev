@@ -7,7 +7,9 @@
  * Generates a 4-digit signature code based on:
  * - Date (DDMMYYYY) in IST
  * - User's 4-digit PIN
- * - Secret key from environment variables
+ * - Secret key from environment variables (used as HMAC key)
+ * 
+ * Uses HMAC-SHA512 for maximum security (last 4 hex digits)
  */
 
 export async function onRequestPost(context) {
@@ -55,13 +57,25 @@ export async function onRequestPost(context) {
             });
         }
 
-        // Create the combined string: DDMMYYYYXXXX + secretKey
-        const combinedString = `${dateStr}${pin}${secretKey}`;
+        // Create the message: DDMMYYYYXXXX (date + PIN)
+        const message = `${dateStr}${pin}`;
         
-        // Calculate SHA-256 hash
+        // Calculate HMAC-SHA512
         const encoder = new TextEncoder();
-        const data = encoder.encode(combinedString);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const keyData = encoder.encode(secretKey);
+        const messageData = encoder.encode(message);
+        
+        // Import key for HMAC
+        const cryptoKey = await crypto.subtle.importKey(
+            'raw',
+            keyData,
+            { name: 'HMAC', hash: 'SHA-512' },
+            false,
+            ['sign']
+        );
+        
+        // Sign the message
+        const hashBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         
