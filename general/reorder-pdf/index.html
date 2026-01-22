@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reorder PDF Pages | Punjab Investigation Tools</title>
+    <meta name="description" content="Reorder PDF pages by drag and drop. Rearrange PDF pages in custom order. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- pdf-lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .pdf-info {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            display: none;
+        }
+        
+        .pdf-info.active {
+            display: block;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            text-align: center;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+        }
+        
+        .info-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #818cf8;
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .pages-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            display: none;
+        }
+        
+        .pages-container.active {
+            display: block;
+        }
+        
+        .pages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .page-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: move;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .page-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+            transform: translateY(-3px);
+        }
+        
+        .page-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        
+        .page-item.drag-over {
+            border-color: var(--accent-color);
+            background: rgba(233, 69, 96, 0.1);
+        }
+        
+        .page-icon {
+            font-size: 48px;
+            color: #818cf8;
+            margin-bottom: 10px;
+        }
+        
+        .page-number {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+        
+        .page-badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
+        }
+        
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .action-btn.secondary {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            border: 1px solid #818cf8;
+        }
+        
+        .action-btn.secondary:hover {
+            background: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+        }
+        
+        .progress-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            display: none;
+            text-align: center;
+        }
+        
+        .progress-section.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), #ff6b9d);
+            border-radius: 10px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+        
+        .progress-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .results-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            display: none;
+            text-align: center;
+        }
+        
+        .results-section.active {
+            display: block;
+        }
+        
+        .success-icon {
+            font-size: 64px;
+            color: #10b981;
+            margin-bottom: 20px;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .instruction-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            color: #818cf8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Reorder PDF Pages</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-arrows-up-down"></i> Reorder PDF Pages</h1>
+                <p>Drag and drop pages to reorder them. Rearrange PDF pages in custom sequence.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop PDF file here or click to upload</h3>
+                    <p>Single PDF file • Client-side processing • No file size limit</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select PDF
+                    </button>
+                    <input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- PDF Info -->
+        <div class="pdf-info" id="pdfInfo">
+            <h3><i class="fas fa-file-pdf"></i> PDF Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-value" id="pdfPages">0</div>
+                    <div class="info-label">Total Pages</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="pdfSize">0 KB</div>
+                    <div class="info-label">File Size</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="pdfName">-</div>
+                    <div class="info-label">Filename</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pages Container -->
+        <div class="pages-container" id="pagesContainer">
+            <h3><i class="fas fa-grip-vertical"></i> Drag & Drop Pages to Reorder</h3>
+            <div class="instruction-box">
+                <i class="fas fa-hand-pointer"></i> Click and drag any page to reorder. Release to drop in new position.
+            </div>
+            <div class="pages-grid" id="pagesGrid"></div>
+            <div class="action-buttons">
+                <button class="action-btn secondary" onclick="resetOrder()">
+                    <i class="fas fa-rotate-left"></i> Reset Order
+                </button>
+                <button class="action-btn" onclick="saveReorderedPDF()">
+                    <i class="fas fa-download"></i> Save Reordered PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <h3><i class="fas fa-spinner fa-spin"></i> Processing PDF...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Reordering pages...</div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="success-icon">
+                <i class="fas fa-circle-check"></i>
+            </div>
+            <h3>PDF Pages Reordered Successfully!</h3>
+            <p>Your PDF has been reordered with the new page sequence.</p>
+            <button class="download-btn" id="downloadBtn">
+                <i class="fas fa-download"></i> Download Reordered PDF
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-content">
+            <p>&copy; <span id="currentYear"></span> Punjab Investigation Tools. Built for Law Enforcement.</p>
+            <div class="footer-links">
+                <a href="/privacy.html">Privacy Policy</a>
+                <a href="/terms.html">Terms of Service</a>
+                <a href="/disclaimer.html">Disclaimer</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let pdfDoc = null;
+        let pdfBytes = null;
+        let fileName = '';
+        let pageOrder = [];
+        let originalOrder = [];
+
+        // Upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        async function handleFile(file) {
+            fileName = file.name.replace('.pdf', '');
+            const arrayBuffer = await file.arrayBuffer();
+            pdfBytes = new Uint8Array(arrayBuffer);
+            
+            try {
+                pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                const pageCount = pdfDoc.getPageCount();
+                
+                // Initialize page order
+                originalOrder = Array.from({ length: pageCount }, (_, i) => i);
+                pageOrder = [...originalOrder];
+                
+                // Display info
+                document.getElementById('pdfPages').textContent = pageCount;
+                document.getElementById('pdfSize').textContent = formatBytes(file.size);
+                document.getElementById('pdfName').textContent = fileName;
+                
+                document.getElementById('pdfInfo').classList.add('active');
+                document.getElementById('pagesContainer').classList.add('active');
+                
+                renderPages();
+            } catch (error) {
+                alert('Error loading PDF: ' + error.message);
+            }
+        }
+
+        function renderPages() {
+            const grid = document.getElementById('pagesGrid');
+            grid.innerHTML = '';
+            
+            pageOrder.forEach((originalIndex, currentIndex) => {
+                const pageItem = document.createElement('div');
+                pageItem.className = 'page-item';
+                pageItem.draggable = true;
+                pageItem.dataset.index = currentIndex;
+                
+                pageItem.innerHTML = `
+                    <div class="page-icon"><i class="fas fa-file-pdf"></i></div>
+                    <div class="page-number">Page ${originalIndex + 1}</div>
+                    <div class="page-badge">Position ${currentIndex + 1}</div>
+                `;
+                
+                // Drag events
+                pageItem.addEventListener('dragstart', handleDragStart);
+                pageItem.addEventListener('dragend', handleDragEnd);
+                pageItem.addEventListener('dragover', handleDragOver);
+                pageItem.addEventListener('drop', handleDrop);
+                
+                grid.appendChild(pageItem);
+            });
+        }
+
+        let draggedElement = null;
+        let draggedIndex = null;
+
+        function handleDragStart(e) {
+            draggedElement = e.target.closest('.page-item');
+            draggedIndex = parseInt(draggedElement.dataset.index);
+            draggedElement.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            draggedElement.classList.remove('dragging');
+            document.querySelectorAll('.page-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            const targetElement = e.target.closest('.page-item');
+            if (targetElement && targetElement !== draggedElement) {
+                targetElement.classList.add('drag-over');
+            }
+            return false;
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetElement = e.target.closest('.page-item');
+            
+            if (targetElement && targetElement !== draggedElement) {
+                const targetIndex = parseInt(targetElement.dataset.index);
+                
+                // Swap pages in order array
+                const temp = pageOrder[draggedIndex];
+                pageOrder[draggedIndex] = pageOrder[targetIndex];
+                pageOrder[targetIndex] = temp;
+                
+                renderPages();
+            }
+            
+            return false;
+        }
+
+        function resetOrder() {
+            pageOrder = [...originalOrder];
+            renderPages();
+        }
+
+        async function saveReorderedPDF() {
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('progressFill').style.width = '30%';
+            
+            try {
+                // Create new PDF with reordered pages
+                const newPdf = await PDFLib.PDFDocument.create();
+                
+                document.getElementById('progressFill').style.width = '50%';
+                
+                // Copy pages in new order
+                for (let i = 0; i < pageOrder.length; i++) {
+                    const [copiedPage] = await newPdf.copyPages(pdfDoc, [pageOrder[i]]);
+                    newPdf.addPage(copiedPage);
+                    
+                    const progress = 50 + (i / pageOrder.length) * 40;
+                    document.getElementById('progressFill').style.width = progress + '%';
+                }
+                
+                document.getElementById('progressFill').style.width = '90%';
+                
+                const pdfBytesOut = await newPdf.save();
+                
+                document.getElementById('progressFill').style.width = '100%';
+                
+                // Create download
+                const blob = new Blob([pdfBytesOut], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                
+                document.getElementById('progressSection').classList.remove('active');
+                document.getElementById('resultsSection').classList.add('active');
+                
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${fileName}_reordered.pdf`;
+                    a.click();
+                };
+                
+            } catch (error) {
+                alert('Error reordering PDF: ' + error.message);
+                document.getElementById('progressSection').classList.remove('active');
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

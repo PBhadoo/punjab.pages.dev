@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compress PDF | Punjab Investigation Tools</title>
+    <meta name="description" content="Reduce PDF file size while maintaining quality. Client-side PDF compression tool.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- pdf-lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .compression-settings {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .quality-slider {
+            margin: 25px 0;
+        }
+        
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .slider-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .slider-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+        
+        .slider-input {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .slider-input::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .slider-description {
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        
+        .compression-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .compression-preset {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .compression-preset:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+        
+        .compression-preset.active {
+            background: rgba(233, 69, 96, 0.2);
+            border-color: var(--accent-color);
+        }
+        
+        .preset-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .preset-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+        
+        .preset-description {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        .stats-comparison {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: center;
+            margin: 30px 0;
+        }
+        
+        .stats-box {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .stats-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .stats-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .stats-arrow {
+            font-size: 36px;
+            color: #10b981;
+        }
+        
+        .savings-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        
+        @media (max-width: 768px) {
+            .compression-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Compress PDF</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-file-zipper"></i> Compress PDF</h1>
+                <p>Reduce PDF file size while maintaining quality. Optimize for web or email.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop PDF file here or click to upload</h3>
+                    <p>Single PDF file • Client-side processing • No file size limit</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select PDF
+                    </button>
+                    <input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compression Settings -->
+        <div class="compression-settings" id="compressionSettings" style="display: none;">
+            <h3><i class="fas fa-sliders"></i> Compression Settings</h3>
+            
+            <div class="compression-options">
+                <div class="compression-preset active" onclick="selectPreset('low', 90)">
+                    <div class="preset-icon" style="color: #10b981;">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <div class="preset-name">Low Compression</div>
+                    <div class="preset-description">Best quality, larger size</div>
+                </div>
+                <div class="compression-preset" onclick="selectPreset('medium', 70)">
+                    <div class="preset-icon" style="color: #f59e0b;">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <div class="preset-name">Medium Compression</div>
+                    <div class="preset-description">Balanced quality & size</div>
+                </div>
+                <div class="compression-preset" onclick="selectPreset('high', 50)">
+                    <div class="preset-icon" style="color: var(--accent-color);">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="preset-name">High Compression</div>
+                    <div class="preset-description">Smaller size, good quality</div>
+                </div>
+            </div>
+            
+            <div class="quality-slider">
+                <div class="slider-header">
+                    <span class="slider-label">Quality Level</span>
+                    <span class="slider-value" id="qualityValue">90%</span>
+                </div>
+                <input type="range" min="30" max="100" value="90" class="slider-input" id="qualitySlider">
+                <div class="slider-description">
+                    Higher quality = Larger file size • Lower quality = Smaller file size
+                </div>
+            </div>
+            
+            <button class="split-btn" onclick="compressPDF()">
+                <i class="fas fa-compress"></i> Compress PDF
+            </button>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <h3><i class="fas fa-spinner fa-spin"></i> Compressing PDF...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Analyzing PDF structure...</div>
+        </div>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-check-circle"></i> Compression Complete</h2>
+            </div>
+
+            <div class="stats-comparison">
+                <div class="stats-box">
+                    <div class="stats-label">Original Size</div>
+                    <div class="stats-value" id="originalSize">0 KB</div>
+                </div>
+                <div class="stats-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="stats-box">
+                    <div class="stats-label">Compressed Size</div>
+                    <div class="stats-value" id="compressedSize">0 KB</div>
+                    <div class="savings-badge" id="savingsBadge">0% smaller</div>
+                </div>
+            </div>
+
+            <button class="split-btn" onclick="downloadCompressed()">
+                <i class="fas fa-download"></i> Download Compressed PDF
+            </button>
+
+            <button class="btn-secondary" style="width: 100%; padding: 15px; margin-top: 15px;" onclick="reset()">
+                <i class="fas fa-refresh"></i> Compress Another PDF
+            </button>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        const { PDFDocument } = PDFLib;
+        let originalPDF = null;
+        let originalSize = 0;
+        let pdfFileName = '';
+        let compressedPDFBytes = null;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const qualitySlider = document.getElementById('qualitySlider');
+        const qualityValue = document.getElementById('qualityValue');
+
+        qualitySlider.addEventListener('input', (e) => {
+            qualityValue.textContent = e.target.value + '%';
+            document.querySelectorAll('.compression-preset').forEach(preset => preset.classList.remove('active'));
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handlePDFFile(file);
+            } else {
+                alert('Please drop a valid PDF file');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handlePDFFile(file);
+            }
+        });
+
+        async function handlePDFFile(file) {
+            pdfFileName = file.name;
+            originalSize = file.size;
+            
+            const arrayBuffer = await file.arrayBuffer();
+            originalPDF = await PDFDocument.load(arrayBuffer);
+            
+            document.getElementById('compressionSettings').style.display = 'block';
+        }
+
+        function selectPreset(preset, quality) {
+            document.querySelectorAll('.compression-preset').forEach(p => p.classList.remove('active'));
+            event.target.closest('.compression-preset').classList.add('active');
+            
+            qualitySlider.value = quality;
+            qualityValue.textContent = quality + '%';
+        }
+
+        async function compressPDF() {
+            if (!originalPDF) {
+                alert('Please upload a PDF file first');
+                return;
+            }
+
+            document.getElementById('progressSection').classList.add('active');
+            updateProgress(20, 'Loading PDF document...');
+
+            try {
+                const quality = parseInt(qualitySlider.value) / 100;
+                
+                updateProgress(40, 'Creating compressed PDF...');
+                
+                // Create a new PDF with compression
+                const compressedPDF = await PDFDocument.create();
+                
+                updateProgress(60, 'Copying pages...');
+                
+                // Copy all pages from original
+                const pageIndices = originalPDF.getPageIndices();
+                const copiedPages = await compressedPDF.copyPages(originalPDF, pageIndices);
+                
+                copiedPages.forEach(page => compressedPDF.addPage(page));
+                
+                updateProgress(80, 'Applying compression...');
+                
+                // Save with compression options
+                compressedPDFBytes = await compressedPDF.save({
+                    useObjectStreams: true,
+                    addDefaultPage: false,
+                    objectsPerTick: Math.floor(50 * quality)
+                });
+                
+                updateProgress(100, 'Compression complete!');
+                
+                setTimeout(() => {
+                    document.getElementById('progressSection').classList.remove('active');
+                    showResults();
+                }, 500);
+                
+            } catch (error) {
+                alert('Error compressing PDF: ' + error.message);
+                document.getElementById('progressSection').classList.remove('active');
+            }
+        }
+
+        function updateProgress(percentage, message) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = message;
+        }
+
+        function showResults() {
+            const compressedSize = compressedPDFBytes.length;
+            const savings = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+            
+            document.getElementById('originalSize').textContent = formatFileSize(originalSize);
+            document.getElementById('compressedSize').textContent = formatFileSize(compressedSize);
+            document.getElementById('savingsBadge').textContent = savings + '% smaller';
+            
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function downloadCompressed() {
+            const blob = new Blob([compressedPDFBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = pdfFileName.replace('.pdf', '_compressed.pdf');
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function reset() {
+            originalPDF = null;
+            compressedPDFBytes = null;
+            originalSize = 0;
+            pdfFileName = '';
+            
+            document.getElementById('compressionSettings').style.display = 'none';
+            document.getElementById('progressSection').classList.remove('active');
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            fileInput.value = '';
+            qualitySlider.value = 90;
+            qualityValue.textContent = '90%';
+            
+            document.querySelectorAll('.compression-preset').forEach(p => p.classList.remove('active'));
+            document.querySelector('.compression-preset').classList.add('active');
+        }
+    </script>
+</body>
+</html>

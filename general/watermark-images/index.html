@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watermark Images | Punjab Investigation Tools</title>
+    <meta name="description" content="Add text or image watermarks to images. Customizable position, opacity, and size. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .image-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 15px;
+        }
+        
+        .image-preview {
+            width: 100%;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .image-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .image-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-download:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-remove {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+        }
+        
+        .btn-remove:hover {
+            background: rgba(255, 69, 96, 0.2);
+            color: var(--accent-color);
+        }
+        
+        .controls-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .watermark-type {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .type-btn {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .type-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+        
+        .type-btn.active {
+            background: rgba(233, 69, 96, 0.2);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        
+        .watermark-options {
+            display: none;
+        }
+        
+        .watermark-options.active {
+            display: block;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        
+        .control-group input[type="range"] {
+            cursor: pointer;
+        }
+        
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 2px 8px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 4px;
+            color: #818cf8;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .position-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .position-btn:hover,
+        .position-btn.active {
+            background: rgba(233, 69, 96, 0.2);
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .bulk-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .bulk-actions button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .watermark-upload {
+            margin-top: 10px;
+        }
+        
+        .watermark-upload-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #818cf8;
+            border-radius: 8px;
+            color: #818cf8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .watermark-upload-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Watermark Images</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-copyright"></i> Watermark Images</h1>
+                <p>Add text or image watermarks with customizable position, size, opacity, and color.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop images here or click to upload</h3>
+                    <p>Supports JPG, PNG, WebP • Multiple images • Client-side processing</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select Images
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- Images Section -->
+        <section class="results-section" id="imagesSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-images"></i> Images (<span id="imageCount">0</span>)</h2>
+                <p>Configure watermark settings below and apply to all images</p>
+            </div>
+
+            <!-- Watermark Controls -->
+            <div class="controls-section">
+                <h3><i class="fas fa-sliders"></i> Watermark Settings</h3>
+                
+                <div class="watermark-type">
+                    <button class="type-btn active" onclick="switchWatermarkType('text')">
+                        <i class="fas fa-font"></i> Text Watermark
+                    </button>
+                    <button class="type-btn" onclick="switchWatermarkType('image')">
+                        <i class="fas fa-image"></i> Image Watermark
+                    </button>
+                </div>
+
+                <!-- Text Watermark Options -->
+                <div class="watermark-options active" id="textOptions">
+                    <div class="control-group">
+                        <label>Watermark Text</label>
+                        <input type="text" id="watermarkText" value="© 2026 Punjab Police" placeholder="Enter watermark text">
+                    </div>
+                    
+                    <div class="control-grid">
+                        <div class="control-group">
+                            <label>Font Size <span class="range-value" id="fontSizeValue">40px</span></label>
+                            <input type="range" id="fontSize" min="12" max="200" value="40" oninput="updateRangeValue('fontSize', this.value + 'px')">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Font Weight</label>
+                            <select id="fontWeight">
+                                <option value="300">Light</option>
+                                <option value="400">Regular</option>
+                                <option value="600">Semi-Bold</option>
+                                <option value="700" selected>Bold</option>
+                                <option value="900">Black</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Text Color</label>
+                            <input type="color" id="textColor" value="#ffffff">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Opacity <span class="range-value" id="textOpacityValue">50%</span></label>
+                            <input type="range" id="textOpacity" min="0" max="100" value="50" oninput="updateRangeValue('textOpacity', this.value + '%')">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Watermark Options -->
+                <div class="watermark-options" id="imageOptions">
+                    <div class="control-group">
+                        <label>Watermark Image</label>
+                        <div class="watermark-upload">
+                            <button class="watermark-upload-btn" onclick="document.getElementById('watermarkInput').click()">
+                                <i class="fas fa-upload"></i> Upload Watermark Image
+                            </button>
+                            <input type="file" id="watermarkInput" accept="image/*" hidden>
+                            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 10px;" id="watermarkStatus">No watermark image selected</p>
+                        </div>
+                    </div>
+                    
+                    <div class="control-grid">
+                        <div class="control-group">
+                            <label>Size <span class="range-value" id="watermarkSizeValue">20%</span></label>
+                            <input type="range" id="watermarkSize" min="5" max="50" value="20" oninput="updateRangeValue('watermarkSize', this.value + '%')">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Opacity <span class="range-value" id="imageOpacityValue">50%</span></label>
+                            <input type="range" id="imageOpacity" min="0" max="100" value="50" oninput="updateRangeValue('imageOpacity', this.value + '%')">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Common Options -->
+                <div class="control-group">
+                    <label>Position</label>
+                    <div class="position-grid">
+                        <button class="position-btn" onclick="setPosition('top-left')">Top Left</button>
+                        <button class="position-btn" onclick="setPosition('top-center')">Top Center</button>
+                        <button class="position-btn" onclick="setPosition('top-right')">Top Right</button>
+                        <button class="position-btn" onclick="setPosition('middle-left')">Middle Left</button>
+                        <button class="position-btn active" onclick="setPosition('center')">Center</button>
+                        <button class="position-btn" onclick="setPosition('middle-right')">Middle Right</button>
+                        <button class="position-btn" onclick="setPosition('bottom-left')">Bottom Left</button>
+                        <button class="position-btn" onclick="setPosition('bottom-center')">Bottom Center</button>
+                        <button class="position-btn" onclick="setPosition('bottom-right')">Bottom Right</button>
+                    </div>
+                </div>
+
+                <div class="bulk-actions">
+                    <button class="btn-primary" onclick="applyWatermark()">
+                        <i class="fas fa-magic"></i> Apply Watermark
+                    </button>
+                    <button class="btn-primary" onclick="downloadAll()">
+                        <i class="fas fa-download"></i> Download All
+                    </button>
+                    <button class="btn-secondary" onclick="clearAll()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="images-grid" id="imagesGrid"></div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let images = [];
+        let watermarkType = 'text';
+        let watermarkPosition = 'center';
+        let watermarkImageData = null;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const watermarkInput = document.getElementById('watermarkInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        watermarkInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    watermarkImageData = e.target.result;
+                    document.getElementById('watermarkStatus').textContent = `Selected: ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (imageFiles.length === 0) {
+                alert('Please select valid image files');
+                return;
+            }
+
+            imageFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const imageData = {
+                            id: Date.now() + Math.random(),
+                            name: file.name,
+                            originalData: e.target.result,
+                            watermarkedData: null,
+                            width: img.width,
+                            height: img.height,
+                            format: file.type.split('/')[1]
+                        };
+                        
+                        images.push(imageData);
+                        updateDisplay();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function switchWatermarkType(type) {
+            watermarkType = type;
+            
+            const textBtn = document.querySelector('.type-btn:first-child');
+            const imageBtn = document.querySelector('.type-btn:last-child');
+            const textOptions = document.getElementById('textOptions');
+            const imageOptions = document.getElementById('imageOptions');
+            
+            if (type === 'text') {
+                textBtn.classList.add('active');
+                imageBtn.classList.remove('active');
+                textOptions.classList.add('active');
+                imageOptions.classList.remove('active');
+            } else {
+                textBtn.classList.remove('active');
+                imageBtn.classList.add('active');
+                textOptions.classList.remove('active');
+                imageOptions.classList.add('active');
+            }
+        }
+
+        function setPosition(position) {
+            watermarkPosition = position;
+            document.querySelectorAll('.position-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function updateRangeValue(id, value) {
+            document.getElementById(id + 'Value').textContent = value;
+        }
+
+        function applyWatermark() {
+            if (watermarkType === 'image' && !watermarkImageData) {
+                alert('Please upload a watermark image first');
+                return;
+            }
+
+            images.forEach(imageData => {
+                addWatermarkToImage(imageData);
+            });
+        }
+
+        function addWatermarkToImage(imageData) {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = imageData.width;
+                canvas.height = imageData.height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                if (watermarkType === 'text') {
+                    addTextWatermark(ctx, canvas.width, canvas.height);
+                } else {
+                    addImageWatermark(ctx, canvas.width, canvas.height);
+                }
+                
+                imageData.watermarkedData = canvas.toDataURL(`image/${imageData.format}`, 0.95);
+                updateDisplay();
+            };
+            img.src = imageData.originalData;
+        }
+
+        function addTextWatermark(ctx, width, height) {
+            const text = document.getElementById('watermarkText').value;
+            const fontSize = document.getElementById('fontSize').value;
+            const fontWeight = document.getElementById('fontWeight').value;
+            const color = document.getElementById('textColor').value;
+            const opacity = document.getElementById('textOpacity').value / 100;
+            
+            ctx.font = `${fontWeight} ${fontSize}px Inter`;
+            ctx.fillStyle = color;
+            ctx.globalAlpha = opacity;
+            
+            const textMetrics = ctx.measureText(text);
+            const textWidth = textMetrics.width;
+            const textHeight = fontSize;
+            
+            const pos = getWatermarkPosition(width, height, textWidth, textHeight);
+            ctx.fillText(text, pos.x, pos.y);
+        }
+
+        function addImageWatermark(ctx, width, height) {
+            const watermark = new Image();
+            watermark.onload = () => {
+                const size = document.getElementById('watermarkSize').value / 100;
+                const opacity = document.getElementById('imageOpacity').value / 100;
+                
+                const wmWidth = width * size;
+                const wmHeight = (watermark.height / watermark.width) * wmWidth;
+                
+                const pos = getWatermarkPosition(width, height, wmWidth, wmHeight);
+                
+                ctx.globalAlpha = opacity;
+                ctx.drawImage(watermark, pos.x, pos.y, wmWidth, wmHeight);
+            };
+            watermark.src = watermarkImageData;
+        }
+
+        function getWatermarkPosition(canvasWidth, canvasHeight, wmWidth, wmHeight) {
+            const padding = 20;
+            let x, y;
+            
+            switch (watermarkPosition) {
+                case 'top-left':
+                    x = padding;
+                    y = wmHeight + padding;
+                    break;
+                case 'top-center':
+                    x = (canvasWidth - wmWidth) / 2;
+                    y = wmHeight + padding;
+                    break;
+                case 'top-right':
+                    x = canvasWidth - wmWidth - padding;
+                    y = wmHeight + padding;
+                    break;
+                case 'middle-left':
+                    x = padding;
+                    y = (canvasHeight + wmHeight) / 2;
+                    break;
+                case 'center':
+                    x = (canvasWidth - wmWidth) / 2;
+                    y = (canvasHeight + wmHeight) / 2;
+                    break;
+                case 'middle-right':
+                    x = canvasWidth - wmWidth - padding;
+                    y = (canvasHeight + wmHeight) / 2;
+                    break;
+                case 'bottom-left':
+                    x = padding;
+                    y = canvasHeight - padding;
+                    break;
+                case 'bottom-center':
+                    x = (canvasWidth - wmWidth) / 2;
+                    y = canvasHeight - padding;
+                    break;
+                case 'bottom-right':
+                    x = canvasWidth - wmWidth - padding;
+                    y = canvasHeight - padding;
+                    break;
+            }
+            
+            return { x, y };
+        }
+
+        function updateDisplay() {
+            const grid = document.getElementById('imagesGrid');
+            const section = document.getElementById('imagesSection');
+            const count = document.getElementById('imageCount');
+            
+            count.textContent = images.length;
+            section.style.display = images.length > 0 ? 'block' : 'none';
+            
+            grid.innerHTML = '';
+            
+            images.forEach(imageData => {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                
+                const hasWatermark = imageData.watermarkedData !== null;
+                const displayImage = hasWatermark ? imageData.watermarkedData : imageData.originalData;
+                
+                card.innerHTML = `
+                    <div class="image-name">${imageData.name}</div>
+                    <div class="image-preview">
+                        <img src="${displayImage}" alt="${imageData.name}">
+                    </div>
+                    <div class="image-actions">
+                        <button class="btn-download" onclick="downloadImage('${imageData.id}')" ${!hasWatermark ? 'disabled' : ''}>
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                        <button class="btn-remove" onclick="removeImage('${imageData.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function downloadImage(id) {
+            const imageData = images.find(img => img.id == id);
+            if (imageData && imageData.watermarkedData) {
+                const link = document.createElement('a');
+                const fileName = imageData.name.replace(/\.[^/.]+$/, '') + `_watermarked.${imageData.format}`;
+                
+                link.href = imageData.watermarkedData;
+                link.download = fileName;
+                link.click();
+            }
+        }
+
+        function downloadAll() {
+            const watermarkedImages = images.filter(img => img.watermarkedData);
+            
+            if (watermarkedImages.length === 0) {
+                alert('No watermarked images to download. Please apply watermark first.');
+                return;
+            }
+            
+            watermarkedImages.forEach((imageData, index) => {
+                setTimeout(() => downloadImage(imageData.id), index * 200);
+            });
+        }
+
+        function removeImage(id) {
+            images = images.filter(img => img.id != id);
+            updateDisplay();
+        }
+
+        function clearAll() {
+            if (confirm('Remove all images?')) {
+                images = [];
+                updateDisplay();
+                fileInput.value = '';
+            }
+        }
+    </script>
+</body>
+</html>

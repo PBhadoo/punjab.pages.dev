@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image ↔ Base64 | Punjab Investigation Tools</title>
+    <meta name="description" content="Convert images to Base64 strings and Base64 strings back to images. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .mode-btn {
+            padding: 15px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            border-color: var(--accent-color);
+            color: white;
+        }
+        
+        .converter-section {
+            display: none;
+        }
+        
+        .converter-section.active {
+            display: block;
+        }
+        
+        .base64-output {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .output-header h3 {
+            color: var(--text-primary);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .output-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .stat-badge {
+            padding: 5px 12px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 5px;
+            color: #818cf8;
+            font-weight: 600;
+        }
+        
+        .base64-text {
+            width: 100%;
+            min-height: 200px;
+            max-height: 400px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            resize: vertical;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+        
+        .output-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .output-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .btn-copy {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            border: 1px solid #818cf8;
+        }
+        
+        .btn-copy:hover {
+            background: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-copy.copied {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border-color: #10b981;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        .image-preview-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .preview-container {
+            width: 100%;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        
+        .preview-container img {
+            max-width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+        }
+        
+        .preview-info {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        
+        .info-item {
+            padding: 8px 15px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            color: #818cf8;
+            font-weight: 600;
+        }
+        
+        .base64-input {
+            width: 100%;
+            min-height: 200px;
+            max-height: 400px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            resize: vertical;
+            margin: 20px 0;
+        }
+        
+        .decode-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .decode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        .info-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        
+        .info-box h3 {
+            color: #818cf8;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-box ul {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+        
+        .info-box code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Image ↔ Base64</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-code"></i> Image ↔ Base64 Converter</h1>
+                <p>Convert images to Base64 encoded strings or decode Base64 strings back to images.</p>
+            </div>
+        </section>
+
+        <!-- Mode Selector -->
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="switchMode('encode')">
+                <i class="fas fa-image"></i> Image → Base64
+            </button>
+            <button class="mode-btn" onclick="switchMode('decode')">
+                <i class="fas fa-code"></i> Base64 → Image
+            </button>
+        </div>
+
+        <!-- Encode Mode -->
+        <section class="converter-section active" id="encodeSection">
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-container">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-arrow-up"></i>
+                        </div>
+                        <h3>Drop an image here or click to upload</h3>
+                        <p>Supports JPG, PNG, WebP, GIF, SVG • Client-side processing</p>
+                        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open"></i> Select Image
+                        </button>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Base64 Output -->
+            <div id="base64Output" style="display: none;">
+                <div class="base64-output">
+                    <div class="output-header">
+                        <h3><i class="fas fa-code"></i> Base64 String</h3>
+                        <div class="output-stats">
+                            <span class="stat-badge" id="base64Length">0 characters</span>
+                            <span class="stat-badge" id="base64Size">0 KB</span>
+                        </div>
+                    </div>
+                    <textarea class="base64-text" id="base64Text" readonly></textarea>
+                    <div class="output-actions">
+                        <button class="btn-copy" onclick="copyBase64()">
+                            <i class="fas fa-copy"></i> Copy to Clipboard
+                        </button>
+                        <button class="btn-download" onclick="downloadBase64()">
+                            <i class="fas fa-download"></i> Download as TXT
+                        </button>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h3><i class="fas fa-info-circle"></i> About Base64 Encoding</h3>
+                    <ul>
+                        <li><strong>Data URI Format:</strong> <code>data:image/png;base64,iVBORw0KGgo...</code></li>
+                        <li><strong>Use Cases:</strong> Embed images in HTML/CSS, API data transfer, email attachments</li>
+                        <li><strong>Size Note:</strong> Base64 encoded images are ~33% larger than original binary</li>
+                        <li><strong>Compatible:</strong> Use in <code>&lt;img src="data:..."&gt;</code> or CSS backgrounds</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Decode Mode -->
+        <section class="converter-section" id="decodeSection">
+            <section class="upload-section">
+                <div class="upload-container">
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        <h3 style="color: var(--text-primary); margin-bottom: 15px;">
+                            <i class="fas fa-paste"></i> Paste Base64 String
+                        </h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                            Paste your Base64 encoded string (with or without data URI prefix)
+                        </p>
+                        <textarea class="base64-input" id="base64Input" 
+                                  placeholder="Paste Base64 string here...&#10;&#10;Examples:&#10;data:image/png;base64,iVBORw0KGgo...&#10;or just:&#10;iVBORw0KGgo..."></textarea>
+                        <button class="decode-btn" onclick="decodeBase64()">
+                            <i class="fas fa-magic"></i> Decode to Image
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Image Preview -->
+            <div id="imagePreview" style="display: none;">
+                <div class="image-preview-section">
+                    <div class="output-header">
+                        <h3><i class="fas fa-image"></i> Decoded Image</h3>
+                    </div>
+                    <div class="preview-container">
+                        <img id="previewImage" alt="Decoded image">
+                    </div>
+                    <div class="preview-info">
+                        <span class="info-item" id="imageFormat">Format: -</span>
+                        <span class="info-item" id="imageDimensions">Dimensions: -</span>
+                    </div>
+                    <div class="output-actions">
+                        <button class="btn-download" onclick="downloadDecodedImage()">
+                            <i class="fas fa-download"></i> Download Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let currentImageData = null;
+        let currentFileName = '';
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageFile(file);
+            } else {
+                alert('Please drop a valid image file');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageFile(file);
+            }
+        });
+
+        function handleImageFile(file) {
+            currentFileName = file.name;
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                currentImageData = e.target.result;
+                displayBase64(currentImageData);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function displayBase64(base64String) {
+            const outputDiv = document.getElementById('base64Output');
+            const textArea = document.getElementById('base64Text');
+            const lengthSpan = document.getElementById('base64Length');
+            const sizeSpan = document.getElementById('base64Size');
+            
+            textArea.value = base64String;
+            
+            const length = base64String.length;
+            const sizeKB = (length * 0.75 / 1024).toFixed(2); // Approximate size
+            
+            lengthSpan.textContent = `${length.toLocaleString()} characters`;
+            sizeSpan.textContent = `${sizeKB} KB`;
+            
+            outputDiv.style.display = 'block';
+        }
+
+        function copyBase64() {
+            const textArea = document.getElementById('base64Text');
+            textArea.select();
+            document.execCommand('copy');
+            
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+
+        function downloadBase64() {
+            const base64String = document.getElementById('base64Text').value;
+            const blob = new Blob([base64String], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = currentFileName.replace(/\.[^/.]+$/, '') + '_base64.txt';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function switchMode(mode) {
+            const encodeSec = document.getElementById('encodeSection');
+            const decodeSec = document.getElementById('decodeSection');
+            const buttons = document.querySelectorAll('.mode-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            if (mode === 'encode') {
+                encodeSec.classList.add('active');
+                decodeSec.classList.remove('active');
+                buttons[0].classList.add('active');
+            } else {
+                encodeSec.classList.remove('active');
+                decodeSec.classList.add('active');
+                buttons[1].classList.add('active');
+            }
+        }
+
+        function decodeBase64() {
+            const input = document.getElementById('base64Input').value.trim();
+            
+            if (!input) {
+                alert('Please paste a Base64 string');
+                return;
+            }
+            
+            try {
+                // Handle data URI format or raw base64
+                let base64Data = input;
+                if (input.startsWith('data:')) {
+                    base64Data = input;
+                } else {
+                    // Try to detect image format
+                    base64Data = 'data:image/png;base64,' + input;
+                }
+                
+                // Test if valid by creating an image
+                const img = new Image();
+                img.onload = () => {
+                    const previewDiv = document.getElementById('imagePreview');
+                    const previewImg = document.getElementById('previewImage');
+                    const formatSpan = document.getElementById('imageFormat');
+                    const dimensionsSpan = document.getElementById('imageDimensions');
+                    
+                    previewImg.src = base64Data;
+                    currentImageData = base64Data;
+                    
+                    // Extract format
+                    const formatMatch = base64Data.match(/data:image\/([^;]+)/);
+                    const format = formatMatch ? formatMatch[1].toUpperCase() : 'Unknown';
+                    
+                    formatSpan.textContent = `Format: ${format}`;
+                    dimensionsSpan.textContent = `Dimensions: ${img.width} × ${img.height}`;
+                    
+                    previewDiv.style.display = 'block';
+                };
+                
+                img.onerror = () => {
+                    alert('Invalid Base64 string. Please check your input.');
+                };
+                
+                img.src = base64Data;
+                
+            } catch (error) {
+                alert('Error decoding Base64: ' + error.message);
+            }
+        }
+
+        function downloadDecodedImage() {
+            if (!currentImageData) return;
+            
+            const link = document.createElement('a');
+            link.href = currentImageData;
+            
+            // Extract format from data URI
+            const formatMatch = currentImageData.match(/data:image\/([^;]+)/);
+            const format = formatMatch ? formatMatch[1] : 'png';
+            
+            link.download = `decoded_image.${format}`;
+            link.click();
+        }
+    </script>
+</body>
+</html>

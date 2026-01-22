@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to QR Code | Punjab Investigation Tools</title>
+    <meta name="description" content="Embed image data in QR code. Convert images to QR-scannable format.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .qr-settings {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .image-preview {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 10px;
+            border: 2px solid var(--card-border);
+            margin: 20px auto;
+            display: block;
+        }
+        
+        .size-warning {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .size-warning.active {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .warning-icon {
+            font-size: 24px;
+            color: #f59e0b;
+        }
+        
+        .warning-text {
+            flex: 1;
+            color: #fbbf24;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .control-group {
+            margin: 20px 0;
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .control-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .size-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 8px;
+        }
+        
+        .size-item {
+            text-align: center;
+        }
+        
+        .size-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #818cf8;
+        }
+        
+        .size-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        
+        .qr-output {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        #qrcode {
+            display: inline-block;
+        }
+        
+        .compression-slider {
+            margin: 20px 0;
+        }
+        
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .slider-input {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .slider-input::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Image to QR Code</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-image"></i> Image to QR Code</h1>
+                <p>Embed image data in QR code. Perfect for sharing images via QR scanning.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop image file here or click to upload</h3>
+                    <p>JPG, PNG, GIF • Smaller images work best • Client-side processing</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select Image
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- QR Settings -->
+        <div class="qr-settings" id="qrSettings" style="display: none;">
+            <h3><i class="fas fa-sliders"></i> Image & QR Settings</h3>
+            
+            <img id="imagePreview" class="image-preview" alt="Image preview">
+            
+            <div class="size-info">
+                <div class="size-item">
+                    <div class="size-value" id="originalSize">0 KB</div>
+                    <div class="size-label">Original Size</div>
+                </div>
+                <div class="size-item">
+                    <div class="size-value" id="compressedSize">0 KB</div>
+                    <div class="size-label">Compressed Size</div>
+                </div>
+                <div class="size-item">
+                    <div class="size-value" id="base64Length">0</div>
+                    <div class="size-label">Base64 Length</div>
+                </div>
+            </div>
+            
+            <div class="size-warning" id="sizeWarning">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="warning-text">
+                    <strong>Large Image Warning:</strong> The image data is large and may create a complex QR code that's difficult to scan. 
+                    Try increasing compression or using a smaller image.
+                </div>
+            </div>
+            
+            <div class="compression-slider">
+                <div class="slider-header">
+                    <span class="control-label">Compression Quality</span>
+                    <span class="size-value" id="qualityValue">80%</span>
+                </div>
+                <input type="range" min="10" max="100" value="80" class="slider-input" id="qualitySlider">
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+                    Lower quality = Smaller QR code, easier to scan • Higher quality = Better image, larger QR
+                </p>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">QR Code Size (pixels)</label>
+                <select class="control-input" id="qrSize">
+                    <option value="256">256 × 256</option>
+                    <option value="512" selected>512 × 512</option>
+                    <option value="768">768 × 768</option>
+                    <option value="1024">1024 × 1024</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Error Correction Level</label>
+                <select class="control-input" id="errorCorrection">
+                    <option value="L">Low (7% recovery)</option>
+                    <option value="M" selected>Medium (15% recovery)</option>
+                    <option value="Q">Quartile (25% recovery)</option>
+                    <option value="H">High (30% recovery)</option>
+                </select>
+            </div>
+            
+            <button class="split-btn" onclick="generateQRCode()">
+                <i class="fas fa-qrcode"></i> Generate QR Code
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-check-circle"></i> QR Code Generated</h2>
+                <p>Scan this QR code to retrieve the embedded image</p>
+            </div>
+
+            <div class="qr-output">
+                <div id="qrcode"></div>
+            </div>
+
+            <button class="split-btn" onclick="downloadQRCode()">
+                <i class="fas fa-download"></i> Download QR Code
+            </button>
+
+            <button class="btn-secondary" style="width: 100%; padding: 15px; margin-top: 15px;" onclick="reset()">
+                <i class="fas fa-refresh"></i> Create Another QR Code
+            </button>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let originalImage = null;
+        let compressedDataURL = null;
+        let imageFileName = '';
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const qualitySlider = document.getElementById('qualitySlider');
+        const qualityValue = document.getElementById('qualityValue');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageFile(file);
+            } else {
+                alert('Please drop a valid image file');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageFile(file);
+            }
+        });
+
+        qualitySlider.addEventListener('input', (e) => {
+            qualityValue.textContent = e.target.value + '%';
+            if (originalImage) {
+                compressImage();
+            }
+        });
+
+        function handleImageFile(file) {
+            imageFileName = file.name;
+            const reader = new FileReader();
+            
+            document.getElementById('originalSize').textContent = formatFileSize(file.size);
+            
+            reader.onload = (e) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    imagePreview.src = e.target.result;
+                    compressImage();
+                    document.getElementById('qrSettings').style.display = 'block';
+                };
+                originalImage.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function compressImage() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Limit maximum dimensions
+            const maxDim = 400;
+            let width = originalImage.width;
+            let height = originalImage.height;
+            
+            if (width > height && width > maxDim) {
+                height = (height * maxDim) / width;
+                width = maxDim;
+            } else if (height > maxDim) {
+                width = (width * maxDim) / height;
+                height = maxDim;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            ctx.drawImage(originalImage, 0, 0, width, height);
+            
+            const quality = parseInt(qualitySlider.value) / 100;
+            compressedDataURL = canvas.toDataURL('image/jpeg', quality);
+            
+            const compressedSize = Math.round((compressedDataURL.length * 3) / 4);
+            document.getElementById('compressedSize').textContent = formatFileSize(compressedSize);
+            document.getElementById('base64Length').textContent = compressedDataURL.length.toLocaleString();
+            
+            // Show warning if data is too large
+            if (compressedDataURL.length > 2000) {
+                document.getElementById('sizeWarning').classList.add('active');
+            } else {
+                document.getElementById('sizeWarning').classList.remove('active');
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function generateQRCode() {
+            if (!compressedDataURL) {
+                alert('Please upload an image first');
+                return;
+            }
+
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            const size = parseInt(document.getElementById('qrSize').value);
+            const errorCorrectionLevel = document.getElementById('errorCorrection').value;
+            
+            try {
+                new QRCode(qrContainer, {
+                    text: compressedDataURL,
+                    width: size,
+                    height: size,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel[errorCorrectionLevel]
+                });
+                
+                document.getElementById('resultsSection').style.display = 'block';
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                alert('Error generating QR code: ' + error.message + '. Try reducing image quality or size.');
+            }
+        }
+
+        function downloadQRCode() {
+            const qrCanvas = document.querySelector('#qrcode canvas');
+            if (!qrCanvas) {
+                alert('No QR code to download');
+                return;
+            }
+            
+            qrCanvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = imageFileName.replace(/\.[^/.]+$/, '') + '_qrcode.png';
+                link.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function reset() {
+            originalImage = null;
+            compressedDataURL = null;
+            imageFileName = '';
+            
+            document.getElementById('qrSettings').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('sizeWarning').classList.remove('active');
+            document.getElementById('qrcode').innerHTML = '';
+            
+            fileInput.value = '';
+            qualitySlider.value = 80;
+            qualityValue.textContent = '80%';
+        }
+    </script>
+</body>
+</html>

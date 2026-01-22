@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR to Image | Punjab Investigation Tools</title>
+    <meta name="description" content="Extract embedded image from QR code. Decode and save original image data.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- jsQR -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .qr-scanner {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .qr-preview {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            border: 2px solid var(--card-border);
+            margin: 20px auto;
+            display: block;
+        }
+        
+        .decoded-image {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 10px;
+            border: 2px solid var(--card-border);
+            margin: 20px auto;
+            display: block;
+        }
+        
+        .info-badge {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #818cf8;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .info-icon {
+            font-size: 24px;
+            color: #818cf8;
+        }
+        
+        .info-text {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .error-message.active {
+            display: block;
+        }
+        
+        .error-title {
+            color: #ef4444;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .error-details {
+            color: #fca5a5;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .image-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+        }
+        
+        .info-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #818cf8;
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">QR to Image</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-file-image"></i> QR to Image</h1>
+                <p>Extract embedded image from QR code. Decode image data and save the original file.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop QR code image here or click to upload</h3>
+                    <p>JPG, PNG, GIF • Must contain QR code with embedded image • Client-side processing</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select QR Code Image
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- QR Scanner -->
+        <div class="qr-scanner" id="qrScanner" style="display: none;">
+            <h3><i class="fas fa-qrcode"></i> QR Code Scanning</h3>
+            
+            <img id="qrPreview" class="qr-preview" alt="QR code preview">
+            
+            <div class="info-badge">
+                <div class="info-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="info-text">
+                    <strong>Processing QR Code:</strong> Scanning for embedded image data. This works with QR codes generated by the "Image to QR Code" tool.
+                </div>
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                <div class="error-title">
+                    <i class="fas fa-exclamation-circle"></i> Decoding Failed
+                </div>
+                <div class="error-details" id="errorDetails">
+                    Could not decode QR code or no image data found.
+                </div>
+            </div>
+            
+            <button class="split-btn" onclick="scanQRCode()">
+                <i class="fas fa-search"></i> Scan QR Code
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-check-circle"></i> Image Extracted Successfully</h2>
+                <p>The embedded image has been decoded from the QR code</p>
+            </div>
+
+            <div class="image-info">
+                <div class="info-item">
+                    <div class="info-value" id="imageWidth">0</div>
+                    <div class="info-label">Width (px)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="imageHeight">0</div>
+                    <div class="info-label">Height (px)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="imageFormat">-</div>
+                    <div class="info-label">Format</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="imageSize">0 KB</div>
+                    <div class="info-label">Size</div>
+                </div>
+            </div>
+
+            <img id="decodedImage" class="decoded-image" alt="Decoded image">
+
+            <button class="split-btn" onclick="downloadImage()">
+                <i class="fas fa-download"></i> Download Extracted Image
+            </button>
+
+            <button class="btn-secondary" style="width: 100%; padding: 15px; margin-top: 15px;" onclick="reset()">
+                <i class="fas fa-refresh"></i> Decode Another QR Code
+            </button>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let qrImage = null;
+        let extractedImageData = null;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const qrPreview = document.getElementById('qrPreview');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleQRImage(file);
+            } else {
+                alert('Please drop a valid image file');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleQRImage(file);
+            }
+        });
+
+        function handleQRImage(file) {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                qrImage = new Image();
+                qrImage.onload = () => {
+                    qrPreview.src = e.target.result;
+                    document.getElementById('qrScanner').style.display = 'block';
+                    document.getElementById('errorMessage').classList.remove('active');
+                };
+                qrImage.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function scanQRCode() {
+            if (!qrImage) {
+                alert('Please upload a QR code image first');
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = qrImage.width;
+            canvas.height = qrImage.height;
+            ctx.drawImage(qrImage, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code && code.data) {
+                // Check if the decoded data is a data URL (image)
+                if (code.data.startsWith('data:image/')) {
+                    extractedImageData = code.data;
+                    displayExtractedImage();
+                } else {
+                    showError('QR code does not contain image data. It contains: ' + code.data.substring(0, 100) + '...');
+                }
+            } else {
+                showError('Could not decode QR code. Please ensure the image contains a valid QR code.');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorDetails').textContent = message;
+            document.getElementById('errorMessage').classList.add('active');
+        }
+
+        function displayExtractedImage() {
+            const decodedImage = document.getElementById('decodedImage');
+            decodedImage.src = extractedImageData;
+            
+            decodedImage.onload = () => {
+                document.getElementById('imageWidth').textContent = decodedImage.naturalWidth;
+                document.getElementById('imageHeight').textContent = decodedImage.naturalHeight;
+                
+                // Extract format from data URL
+                const formatMatch = extractedImageData.match(/^data:image\/([a-z]+);/);
+                const format = formatMatch ? formatMatch[1].toUpperCase() : 'Unknown';
+                document.getElementById('imageFormat').textContent = format;
+                
+                // Calculate approximate size
+                const sizeBytes = Math.round((extractedImageData.length * 3) / 4);
+                document.getElementById('imageSize').textContent = formatFileSize(sizeBytes);
+                
+                document.getElementById('resultsSection').style.display = 'block';
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            };
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function downloadImage() {
+            if (!extractedImageData) {
+                alert('No image to download');
+                return;
+            }
+            
+            // Convert data URL to blob
+            const arr = extractedImageData.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            const blob = new Blob([u8arr], { type: mime });
+            
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            
+            // Get extension from MIME type
+            const ext = mime.split('/')[1];
+            link.download = 'extracted_image.' + ext;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function reset() {
+            qrImage = null;
+            extractedImageData = null;
+            
+            document.getElementById('qrScanner').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorMessage').classList.remove('active');
+            
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>

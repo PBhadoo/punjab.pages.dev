@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compress Images | Punjab Investigation Tools</title>
+    <meta name="description" content="Compress JPG, PNG, WebP images while maintaining quality. Reduce file size for faster sharing. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .image-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .image-info {
+            margin-bottom: 15px;
+        }
+        
+        .image-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .size-comparison {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .size-badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .size-original {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+        
+        .size-compressed {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .compression-ratio {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .ratio-badge {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        
+        .quality-control {
+            margin: 15px 0;
+        }
+        
+        .quality-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .quality-value {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+        
+        .format-selector {
+            margin: 15px 0;
+        }
+        
+        .format-selector select,
+        .format-selector {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .image-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-remove {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+        }
+        
+        .btn-remove:hover {
+            background: rgba(255, 69, 96, 0.2);
+            color: var(--accent-color);
+        }
+        
+        .controls-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .global-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .bulk-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .bulk-actions button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .processing-content {
+            text-align: center;
+            color: white;
+        }
+        
+        .processing-spinner {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Compress Images</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-compress-alt"></i> Image Compressor</h1>
+                <p>Reduce image file size while maintaining quality. Supports JPG, PNG, WebP formats with adjustable compression.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop images here or click to upload</h3>
+                    <p>Supports JPG, PNG, WebP • Multiple images • Client-side processing</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select Images
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- Images Section -->
+        <section class="results-section" id="imagesSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-images"></i> Images (<span id="imageCount">0</span>)</h2>
+                <p>Adjust quality per image or use global controls below</p>
+            </div>
+
+            <!-- Global Controls -->
+            <div class="controls-section">
+                <h3><i class="fas fa-sliders"></i> Global Settings</h3>
+                
+                <div class="global-controls">
+                    <div class="control-group">
+                        <label for="globalQuality">Quality (applies to all)</label>
+                        <input type="range" id="globalQuality" min="10" max="100" value="80" class="quality-slider">
+                        <div class="quality-value"><span id="globalQualityValue">80</span>%</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="globalFormat">Output Format</label>
+                        <select id="globalFormat" class="format-selector">
+                            <option value="original">Same as Original</option>
+                            <option value="jpeg">JPEG</option>
+                            <option value="png">PNG</option>
+                            <option value="webp">WebP</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bulk-actions">
+                    <button class="btn-secondary" onclick="applyGlobalSettings()">
+                        <i class="fas fa-magic"></i> Apply to All
+                    </button>
+                    <button class="btn-primary" onclick="downloadAll()">
+                        <i class="fas fa-download"></i> Download All
+                    </button>
+                    <button class="btn-secondary" onclick="clearAll()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="images-grid" id="imagesGrid"></div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let images = [];
+
+        // Setup drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Global quality slider
+        document.getElementById('globalQuality').addEventListener('input', (e) => {
+            document.getElementById('globalQualityValue').textContent = e.target.value;
+        });
+
+        function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (imageFiles.length === 0) {
+                alert('Please select valid image files');
+                return;
+            }
+
+            imageFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const imageData = {
+                            id: Date.now() + Math.random(),
+                            name: file.name,
+                            originalData: e.target.result,
+                            compressedData: null,
+                            originalSize: file.size,
+                            compressedSize: 0,
+                            quality: 80,
+                            format: file.type.split('/')[1],
+                            outputFormat: 'original',
+                            width: img.width,
+                            height: img.height
+                        };
+                        
+                        images.push(imageData);
+                        compressImage(imageData);
+                        updateDisplay();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function compressImage(imageData) {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = imageData.width;
+                canvas.height = imageData.height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                const quality = imageData.quality / 100;
+                let format = imageData.format;
+                
+                if (imageData.outputFormat !== 'original') {
+                    format = imageData.outputFormat;
+                }
+                
+                const mimeType = `image/${format}`;
+                imageData.compressedData = canvas.toDataURL(mimeType, quality);
+                
+                // Calculate compressed size (base64 to bytes)
+                const base64Length = imageData.compressedData.length - `data:${mimeType};base64,`.length;
+                imageData.compressedSize = Math.round((base64Length * 3) / 4);
+                
+                updateDisplay();
+            };
+            img.src = imageData.originalData;
+        }
+
+        function updateDisplay() {
+            const grid = document.getElementById('imagesGrid');
+            const section = document.getElementById('imagesSection');
+            const count = document.getElementById('imageCount');
+            
+            count.textContent = images.length;
+            section.style.display = images.length > 0 ? 'block' : 'none';
+            
+            grid.innerHTML = '';
+            
+            images.forEach(imageData => {
+                const savings = ((1 - imageData.compressedSize / imageData.originalSize) * 100).toFixed(1);
+                
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                card.innerHTML = `
+                    <img src="${imageData.compressedData || imageData.originalData}" alt="${imageData.name}">
+                    <div class="image-info">
+                        <div class="image-name">${imageData.name}</div>
+                        <div class="size-comparison">
+                            <span class="size-badge size-original">${formatFileSize(imageData.originalSize)}</span>
+                            <i class="fas fa-arrow-right"></i>
+                            <span class="size-badge size-compressed">${formatFileSize(imageData.compressedSize)}</span>
+                        </div>
+                        <div class="compression-ratio">
+                            <span>Saved:</span>
+                            <span class="ratio-badge">${savings}%</span>
+                        </div>
+                    </div>
+                    <div class="quality-control">
+                        <label>Quality: <span id="quality-${imageData.id}">${imageData.quality}</span>%</label>
+                        <input type="range" min="10" max="100" value="${imageData.quality}" 
+                               class="quality-slider" onchange="updateImageQuality('${imageData.id}', this.value)">
+                    </div>
+                    <div class="format-selector">
+                        <select onchange="updateImageFormat('${imageData.id}', this.value)">
+                            <option value="original" ${imageData.outputFormat === 'original' ? 'selected' : ''}>Original (${imageData.format.toUpperCase()})</option>
+                            <option value="jpeg" ${imageData.outputFormat === 'jpeg' ? 'selected' : ''}>JPEG</option>
+                            <option value="png" ${imageData.outputFormat === 'png' ? 'selected' : ''}>PNG</option>
+                            <option value="webp" ${imageData.outputFormat === 'webp' ? 'selected' : ''}>WebP</option>
+                        </select>
+                    </div>
+                    <div class="image-actions">
+                        <button class="btn-download" onclick="downloadImage('${imageData.id}')">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                        <button class="btn-remove" onclick="removeImage('${imageData.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function updateImageQuality(id, quality) {
+            const imageData = images.find(img => img.id == id);
+            if (imageData) {
+                imageData.quality = parseInt(quality);
+                document.getElementById(`quality-${id}`).textContent = quality;
+                compressImage(imageData);
+            }
+        }
+
+        function updateImageFormat(id, format) {
+            const imageData = images.find(img => img.id == id);
+            if (imageData) {
+                imageData.outputFormat = format;
+                compressImage(imageData);
+            }
+        }
+
+        function applyGlobalSettings() {
+            const quality = parseInt(document.getElementById('globalQuality').value);
+            const format = document.getElementById('globalFormat').value;
+            
+            images.forEach(imageData => {
+                imageData.quality = quality;
+                imageData.outputFormat = format;
+                compressImage(imageData);
+            });
+            
+            updateDisplay();
+        }
+
+        function downloadImage(id) {
+            const imageData = images.find(img => img.id == id);
+            if (imageData && imageData.compressedData) {
+                const link = document.createElement('a');
+                const extension = imageData.outputFormat === 'original' ? imageData.format : imageData.outputFormat;
+                const fileName = imageData.name.replace(/\.[^/.]+$/, '') + `_compressed.${extension}`;
+                
+                link.href = imageData.compressedData;
+                link.download = fileName;
+                link.click();
+            }
+        }
+
+        function downloadAll() {
+            if (images.length === 0) {
+                alert('No images to download');
+                return;
+            }
+            
+            images.forEach(imageData => {
+                if (imageData.compressedData) {
+                    setTimeout(() => downloadImage(imageData.id), 100);
+                }
+            });
+        }
+
+        function removeImage(id) {
+            images = images.filter(img => img.id != id);
+            updateDisplay();
+        }
+
+        function clearAll() {
+            if (confirm('Remove all images?')) {
+                images = [];
+                updateDisplay();
+                fileInput.value = '';
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

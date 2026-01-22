@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotate Images | Punjab Investigation Tools</title>
+    <meta name="description" content="Rotate images by 90°, 180°, 270° or custom angles. Flip horizontal/vertical. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .image-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 15px;
+        }
+        
+        .image-preview {
+            width: 100%;
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+        
+        .image-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .rotation-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            font-size: 13px;
+        }
+        
+        .rotation-badge {
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+        
+        .rotate-controls {
+            margin: 15px 0;
+        }
+        
+        .quick-rotate {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .rotate-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .rotate-btn i {
+            font-size: 18px;
+        }
+        
+        .rotate-btn:hover {
+            background: rgba(233, 69, 96, 0.2);
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+        
+        .flip-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .flip-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .flip-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border-color: #10b981;
+        }
+        
+        .custom-angle {
+            margin: 15px 0;
+        }
+        
+        .angle-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .angle-input-group input {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        
+        .angle-input-group button {
+            padding: 10px 20px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #818cf8;
+            border-radius: 8px;
+            color: #818cf8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .angle-input-group button:hover {
+            background: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .image-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-download:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+        }
+        
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .btn-remove {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+        }
+        
+        .btn-remove:hover {
+            background: rgba(255, 69, 96, 0.2);
+            color: var(--accent-color);
+        }
+        
+        .controls-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .global-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .bulk-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .bulk-actions button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Rotate Images</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-rotate"></i> Image Rotator</h1>
+                <p>Rotate images by 90°, 180°, 270° or custom angles. Flip horizontal or vertical for multiple images.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop images here or click to upload</h3>
+                    <p>Supports JPG, PNG, WebP, GIF • Multiple images • Client-side processing</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select Images
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- Images Section -->
+        <section class="results-section" id="imagesSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-images"></i> Images (<span id="imageCount">0</span>)</h2>
+                <p>Rotate each image individually or apply the same rotation to all</p>
+            </div>
+
+            <!-- Global Controls -->
+            <div class="controls-section">
+                <h3><i class="fas fa-sliders"></i> Quick Actions (Apply to All)</h3>
+                
+                <div class="global-controls">
+                    <button class="rotate-btn" onclick="rotateAll(90)">
+                        <i class="fas fa-rotate-right"></i>
+                        <span>90° Right</span>
+                    </button>
+                    <button class="rotate-btn" onclick="rotateAll(180)">
+                        <i class="fas fa-rotate"></i>
+                        <span>180°</span>
+                    </button>
+                    <button class="rotate-btn" onclick="rotateAll(270)">
+                        <i class="fas fa-rotate-left"></i>
+                        <span>90° Left</span>
+                    </button>
+                    <button class="flip-btn" onclick="flipAll('horizontal')">
+                        <i class="fas fa-arrows-left-right"></i>
+                        <span>Flip H</span>
+                    </button>
+                    <button class="flip-btn" onclick="flipAll('vertical')">
+                        <i class="fas fa-arrows-up-down"></i>
+                        <span>Flip V</span>
+                    </button>
+                </div>
+
+                <div class="bulk-actions">
+                    <button class="btn-primary" onclick="downloadAll()">
+                        <i class="fas fa-download"></i> Download All
+                    </button>
+                    <button class="btn-secondary" onclick="resetAll()">
+                        <i class="fas fa-undo"></i> Reset All
+                    </button>
+                    <button class="btn-secondary" onclick="clearAll()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="images-grid" id="imagesGrid"></div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let images = [];
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (imageFiles.length === 0) {
+                alert('Please select valid image files');
+                return;
+            }
+
+            imageFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const imageData = {
+                            id: Date.now() + Math.random(),
+                            name: file.name,
+                            originalData: e.target.result,
+                            rotatedData: null,
+                            rotation: 0,
+                            flipH: false,
+                            flipV: false,
+                            width: img.width,
+                            height: img.height,
+                            format: file.type.split('/')[1],
+                            quality: 95
+                        };
+                        
+                        images.push(imageData);
+                        updateDisplay();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function rotateImage(imageData) {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Calculate canvas size based on rotation
+                const rotation = imageData.rotation % 360;
+                if (rotation === 90 || rotation === 270) {
+                    canvas.width = imageData.height;
+                    canvas.height = imageData.width;
+                } else {
+                    canvas.width = imageData.width;
+                    canvas.height = imageData.height;
+                }
+                
+                // Apply transformations
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((rotation * Math.PI) / 180);
+                
+                if (imageData.flipH) {
+                    ctx.scale(-1, 1);
+                }
+                if (imageData.flipV) {
+                    ctx.scale(1, -1);
+                }
+                
+                ctx.drawImage(img, -imageData.width / 2, -imageData.height / 2, imageData.width, imageData.height);
+                
+                const quality = imageData.quality / 100;
+                const mimeType = `image/${imageData.format}`;
+                
+                imageData.rotatedData = canvas.toDataURL(mimeType, quality);
+                updateDisplay();
+            };
+            img.src = imageData.originalData;
+        }
+
+        function applyRotation(id, degrees) {
+            const imageData = images.find(img => img.id == id);
+            if (!imageData) return;
+            
+            imageData.rotation = (imageData.rotation + degrees) % 360;
+            if (imageData.rotation < 0) imageData.rotation += 360;
+            
+            rotateImage(imageData);
+        }
+
+        function applyCustomAngle(id, angle) {
+            const imageData = images.find(img => img.id == id);
+            if (!imageData) return;
+            
+            imageData.rotation = parseInt(angle) % 360;
+            if (imageData.rotation < 0) imageData.rotation += 360;
+            
+            rotateImage(imageData);
+        }
+
+        function applyFlip(id, direction) {
+            const imageData = images.find(img => img.id == id);
+            if (!imageData) return;
+            
+            if (direction === 'horizontal') {
+                imageData.flipH = !imageData.flipH;
+            } else if (direction === 'vertical') {
+                imageData.flipV = !imageData.flipV;
+            }
+            
+            rotateImage(imageData);
+        }
+
+        function resetImage(id) {
+            const imageData = images.find(img => img.id == id);
+            if (!imageData) return;
+            
+            imageData.rotation = 0;
+            imageData.flipH = false;
+            imageData.flipV = false;
+            imageData.rotatedData = null;
+            
+            updateDisplay();
+        }
+
+        function rotateAll(degrees) {
+            images.forEach(imageData => {
+                imageData.rotation = (imageData.rotation + degrees) % 360;
+                if (imageData.rotation < 0) imageData.rotation += 360;
+                rotateImage(imageData);
+            });
+        }
+
+        function flipAll(direction) {
+            images.forEach(imageData => {
+                if (direction === 'horizontal') {
+                    imageData.flipH = !imageData.flipH;
+                } else if (direction === 'vertical') {
+                    imageData.flipV = !imageData.flipV;
+                }
+                rotateImage(imageData);
+            });
+        }
+
+        function resetAll() {
+            images.forEach(imageData => {
+                imageData.rotation = 0;
+                imageData.flipH = false;
+                imageData.flipV = false;
+                imageData.rotatedData = null;
+            });
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const grid = document.getElementById('imagesGrid');
+            const section = document.getElementById('imagesSection');
+            const count = document.getElementById('imageCount');
+            
+            count.textContent = images.length;
+            section.style.display = images.length > 0 ? 'block' : 'none';
+            
+            grid.innerHTML = '';
+            
+            images.forEach(imageData => {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                
+                const hasRotation = imageData.rotatedData !== null;
+                const displayImage = hasRotation ? imageData.rotatedData : imageData.originalData;
+                
+                const transformations = [];
+                if (imageData.rotation !== 0) transformations.push(`${imageData.rotation}°`);
+                if (imageData.flipH) transformations.push('Flip H');
+                if (imageData.flipV) transformations.push('Flip V');
+                
+                card.innerHTML = `
+                    <div class="image-name">${imageData.name}</div>
+                    ${hasRotation ? `
+                        <div class="rotation-info">
+                            <span class="rotation-badge">${transformations.join(' + ')}</span>
+                        </div>
+                    ` : ''}
+                    <div class="image-preview">
+                        <img src="${displayImage}" alt="${imageData.name}">
+                    </div>
+                    
+                    <div class="rotate-controls">
+                        <div class="quick-rotate">
+                            <button class="rotate-btn" onclick="applyRotation('${imageData.id}', 90)">
+                                <i class="fas fa-rotate-right"></i>
+                                <span>90° R</span>
+                            </button>
+                            <button class="rotate-btn" onclick="applyRotation('${imageData.id}', 180)">
+                                <i class="fas fa-rotate"></i>
+                                <span>180°</span>
+                            </button>
+                            <button class="rotate-btn" onclick="applyRotation('${imageData.id}', 270)">
+                                <i class="fas fa-rotate-left"></i>
+                                <span>90° L</span>
+                            </button>
+                            <button class="rotate-btn" onclick="applyRotation('${imageData.id}', -90)">
+                                <i class="fas fa-undo"></i>
+                                <span>Undo</span>
+                            </button>
+                        </div>
+                        
+                        <div class="flip-controls">
+                            <button class="flip-btn" onclick="applyFlip('${imageData.id}', 'horizontal')">
+                                <i class="fas fa-arrows-left-right"></i>
+                                <span>Flip Horizontal</span>
+                            </button>
+                            <button class="flip-btn" onclick="applyFlip('${imageData.id}', 'vertical')">
+                                <i class="fas fa-arrows-up-down"></i>
+                                <span>Flip Vertical</span>
+                            </button>
+                        </div>
+                        
+                        <div class="custom-angle">
+                            <div class="angle-input-group">
+                                <input type="number" id="angle-${imageData.id}" placeholder="Custom angle (0-360°)" min="0" max="360">
+                                <button onclick="applyCustomAngle('${imageData.id}', document.getElementById('angle-${imageData.id}').value)">
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="image-actions">
+                        <button class="btn-download" onclick="downloadImage('${imageData.id}')" ${!hasRotation ? 'disabled' : ''}>
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                        <button class="btn-reset" onclick="resetImage('${imageData.id}')">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                        <button class="btn-remove" onclick="removeImage('${imageData.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function downloadImage(id) {
+            const imageData = images.find(img => img.id == id);
+            if (imageData && imageData.rotatedData) {
+                const link = document.createElement('a');
+                const suffix = `_${imageData.rotation}deg${imageData.flipH ? '_flipH' : ''}${imageData.flipV ? '_flipV' : ''}`;
+                const fileName = imageData.name.replace(/\.[^/.]+$/, '') + `${suffix}.${imageData.format}`;
+                
+                link.href = imageData.rotatedData;
+                link.download = fileName;
+                link.click();
+            }
+        }
+
+        function downloadAll() {
+            const rotatedImages = images.filter(img => img.rotatedData);
+            
+            if (rotatedImages.length === 0) {
+                alert('No rotated images to download. Please rotate images first.');
+                return;
+            }
+            
+            rotatedImages.forEach((imageData, index) => {
+                setTimeout(() => downloadImage(imageData.id), index * 200);
+            });
+        }
+
+        function removeImage(id) {
+            images = images.filter(img => img.id != id);
+            updateDisplay();
+        }
+
+        function clearAll() {
+            if (confirm('Remove all images?')) {
+                images = [];
+                updateDisplay();
+                fileInput.value = '';
+            }
+        }
+    </script>
+</body>
+</html>

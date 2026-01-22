@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete PDF Pages | Punjab Investigation Tools</title>
+    <meta name="description" content="Remove unwanted pages from PDF. Select and delete specific pages.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- pdf-lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .page-manager {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .page-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+        
+        .page-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .page-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #818cf8;
+        }
+        
+        .page-card.to-delete {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+        }
+        
+        .page-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+        
+        .page-status {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .page-card.to-delete .page-status {
+            color: #ef4444;
+        }
+        
+        .delete-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            color: #ef4444;
+            font-size: 16px;
+            display: none;
+        }
+        
+        .page-card.to-delete .delete-icon {
+            display: block;
+        }
+        
+        .selection-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #818cf8;
+            border-radius: 8px;
+            color: #818cf8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+        
+        .action-btn.danger {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        
+        .action-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .stats-info {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Delete PDF Pages</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-trash-alt"></i> Delete PDF Pages</h1>
+                <p>Remove unwanted pages from your PDF document. Select pages to delete.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop PDF file here or click to upload</h3>
+                    <p>Single PDF file • Client-side processing • No file size limit</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select PDF
+                    </button>
+                    <input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- Page Manager -->
+        <div class="page-manager" id="pageManager" style="display: none;">
+            <h3><i class="fas fa-edit"></i> Select Pages to Delete</h3>
+            
+            <div class="stats-info">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalPages">0</div>
+                    <div class="stat-label">Total Pages</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="toDelete" style="color: #ef4444;">0</div>
+                    <div class="stat-label">To Delete</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="remaining" style="color: #10b981;">0</div>
+                    <div class="stat-label">Remaining</div>
+                </div>
+            </div>
+            
+            <div class="selection-actions">
+                <button class="action-btn" onclick="selectAll()">Select All</button>
+                <button class="action-btn" onclick="deselectAll()">Deselect All</button>
+                <button class="action-btn danger" onclick="invertSelection()">Invert Selection</button>
+            </div>
+            
+            <div class="page-grid" id="pageGrid"></div>
+            
+            <button class="split-btn" onclick="deletePagesFromPDF()">
+                <i class="fas fa-trash"></i> Delete Selected Pages
+            </button>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <h3><i class="fas fa-spinner fa-spin"></i> Processing PDF...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Removing pages...</div>
+        </div>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-check-circle"></i> Pages Deleted Successfully</h2>
+                <p><span id="deletedCount">0</span> page(s) removed from PDF</p>
+            </div>
+
+            <button class="split-btn" onclick="downloadModified()">
+                <i class="fas fa-download"></i> Download Modified PDF
+            </button>
+
+            <button class="btn-secondary" style="width: 100%; padding: 15px; margin-top: 15px;" onclick="reset()">
+                <i class="fas fa-refresh"></i> Process Another PDF
+            </button>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        const { PDFDocument } = PDFLib;
+        let pdfDocument = null;
+        let pdfFileName = '';
+        let pagesToDelete = new Set();
+        let totalPageCount = 0;
+        let modifiedPDFBytes = null;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handlePDFFile(file);
+            } else {
+                alert('Please drop a valid PDF file');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handlePDFFile(file);
+            }
+        });
+
+        async function handlePDFFile(file) {
+            pdfFileName = file.name;
+            const arrayBuffer = await file.arrayBuffer();
+            pdfDocument = await PDFDocument.load(arrayBuffer);
+            totalPageCount = pdfDocument.getPageCount();
+            
+            generatePageGrid();
+            updateStats();
+            document.getElementById('pageManager').style.display = 'block';
+        }
+
+        function generatePageGrid() {
+            const grid = document.getElementById('pageGrid');
+            grid.innerHTML = '';
+            document.getElementById('totalPages').textContent = totalPageCount;
+            
+            for (let i = 1; i <= totalPageCount; i++) {
+                const card = document.createElement('div');
+                card.className = 'page-card';
+                card.innerHTML = `
+                    <i class="fas fa-trash delete-icon"></i>
+                    <div class="page-number">${i}</div>
+                    <div class="page-status">Keep</div>
+                `;
+                card.onclick = () => togglePageForDeletion(i, card);
+                grid.appendChild(card);
+            }
+        }
+
+        function togglePageForDeletion(pageNum, element) {
+            if (pagesToDelete.has(pageNum)) {
+                pagesToDelete.delete(pageNum);
+                element.classList.remove('to-delete');
+                element.querySelector('.page-status').textContent = 'Keep';
+            } else {
+                pagesToDelete.add(pageNum);
+                element.classList.add('to-delete');
+                element.querySelector('.page-status').textContent = 'Delete';
+            }
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('toDelete').textContent = pagesToDelete.size;
+            document.getElementById('remaining').textContent = totalPageCount - pagesToDelete.size;
+        }
+
+        function selectAll() {
+            pagesToDelete.clear();
+            for (let i = 1; i <= totalPageCount; i++) {
+                pagesToDelete.add(i);
+            }
+            document.querySelectorAll('.page-card').forEach(card => {
+                card.classList.add('to-delete');
+                card.querySelector('.page-status').textContent = 'Delete';
+            });
+            updateStats();
+        }
+
+        function deselectAll() {
+            pagesToDelete.clear();
+            document.querySelectorAll('.page-card').forEach(card => {
+                card.classList.remove('to-delete');
+                card.querySelector('.page-status').textContent = 'Keep';
+            });
+            updateStats();
+        }
+
+        function invertSelection() {
+            const newSelection = new Set();
+            for (let i = 1; i <= totalPageCount; i++) {
+                if (!pagesToDelete.has(i)) {
+                    newSelection.add(i);
+                }
+            }
+            pagesToDelete = newSelection;
+            
+            document.querySelectorAll('.page-card').forEach((card, index) => {
+                const pageNum = index + 1;
+                if (pagesToDelete.has(pageNum)) {
+                    card.classList.add('to-delete');
+                    card.querySelector('.page-status').textContent = 'Delete';
+                } else {
+                    card.classList.remove('to-delete');
+                    card.querySelector('.page-status').textContent = 'Keep';
+                }
+            });
+            updateStats();
+        }
+
+        async function deletePagesFromPDF() {
+            if (!pdfDocument) {
+                alert('Please upload a PDF file first');
+                return;
+            }
+
+            if (pagesToDelete.size === 0) {
+                alert('Please select at least one page to delete');
+                return;
+            }
+
+            if (pagesToDelete.size === totalPageCount) {
+                alert('Cannot delete all pages. At least one page must remain.');
+                return;
+            }
+
+            document.getElementById('progressSection').classList.add('active');
+            updateProgress(30, 'Creating new PDF...');
+
+            try {
+                const newPDF = await PDFDocument.create();
+                
+                updateProgress(50, 'Copying pages...');
+                
+                const pagesToKeep = [];
+                for (let i = 0; i < totalPageCount; i++) {
+                    if (!pagesToDelete.has(i + 1)) {
+                        pagesToKeep.push(i);
+                    }
+                }
+                
+                const copiedPages = await newPDF.copyPages(pdfDocument, pagesToKeep);
+                copiedPages.forEach(page => newPDF.addPage(page));
+                
+                updateProgress(80, 'Saving modified PDF...');
+                
+                modifiedPDFBytes = await newPDF.save();
+                
+                updateProgress(100, 'Pages deleted successfully!');
+                
+                document.getElementById('deletedCount').textContent = pagesToDelete.size;
+                
+                setTimeout(() => {
+                    document.getElementById('progressSection').classList.remove('active');
+                    document.getElementById('resultsSection').style.display = 'block';
+                }, 500);
+                
+            } catch (error) {
+                alert('Error processing PDF: ' + error.message);
+                document.getElementById('progressSection').classList.remove('active');
+            }
+        }
+
+        function updateProgress(percentage, message) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = message;
+        }
+
+        function downloadModified() {
+            const blob = new Blob([modifiedPDFBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = pdfFileName.replace('.pdf', '_modified.pdf');
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function reset() {
+            pdfDocument = null;
+            modifiedPDFBytes = null;
+            pdfFileName = '';
+            pagesToDelete.clear();
+            totalPageCount = 0;
+            
+            document.getElementById('pageManager').style.display = 'none';
+            document.getElementById('progressSection').classList.remove('active');
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>

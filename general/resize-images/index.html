@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resize Images | Punjab Investigation Tools</title>
+    <meta name="description" content="Resize images by pixels or percentage. Maintain aspect ratio or set custom dimensions. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .image-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 15px;
+        }
+        
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .image-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .dimensions-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+        
+        .dimension-badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        
+        .dim-original {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+        
+        .dim-resized {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .resize-controls {
+            margin: 15px 0;
+        }
+        
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        
+        .aspect-ratio-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        
+        .aspect-ratio-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+        }
+        
+        .preset-btn {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .image-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-download:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-remove {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+        }
+        
+        .btn-remove:hover {
+            background: rgba(255, 69, 96, 0.2);
+            color: var(--accent-color);
+        }
+        
+        .controls-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .global-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .bulk-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .bulk-actions button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Resize Images</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-maximize"></i> Image Resizer</h1>
+                <p>Resize images by pixels or percentage. Maintain aspect ratio or set custom dimensions for multiple images.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop images here or click to upload</h3>
+                    <p>Supports JPG, PNG, WebP, GIF • Multiple images • Client-side processing</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select Images
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- Images Section -->
+        <section class="results-section" id="imagesSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-images"></i> Images (<span id="imageCount">0</span>)</h2>
+                <p>Adjust dimensions for each image or use global controls</p>
+            </div>
+
+            <!-- Global Controls -->
+            <div class="controls-section">
+                <h3><i class="fas fa-sliders"></i> Global Resize Settings</h3>
+                
+                <div class="global-controls">
+                    <div class="control-group">
+                        <label for="globalMode">Resize Mode</label>
+                        <select id="globalMode">
+                            <option value="pixels">Pixels</option>
+                            <option value="percentage">Percentage</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="globalWidth">Width</label>
+                        <input type="number" id="globalWidth" placeholder="Width">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="globalHeight">Height</label>
+                        <input type="number" id="globalHeight" placeholder="Height">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="globalQuality">Quality (%)</label>
+                        <input type="number" id="globalQuality" value="90" min="10" max="100">
+                    </div>
+                </div>
+                
+                <div class="aspect-ratio-toggle">
+                    <input type="checkbox" id="globalMaintainAspect" checked>
+                    <label for="globalMaintainAspect">Maintain aspect ratio</label>
+                </div>
+
+                <div class="bulk-actions">
+                    <button class="btn-secondary" onclick="applyGlobalSettings()">
+                        <i class="fas fa-magic"></i> Apply to All
+                    </button>
+                    <button class="btn-primary" onclick="downloadAll()">
+                        <i class="fas fa-download"></i> Download All
+                    </button>
+                    <button class="btn-secondary" onclick="clearAll()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="images-grid" id="imagesGrid"></div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let images = [];
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (imageFiles.length === 0) {
+                alert('Please select valid image files');
+                return;
+            }
+
+            imageFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const imageData = {
+                            id: Date.now() + Math.random(),
+                            name: file.name,
+                            originalData: e.target.result,
+                            resizedData: null,
+                            originalWidth: img.width,
+                            originalHeight: img.height,
+                            targetWidth: img.width,
+                            targetHeight: img.height,
+                            mode: 'pixels',
+                            percentage: 100,
+                            quality: 90,
+                            maintainAspect: true,
+                            format: file.type.split('/')[1]
+                        };
+                        
+                        images.push(imageData);
+                        updateDisplay();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function resizeImage(imageData) {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = imageData.targetWidth;
+                canvas.height = imageData.targetHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, imageData.targetWidth, imageData.targetHeight);
+                
+                const quality = imageData.quality / 100;
+                const mimeType = `image/${imageData.format}`;
+                
+                imageData.resizedData = canvas.toDataURL(mimeType, quality);
+                updateDisplay();
+            };
+            img.src = imageData.originalData;
+        }
+
+        function updateImageDimensions(id, width, height, maintainAspect) {
+            const imageData = images.find(img => img.id == id);
+            if (!imageData) return;
+
+            if (imageData.mode === 'percentage') {
+                const percentage = parseFloat(width) || 100;
+                imageData.percentage = percentage;
+                imageData.targetWidth = Math.round((imageData.originalWidth * percentage) / 100);
+                imageData.targetHeight = Math.round((imageData.originalHeight * percentage) / 100);
+            } else {
+                const newWidth = parseInt(width) || imageData.targetWidth;
+                const newHeight = parseInt(height) || imageData.targetHeight;
+                
+                if (maintainAspect && imageData.maintainAspect) {
+                    const aspectRatio = imageData.originalWidth / imageData.originalHeight;
+                    if (width !== imageData.targetWidth) {
+                        imageData.targetWidth = newWidth;
+                        imageData.targetHeight = Math.round(newWidth / aspectRatio);
+                    } else if (height !== imageData.targetHeight) {
+                        imageData.targetHeight = newHeight;
+                        imageData.targetWidth = Math.round(newHeight * aspectRatio);
+                    }
+                } else {
+                    imageData.targetWidth = newWidth;
+                    imageData.targetHeight = newHeight;
+                }
+            }
+            
+            resizeImage(imageData);
+        }
+
+        function applyPreset(id, preset) {
+            const imageData = images.find(img => img.id == id);
+            if (!imageData) return;
+
+            const presets = {
+                '50%': 50,
+                '75%': 75,
+                '150%': 150,
+                '200%': 200
+            };
+
+            if (presets[preset]) {
+                imageData.mode = 'percentage';
+                imageData.percentage = presets[preset];
+                imageData.targetWidth = Math.round((imageData.originalWidth * presets[preset]) / 100);
+                imageData.targetHeight = Math.round((imageData.originalHeight * presets[preset]) / 100);
+                resizeImage(imageData);
+            }
+        }
+
+        function updateDisplay() {
+            const grid = document.getElementById('imagesGrid');
+            const section = document.getElementById('imagesSection');
+            const count = document.getElementById('imageCount');
+            
+            count.textContent = images.length;
+            section.style.display = images.length > 0 ? 'block' : 'none';
+            
+            grid.innerHTML = '';
+            
+            images.forEach(imageData => {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                
+                const displayImage = imageData.resizedData || imageData.originalData;
+                const hasResized = imageData.resizedData !== null;
+                
+                card.innerHTML = `
+                    <div class="image-preview">
+                        <img src="${displayImage}" alt="${imageData.name}">
+                    </div>
+                    <div class="image-name">${imageData.name}</div>
+                    <div class="dimensions-info">
+                        <span class="dimension-badge dim-original">${imageData.originalWidth} × ${imageData.originalHeight}</span>
+                        ${hasResized ? `
+                            <i class="fas fa-arrow-right" style="color: var(--text-secondary);"></i>
+                            <span class="dimension-badge dim-resized">${imageData.targetWidth} × ${imageData.targetHeight}</span>
+                        ` : ''}
+                    </div>
+                    <div class="resize-controls">
+                        <div class="control-group">
+                            <label>Mode</label>
+                            <select onchange="changeMode('${imageData.id}', this.value)">
+                                <option value="pixels" ${imageData.mode === 'pixels' ? 'selected' : ''}>Pixels</option>
+                                <option value="percentage" ${imageData.mode === 'percentage' ? 'selected' : ''}>Percentage</option>
+                            </select>
+                        </div>
+                        ${imageData.mode === 'pixels' ? `
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>Width (px)</label>
+                                    <input type="number" value="${imageData.targetWidth}" 
+                                           onchange="updateImageDimensions('${imageData.id}', this.value, null, true)" 
+                                           id="width-${imageData.id}">
+                                </div>
+                                <div class="control-group">
+                                    <label>Height (px)</label>
+                                    <input type="number" value="${imageData.targetHeight}" 
+                                           onchange="updateImageDimensions('${imageData.id}', null, this.value, true)" 
+                                           id="height-${imageData.id}">
+                                </div>
+                            </div>
+                            <div class="aspect-ratio-toggle">
+                                <input type="checkbox" id="aspect-${imageData.id}" 
+                                       ${imageData.maintainAspect ? 'checked' : ''} 
+                                       onchange="toggleAspect('${imageData.id}', this.checked)">
+                                <label for="aspect-${imageData.id}">Lock aspect ratio</label>
+                            </div>
+                        ` : `
+                            <div class="control-group">
+                                <label>Scale (%)</label>
+                                <input type="number" value="${imageData.percentage}" 
+                                       onchange="updateImageDimensions('${imageData.id}', this.value, null, false)">
+                            </div>
+                            <div class="preset-buttons">
+                                <button class="preset-btn" onclick="applyPreset('${imageData.id}', '50%')">50%</button>
+                                <button class="preset-btn" onclick="applyPreset('${imageData.id}', '75%')">75%</button>
+                                <button class="preset-btn" onclick="applyPreset('${imageData.id}', '150%')">150%</button>
+                                <button class="preset-btn" onclick="applyPreset('${imageData.id}', '200%')">200%</button>
+                            </div>
+                        `}
+                    </div>
+                    <div class="image-actions">
+                        <button class="btn-download" onclick="downloadImage('${imageData.id}')" ${!hasResized ? 'disabled' : ''}>
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                        <button class="btn-remove" onclick="removeImage('${imageData.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function changeMode(id, mode) {
+            const imageData = images.find(img => img.id == id);
+            if (imageData) {
+                imageData.mode = mode;
+                if (mode === 'percentage') {
+                    imageData.percentage = 100;
+                }
+                updateDisplay();
+            }
+        }
+
+        function toggleAspect(id, maintain) {
+            const imageData = images.find(img => img.id == id);
+            if (imageData) {
+                imageData.maintainAspect = maintain;
+            }
+        }
+
+        function applyGlobalSettings() {
+            const mode = document.getElementById('globalMode').value;
+            const width = document.getElementById('globalWidth').value;
+            const height = document.getElementById('globalHeight').value;
+            const quality = document.getElementById('globalQuality').value;
+            const maintainAspect = document.getElementById('globalMaintainAspect').checked;
+            
+            if (!width && mode === 'pixels') {
+                alert('Please enter width value');
+                return;
+            }
+            
+            images.forEach(imageData => {
+                imageData.mode = mode;
+                imageData.quality = parseInt(quality);
+                imageData.maintainAspect = maintainAspect;
+                
+                if (mode === 'percentage') {
+                    const percentage = parseFloat(width) || 100;
+                    imageData.percentage = percentage;
+                    imageData.targetWidth = Math.round((imageData.originalWidth * percentage) / 100);
+                    imageData.targetHeight = Math.round((imageData.originalHeight * percentage) / 100);
+                } else {
+                    const newWidth = parseInt(width);
+                    const aspectRatio = imageData.originalWidth / imageData.originalHeight;
+                    
+                    if (maintainAspect) {
+                        imageData.targetWidth = newWidth;
+                        imageData.targetHeight = Math.round(newWidth / aspectRatio);
+                    } else {
+                        imageData.targetWidth = newWidth;
+                        imageData.targetHeight = parseInt(height) || imageData.targetHeight;
+                    }
+                }
+                
+                resizeImage(imageData);
+            });
+            
+            updateDisplay();
+        }
+
+        function downloadImage(id) {
+            const imageData = images.find(img => img.id == id);
+            if (imageData && imageData.resizedData) {
+                const link = document.createElement('a');
+                const fileName = imageData.name.replace(/\.[^/.]+$/, '') + `_${imageData.targetWidth}x${imageData.targetHeight}.${imageData.format}`;
+                
+                link.href = imageData.resizedData;
+                link.download = fileName;
+                link.click();
+            }
+        }
+
+        function downloadAll() {
+            const resizedImages = images.filter(img => img.resizedData);
+            
+            if (resizedImages.length === 0) {
+                alert('No resized images to download. Please resize images first.');
+                return;
+            }
+            
+            resizedImages.forEach((imageData, index) => {
+                setTimeout(() => downloadImage(imageData.id), index * 200);
+            });
+        }
+
+        function removeImage(id) {
+            images = images.filter(img => img.id != id);
+            updateDisplay();
+        }
+
+        function clearAll() {
+            if (confirm('Remove all images?')) {
+                images = [];
+                updateDisplay();
+                fileInput.value = '';
+            }
+        }
+    </script>
+</body>
+</html>

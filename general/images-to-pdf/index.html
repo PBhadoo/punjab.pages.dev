@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Images to PDF | Punjab Investigation Tools</title>
+    <meta name="description" content="Convert JPG, PNG, WebP images to PDF. Combine multiple images into one PDF document. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        .images-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .image-preview {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 10px;
+            cursor: move;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        
+        .image-preview .remove-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        
+        .image-preview .remove-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .image-preview .image-name {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .controls-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .control-group select,
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .action-buttons button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .btn-primary:disabled,
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(102, 126, 234, 0.1));
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .info-box i {
+            color: var(--accent-secondary);
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Images to PDF</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-images"></i> Images to PDF Converter</h1>
+                <p>Convert JPG, PNG, WebP, and other image formats to PDF. Combine multiple images into a single PDF document.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop images here or click to upload</h3>
+                    <p>Supports JPG, PNG, WebP, GIF, BMP • Multiple images • Client-side processing</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select Images
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- Images Preview Section -->
+        <section class="results-section" id="imagesSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-images"></i> Selected Images (<span id="imageCount">0</span>)</h2>
+                <p>Drag to reorder • Click X to remove</p>
+            </div>
+            
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <strong>Drag and drop</strong> images to reorder them. The PDF will be generated in the order shown below.
+                </div>
+            </div>
+
+            <div class="images-container" id="imagesContainer"></div>
+
+            <!-- Controls -->
+            <div class="controls-section">
+                <h3><i class="fas fa-sliders"></i> PDF Settings</h3>
+                
+                <div class="control-group">
+                    <label for="pageSize">Page Size</label>
+                    <select id="pageSize">
+                        <option value="a4">A4 (210 × 297 mm)</option>
+                        <option value="letter">Letter (8.5 × 11 in)</option>
+                        <option value="legal">Legal (8.5 × 14 in)</option>
+                        <option value="a3">A3 (297 × 420 mm)</option>
+                        <option value="a5">A5 (148 × 210 mm)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="orientation">Orientation</label>
+                    <select id="orientation">
+                        <option value="portrait">Portrait</option>
+                        <option value="landscape">Landscape</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="imageMode">Image Fit Mode</label>
+                    <select id="imageMode">
+                        <option value="fit">Fit to Page (maintain aspect ratio)</option>
+                        <option value="fill">Fill Page (may crop)</option>
+                        <option value="stretch">Stretch to Page</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="margin">Margin (mm)</label>
+                    <input type="number" id="margin" value="10" min="0" max="50">
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="clearAllImages()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                    <button class="btn-primary" onclick="generatePDF()" id="generateBtn">
+                        <i class="fas fa-file-pdf"></i> Generate PDF
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        let selectedImages = [];
+        let draggedElement = null;
+
+        // Setup drag and drop for upload area
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (imageFiles.length === 0) {
+                alert('Please select valid image files');
+                return;
+            }
+
+            imageFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedImages.push({
+                        name: file.name,
+                        data: e.target.result,
+                        file: file
+                    });
+                    updateImageDisplay();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function updateImageDisplay() {
+            const container = document.getElementById('imagesContainer');
+            const section = document.getElementById('imagesSection');
+            const count = document.getElementById('imageCount');
+            
+            count.textContent = selectedImages.length;
+            section.style.display = selectedImages.length > 0 ? 'block' : 'none';
+            
+            container.innerHTML = '';
+            
+            selectedImages.forEach((image, index) => {
+                const div = document.createElement('div');
+                div.className = 'image-preview';
+                div.draggable = true;
+                div.dataset.index = index;
+                
+                div.innerHTML = `
+                    <img src="${image.data}" alt="${image.name}">
+                    <button class="remove-btn" onclick="removeImage(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="image-name">${image.name}</div>
+                `;
+                
+                // Drag events for reordering
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('drop', handleDrop);
+                div.addEventListener('dragend', handleDragEnd);
+                
+                container.appendChild(div);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            
+            if (draggedElement !== this) {
+                const draggedIndex = parseInt(draggedElement.dataset.index);
+                const targetIndex = parseInt(this.dataset.index);
+                
+                const temp = selectedImages[draggedIndex];
+                selectedImages.splice(draggedIndex, 1);
+                selectedImages.splice(targetIndex, 0, temp);
+                
+                updateImageDisplay();
+            }
+            
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+        }
+
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            updateImageDisplay();
+        }
+
+        function clearAllImages() {
+            if (confirm('Are you sure you want to remove all images?')) {
+                selectedImages = [];
+                updateImageDisplay();
+                fileInput.value = '';
+            }
+        }
+
+        async function generatePDF() {
+            if (selectedImages.length === 0) {
+                alert('Please add at least one image');
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const pageSize = document.getElementById('pageSize').value;
+                const orientation = document.getElementById('orientation').value;
+                const imageMode = document.getElementById('imageMode').value;
+                const margin = parseFloat(document.getElementById('margin').value);
+
+                const pdf = new jsPDF({
+                    orientation: orientation,
+                    unit: 'mm',
+                    format: pageSize
+                });
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const availableWidth = pageWidth - (margin * 2);
+                const availableHeight = pageHeight - (margin * 2);
+
+                for (let i = 0; i < selectedImages.length; i++) {
+                    if (i > 0) {
+                        pdf.addPage();
+                    }
+
+                    const image = selectedImages[i];
+                    const img = new Image();
+                    img.src = image.data;
+
+                    await new Promise((resolve) => {
+                        img.onload = () => {
+                            const imgAspectRatio = img.width / img.height;
+                            let imgWidth, imgHeight, x, y;
+
+                            if (imageMode === 'fit') {
+                                // Fit to page maintaining aspect ratio
+                                if (imgAspectRatio > (availableWidth / availableHeight)) {
+                                    imgWidth = availableWidth;
+                                    imgHeight = availableWidth / imgAspectRatio;
+                                } else {
+                                    imgHeight = availableHeight;
+                                    imgWidth = availableHeight * imgAspectRatio;
+                                }
+                                x = margin + (availableWidth - imgWidth) / 2;
+                                y = margin + (availableHeight - imgHeight) / 2;
+                            } else if (imageMode === 'fill') {
+                                // Fill page (may crop)
+                                if (imgAspectRatio > (availableWidth / availableHeight)) {
+                                    imgHeight = availableHeight;
+                                    imgWidth = availableHeight * imgAspectRatio;
+                                } else {
+                                    imgWidth = availableWidth;
+                                    imgHeight = availableWidth / imgAspectRatio;
+                                }
+                                x = margin + (availableWidth - imgWidth) / 2;
+                                y = margin + (availableHeight - imgHeight) / 2;
+                            } else {
+                                // Stretch to fill
+                                imgWidth = availableWidth;
+                                imgHeight = availableHeight;
+                                x = margin;
+                                y = margin;
+                            }
+
+                            pdf.addImage(image.data, 'JPEG', x, y, imgWidth, imgHeight);
+                            resolve();
+                        };
+                    });
+                }
+
+                // Save PDF
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                pdf.save(`images-to-pdf-${timestamp}.pdf`);
+
+                alert(`PDF generated successfully with ${selectedImages.length} image(s)!`);
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Error generating PDF. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-file-pdf"></i> Generate PDF';
+            }
+        }
+    </script>
+</body>
+</html>

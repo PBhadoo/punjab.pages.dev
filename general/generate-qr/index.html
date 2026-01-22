@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate QR Code | Punjab Investigation Tools</title>
+    <meta name="description" content="Generate QR codes from text or URLs. Customize size, color, and error correction. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .input-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .control-group textarea {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        
+        .color-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .color-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .color-input-wrapper input[type="color"] {
+            width: 60px;
+            height: 45px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .color-input-wrapper input[type="text"] {
+            flex: 1;
+        }
+        
+        .generate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            display: none;
+            text-align: center;
+        }
+        
+        .results-section.active {
+            display: block;
+        }
+        
+        #qrcode {
+            display: inline-block;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            margin: 10px;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .info-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 13px;
+            color: #818cf8;
+        }
+        
+        .char-counter {
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Generate QR Code</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-qrcode"></i> Generate QR Code</h1>
+                <p>Create QR codes from text, URLs, or any data with customizable size and colors.</p>
+            </div>
+        </section>
+
+        <!-- Input Section -->
+        <div class="input-container">
+            <h3><i class="fas fa-keyboard"></i> QR Code Content</h3>
+            
+            <div class="control-group">
+                <label for="qrText">Text or URL</label>
+                <textarea id="qrText" placeholder="Enter text, URL, or any data to encode..."></textarea>
+                <div class="char-counter" id="charCounter">0 characters</div>
+            </div>
+            
+            <div class="control-group">
+                <label for="qrSize">QR Code Size</label>
+                <select id="qrSize">
+                    <option value="128">128 × 128 px (Small)</option>
+                    <option value="256" selected>256 × 256 px (Medium)</option>
+                    <option value="512">512 × 512 px (Large)</option>
+                    <option value="1024">1024 × 1024 px (Extra Large)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="errorCorrection">Error Correction Level</label>
+                <select id="errorCorrection">
+                    <option value="L">Low (7% recovery)</option>
+                    <option value="M" selected>Medium (15% recovery)</option>
+                    <option value="Q">Quartile (25% recovery)</option>
+                    <option value="H">High (30% recovery)</option>
+                </select>
+            </div>
+            
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                Higher error correction allows the QR code to be read even if partially damaged, but makes it more complex.
+            </div>
+            
+            <div class="control-group">
+                <label>Colors</label>
+                <div class="color-group">
+                    <div>
+                        <label style="font-size: 12px; margin-bottom: 5px;">Foreground (QR Code)</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="colorDark" value="#000000">
+                            <input type="text" id="colorDarkHex" value="#000000" readonly>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; margin-bottom: 5px;">Background</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="colorLight" value="#ffffff">
+                            <input type="text" id="colorLightHex" value="#ffffff" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="generate-btn" onclick="generateQRCode()">
+                <i class="fas fa-wand-magic-sparkles"></i> Generate QR Code
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <h3><i class="fas fa-circle-check"></i> QR Code Generated</h3>
+            <div id="qrcode"></div>
+            <p style="color: var(--text-secondary); margin: 20px 0;">
+                Scan this QR code with your camera or QR scanner app
+            </p>
+            <button class="download-btn" onclick="downloadQR()">
+                <i class="fas fa-download"></i> Download PNG
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-content">
+            <p>&copy; <span id="currentYear"></span> Punjab Investigation Tools. Built for Law Enforcement.</p>
+            <div class="footer-links">
+                <a href="/privacy.html">Privacy Policy</a>
+                <a href="/terms.html">Terms of Service</a>
+                <a href="/disclaimer.html">Disclaimer</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        let qrCodeInstance = null;
+
+        // Character counter
+        document.getElementById('qrText').addEventListener('input', (e) => {
+            document.getElementById('charCounter').textContent = e.target.value.length + ' characters';
+        });
+
+        // Color pickers sync
+        document.getElementById('colorDark').addEventListener('input', (e) => {
+            document.getElementById('colorDarkHex').value = e.target.value;
+        });
+        
+        document.getElementById('colorLight').addEventListener('input', (e) => {
+            document.getElementById('colorLightHex').value = e.target.value;
+        });
+
+        function generateQRCode() {
+            const text = document.getElementById('qrText').value.trim();
+            
+            if (!text) {
+                alert('Please enter text or URL to generate QR code');
+                return;
+            }
+            
+            const size = parseInt(document.getElementById('qrSize').value);
+            const errorCorrection = document.getElementById('errorCorrection').value;
+            const colorDark = document.getElementById('colorDark').value;
+            const colorLight = document.getElementById('colorLight').value;
+            
+            // Clear previous QR code
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+            
+            // Generate new QR code
+            qrCodeInstance = new QRCode(qrcodeDiv, {
+                text: text,
+                width: size,
+                height: size,
+                colorDark: colorDark,
+                colorLight: colorLight,
+                correctLevel: QRCode.CorrectLevel[errorCorrection]
+            });
+            
+            // Show results
+            setTimeout(() => {
+                document.getElementById('resultsSection').classList.add('active');
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+
+        function downloadQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                alert('Please generate a QR code first');
+                return;
+            }
+            
+            // Convert canvas to blob and download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'qrcode_' + Date.now() + '.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Format Detector | Punjab Investigation Tools</title>
+    <meta name="description" content="Identify true file type by analyzing magic bytes. Detect file signature and format.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .detector-results {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .file-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .info-card {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .info-icon-large {
+            font-size: 40px;
+            color: #818cf8;
+            margin-bottom: 15px;
+        }
+        
+        .info-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .info-value-large {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+        
+        .magic-bytes {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .bytes-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+        
+        .bytes-display {
+            font-family: 'JetBrains Mono', monospace;
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        .hex-byte {
+            display: inline-block;
+            margin-right: 8px;
+            padding: 2px 6px;
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 4px;
+        }
+        
+        .format-match {
+            background: rgba(16, 185, 129, 0.2);
+            border: 2px solid #10b981;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .match-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .match-icon {
+            font-size: 32px;
+            color: #10b981;
+        }
+        
+        .match-title {
+            flex: 1;
+            font-size: 20px;
+            font-weight: 700;
+            color: #10b981;
+        }
+        
+        .match-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .match-detail {
+            background: rgba(16, 185, 129, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .detail-label {
+            font-size: 11px;
+            color: #6ee7b7;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #10b981;
+        }
+        
+        .warning-box {
+            background: rgba(245, 158, 11, 0.2);
+            border: 2px solid #f59e0b;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .warning-box.active {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .warning-icon-large {
+            font-size: 32px;
+            color: #f59e0b;
+        }
+        
+        .warning-text {
+            flex: 1;
+        }
+        
+        .warning-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f59e0b;
+            margin-bottom: 8px;
+        }
+        
+        .warning-description {
+            font-size: 14px;
+            color: #fbbf24;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">File Format Detector</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-magnifying-glass"></i> File Format Detector</h1>
+                <p>Identify true file type by analyzing magic bytes. Detect disguised or mislabeled files.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop any file here or click to upload</h3>
+                    <p>Any file type • Detects based on magic bytes • Client-side processing</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select File
+                    </button>
+                    <input type="file" id="fileInput" hidden>
+                </div>
+                
+                <div style="text-align: center; margin: 20px 0; color: var(--text-secondary);">
+                    — OR —
+                </div>
+                
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="url" id="urlInput" placeholder="Enter file URL (e.g., https://example.com/file.pdf)" 
+                               style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+                        <button onclick="analyzeURL()" style="padding: 12px 24px; background: var(--accent-color); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+                            <i class="fas fa-link"></i> Analyze URL
+                        </button>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px; color: var(--text-secondary); text-align: left;">
+                        <i class="fas fa-info-circle"></i> Only fetches first 1KB. Uses Cloudflare proxy if CORS is blocked.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detector Results -->
+        <div class="detector-results" id="detectorResults" style="display: none;">
+            <h3><i class="fas fa-fingerprint"></i> Detection Results</h3>
+            
+            <div class="file-info-grid">
+                <div class="info-card">
+                    <div class="info-icon-large">
+                        <i class="fas fa-file"></i>
+                    </div>
+                    <div class="info-title">File Name</div>
+                    <div class="info-value-large" id="fileName">-</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon-large">
+                        <i class="fas fa-file-code"></i>
+                    </div>
+                    <div class="info-title">File Extension</div>
+                    <div class="info-value-large" id="fileExtension">-</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon-large">
+                        <i class="fas fa-weight-hanging"></i>
+                    </div>
+                    <div class="info-title">File Size</div>
+                    <div class="info-value-large" id="fileSize">-</div>
+                </div>
+            </div>
+            
+            <div class="magic-bytes">
+                <div class="bytes-title">
+                    <i class="fas fa-code"></i> Magic Bytes (First 32 bytes in Hex)
+                </div>
+                <div class="bytes-display" id="magicBytes">-</div>
+            </div>
+            
+            <div class="format-match" id="formatMatch">
+                <div class="match-header">
+                    <div class="match-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="match-title" id="detectedFormat">Unknown Format</div>
+                </div>
+                <div class="match-details">
+                    <div class="match-detail">
+                        <div class="detail-label">MIME Type</div>
+                        <div class="detail-value" id="mimeType">-</div>
+                    </div>
+                    <div class="match-detail">
+                        <div class="detail-label">Category</div>
+                        <div class="detail-value" id="fileCategory">-</div>
+                    </div>
+                    <div class="match-detail">
+                        <div class="detail-label">Expected Extension</div>
+                        <div class="detail-value" id="expectedExtension">-</div>
+                    </div>
+                    <div class="match-detail">
+                        <div class="detail-label">Signature Match</div>
+                        <div class="detail-value" id="signatureMatch">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="warning-box" id="warningBox">
+                <div class="warning-icon-large">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="warning-text">
+                    <div class="warning-title">Extension Mismatch Detected!</div>
+                    <div class="warning-description" id="warningDescription">
+                        The file extension does not match the detected file format. This could indicate a disguised or mislabeled file.
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn-secondary" style="width: 100%; padding: 15px; margin-top: 20px;" onclick="reset()">
+                <i class="fas fa-refresh"></i> Analyze Another File
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        const FILE_SIGNATURES = {
+            // Images
+            'FFD8FF': { format: 'JPEG Image', mime: 'image/jpeg', ext: '.jpg', category: 'Image' },
+            '89504E47': { format: 'PNG Image', mime: 'image/png', ext: '.png', category: 'Image' },
+            '47494638': { format: 'GIF Image', mime: 'image/gif', ext: '.gif', category: 'Image' },
+            '424D': { format: 'BMP Image', mime: 'image/bmp', ext: '.bmp', category: 'Image' },
+            '52494646': { format: 'WebP Image', mime: 'image/webp', ext: '.webp', category: 'Image' },
+            
+            // Documents
+            '25504446': { format: 'PDF Document', mime: 'application/pdf', ext: '.pdf', category: 'Document' },
+            '504B0304': { format: 'ZIP Archive / Office Document', mime: 'application/zip', ext: '.zip', category: 'Archive/Document' },
+            'D0CF11E0A1B11AE1': { format: 'Microsoft Office Document (DOC/XLS/PPT)', mime: 'application/msword', ext: '.doc', category: 'Document' },
+            '7B5C7274': { format: 'RTF Document', mime: 'application/rtf', ext: '.rtf', category: 'Document' },
+            
+            // Archives
+            '52617221': { format: 'RAR Archive', mime: 'application/x-rar-compressed', ext: '.rar', category: 'Archive' },
+            '377ABCAF271C': { format: '7-Zip Archive', mime: 'application/x-7z-compressed', ext: '.7z', category: 'Archive' },
+            '1F8B': { format: 'GZIP Archive', mime: 'application/gzip', ext: '.gz', category: 'Archive' },
+            
+            // Executables
+            '4D5A': { format: 'Windows Executable', mime: 'application/x-msdownload', ext: '.exe', category: 'Executable' },
+            '7F454C46': { format: 'Linux ELF Executable', mime: 'application/x-executable', ext: '', category: 'Executable' },
+            
+            // Video
+            '000000': { format: 'MP4 Video', mime: 'video/mp4', ext: '.mp4', category: 'Video' },
+            '1A45DFA3': { format: 'Matroska Video (MKV)', mime: 'video/x-matroska', ext: '.mkv', category: 'Video' },
+            '464C56': { format: 'Flash Video', mime: 'video/x-flv', ext: '.flv', category: 'Video' },
+            
+            // Audio
+            '494433': { format: 'MP3 Audio', mime: 'audio/mpeg', ext: '.mp3', category: 'Audio' },
+            '664C6143': { format: 'FLAC Audio', mime: 'audio/flac', ext: '.flac', category: 'Audio' },
+            
+            // Database
+            '53514C69746520666F726D6174': { format: 'SQLite Database', mime: 'application/x-sqlite3', ext: '.db', category: 'Database' }
+        };
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                analyzeFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                analyzeFile(file);
+            }
+        });
+
+        function analyzeFile(file) {
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            
+            const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            document.getElementById('fileExtension').textContent = extension || 'None';
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const arrayBuffer = e.target.result;
+                const bytes = new Uint8Array(arrayBuffer);
+                
+                // Display magic bytes
+                const magicBytes = Array.from(bytes.slice(0, 32))
+                    .map(byte => `<span class="hex-byte">${byte.toString(16).toUpperCase().padStart(2, '0')}</span>`)
+                    .join('');
+                document.getElementById('magicBytes').innerHTML = magicBytes;
+                
+                // Detect format
+                const detectedFormat = detectFormat(bytes);
+                displayResults(detectedFormat, extension);
+                
+                document.getElementById('detectorResults').style.display = 'block';
+            };
+            
+            reader.readAsArrayBuffer(file.slice(0, 1024)); // Read first 1KB
+        }
+
+        function detectFormat(bytes) {
+            // Convert bytes to hex string for pattern matching
+            const hexString = Array.from(bytes.slice(0, 16))
+                .map(byte => byte.toString(16).toUpperCase().padStart(2, '0'))
+                .join('');
+            
+            // Check against known signatures
+            for (const [signature, info] of Object.entries(FILE_SIGNATURES)) {
+                if (hexString.startsWith(signature)) {
+                    return { ...info, signature };
+                }
+            }
+            
+            return {
+                format: 'Unknown Format',
+                mime: 'application/octet-stream',
+                ext: 'unknown',
+                category: 'Unknown',
+                signature: 'Not recognized'
+            };
+        }
+
+        function displayResults(detected, actualExtension) {
+            document.getElementById('detectedFormat').textContent = detected.format;
+            document.getElementById('mimeType').textContent = detected.mime;
+            document.getElementById('fileCategory').textContent = detected.category;
+            document.getElementById('expectedExtension').textContent = detected.ext || 'N/A';
+            document.getElementById('signatureMatch').textContent = detected.signature;
+            
+            // Check for extension mismatch
+            if (detected.ext !== 'unknown' && actualExtension && !actualExtension.includes(detected.ext.replace('.', ''))) {
+                document.getElementById('warningBox').classList.add('active');
+                document.getElementById('warningDescription').textContent = 
+                    `The file has a "${actualExtension}" extension but appears to be a ${detected.format} (expected ${detected.ext}). ` +
+                    `This could indicate a disguised or incorrectly labeled file.`;
+            } else {
+                document.getElementById('warningBox').classList.remove('active');
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        function reset() {
+            document.getElementById('detectorResults').style.display = 'none';
+            document.getElementById('warningBox').classList.remove('active');
+            fileInput.value = '';
+            document.getElementById('urlInput').value = '';
+        }
+
+        async function analyzeURL() {
+            const url = document.getElementById('urlInput').value.trim();
+            
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            
+            try {
+                // Extract filename from URL for extension detection
+                const urlObj = new URL(url);
+                const pathname = urlObj.pathname;
+                const filename = pathname.substring(pathname.lastIndexOf('/') + 1) || 'file';
+                const lastDot = filename.lastIndexOf('.');
+                const extension = lastDot > 0 ? filename.substring(lastDot) : '';
+                
+                document.getElementById('fileName').textContent = filename;
+                document.getElementById('fileExtension').textContent = extension || 'none';
+                
+                // Try direct fetch with Range header first
+                let bytes;
+                try {
+                    const response = await fetch(url, {
+                        headers: { 'Range': 'bytes=0-1023' },
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) throw new Error('Direct fetch failed');
+                    
+                    // Read response but enforce 1KB limit
+                    const reader = response.body.getReader();
+                    const chunks = [];
+                    let totalBytes = 0;
+                    
+                    while (totalBytes < 1024) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const bytesToTake = Math.min(value.length, 1024 - totalBytes);
+                        chunks.push(value.slice(0, bytesToTake));
+                        totalBytes += bytesToTake;
+                        
+                        if (totalBytes >= 1024) {
+                            reader.cancel(); // Stop reading
+                            break;
+                        }
+                    }
+                    
+                    const allBytes = new Uint8Array(totalBytes);
+                    let offset = 0;
+                    for (const chunk of chunks) {
+                        allBytes.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+                    bytes = allBytes;
+                    
+                } catch (directError) {
+                    // CORS blocked or server error - use Cloudflare proxy
+                    console.log('Direct fetch failed, using proxy:', directError.message);
+                    
+                    const proxyResponse = await fetch('/api/detect-format', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url })
+                    });
+                    
+                    if (!proxyResponse.ok) {
+                        throw new Error('Proxy fetch failed: ' + await proxyResponse.text());
+                    }
+                    
+                    const data = await proxyResponse.json();
+                    bytes = new Uint8Array(data.bytes);
+                }
+                
+                // Display file size (approximate)
+                document.getElementById('fileSize').textContent = 'Unknown (URL)';
+                
+                // Display magic bytes
+                const magicBytes = Array.from(bytes.slice(0, 32))
+                    .map(byte => `<span class="hex-byte">${byte.toString(16).toUpperCase().padStart(2, '0')}</span>`)
+                    .join('');
+                document.getElementById('magicBytes').innerHTML = magicBytes;
+                
+                // Detect format
+                const detectedFormat = detectFormat(bytes);
+                displayResults(detectedFormat, extension);
+                
+                document.getElementById('detectorResults').style.display = 'block';
+                
+            } catch (error) {
+                alert('Error analyzing URL: ' + error.message);
+                console.error('URL analysis error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

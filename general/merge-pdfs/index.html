@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge PDFs | Punjab Investigation Tools</title>
+    <meta name="description" content="Combine multiple PDF files into one. Reorder pages before merging. 100% client-side processing.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- pdf-lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/homepage.css">
+    
+    <style>
+        .pdfs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .pdf-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: move;
+            transition: all 0.3s;
+        }
+        
+        .pdf-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: var(--accent-color);
+        }
+        
+        .pdf-item.dragging {
+            opacity: 0.5;
+        }
+        
+        .drag-handle {
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: move;
+        }
+        
+        .pdf-icon {
+            font-size: 40px;
+            color: var(--accent-color);
+        }
+        
+        .pdf-info {
+            flex: 1;
+        }
+        
+        .pdf-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .pdf-details {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .detail-badge {
+            padding: 4px 10px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 5px;
+            color: #818cf8;
+            font-weight: 600;
+        }
+        
+        .pdf-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .btn-remove {
+            background: rgba(255, 69, 96, 0.2);
+            color: var(--accent-color);
+        }
+        
+        .btn-remove:hover {
+            background: rgba(255, 69, 96, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .merge-controls {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .merge-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+        }
+        
+        .info-stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #818cf8;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .merge-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .merge-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
+        }
+        
+        .merge-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            display: none;
+        }
+        
+        .progress-section.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), #ff6b9d);
+            border-radius: 10px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .add-more-btn {
+            width: 100%;
+            padding: 15px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 2px dashed #818cf8;
+            border-radius: 12px;
+            color: #818cf8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .add-more-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+            border-style: solid;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Merge PDFs</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/general/" class="back-home-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-object-group"></i> Merge PDFs</h1>
+                <p>Combine multiple PDF files into one document. Drag and drop to reorder files before merging.</p>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drop PDF files here or click to upload</h3>
+                    <p>Multiple PDF files • Client-side processing • No file size limit</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Select PDFs
+                    </button>
+                    <input type="file" id="fileInput" multiple accept=".pdf,application/pdf" hidden>
+                </div>
+            </div>
+        </section>
+
+        <!-- PDFs List -->
+        <section class="results-section" id="pdfsSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> PDF Files (<span id="pdfCount">0</span>)</h2>
+                <p>Drag files to reorder • Files will be merged in this order</p>
+            </div>
+
+            <button class="add-more-btn" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-plus"></i> Add More PDFs
+            </button>
+
+            <div class="pdfs-list" id="pdfsList"></div>
+
+            <!-- Merge Controls -->
+            <div class="merge-controls">
+                <h3><i class="fas fa-info-circle"></i> Merge Summary</h3>
+                
+                <div class="merge-info">
+                    <div class="info-stat">
+                        <div class="stat-value" id="totalFiles">0</div>
+                        <div class="stat-label">Total Files</div>
+                    </div>
+                    <div class="info-stat">
+                        <div class="stat-value" id="totalPages">0</div>
+                        <div class="stat-label">Total Pages</div>
+                    </div>
+                    <div class="info-stat">
+                        <div class="stat-value" id="totalSize">0 KB</div>
+                        <div class="stat-label">Total Size</div>
+                    </div>
+                </div>
+                
+                <button class="merge-btn" onclick="mergePDFs()">
+                    <i class="fas fa-compress"></i> Merge PDFs
+                </button>
+            </div>
+        </section>
+
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <h3><i class="fas fa-spinner fa-spin"></i> Merging PDFs...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Preparing merge...</div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        const { PDFDocument } = PDFLib;
+        let pdfFiles = [];
+        let draggedElement = null;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            uploadArea.style.background = 'rgba(233, 69, 96, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        async function handleFiles(files) {
+            const pdfFilesArray = Array.from(files).filter(file => file.type === 'application/pdf');
+            
+            if (pdfFilesArray.length === 0) {
+                alert('Please select valid PDF files');
+                return;
+            }
+
+            for (const file of pdfFilesArray) {
+                const arrayBuffer = await file.arrayBuffer();
+                
+                try {
+                    const pdfDoc = await PDFDocument.load(arrayBuffer);
+                    const pageCount = pdfDoc.getPageCount();
+                    
+                    pdfFiles.push({
+                        id: Date.now() + Math.random(),
+                        name: file.name,
+                        size: file.size,
+                        pages: pageCount,
+                        data: arrayBuffer
+                    });
+                } catch (error) {
+                    console.error('Error loading PDF:', error);
+                    alert(`Error loading ${file.name}: ${error.message}`);
+                }
+            }
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const list = document.getElementById('pdfsList');
+            const section = document.getElementById('pdfsSection');
+            const count = document.getElementById('pdfCount');
+            
+            if (pdfFiles.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            count.textContent = pdfFiles.length;
+            
+            // Update statistics
+            const totalPages = pdfFiles.reduce((sum, pdf) => sum + pdf.pages, 0);
+            const totalSize = pdfFiles.reduce((sum, pdf) => sum + pdf.size, 0);
+            
+            document.getElementById('totalFiles').textContent = pdfFiles.length;
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('totalSize').textContent = (totalSize / 1024).toFixed(2) + ' KB';
+            
+            // Render list
+            list.innerHTML = '';
+            
+            pdfFiles.forEach((pdf, index) => {
+                const item = document.createElement('div');
+                item.className = 'pdf-item';
+                item.draggable = true;
+                item.dataset.id = pdf.id;
+                
+                item.innerHTML = `
+                    <div class="drag-handle">
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
+                    <div class="pdf-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="pdf-info">
+                        <div class="pdf-name">${pdf.name}</div>
+                        <div class="pdf-details">
+                            <span class="detail-badge">${pdf.pages} page${pdf.pages !== 1 ? 's' : ''}</span>
+                            <span class="detail-badge">${(pdf.size / 1024).toFixed(2)} KB</span>
+                        </div>
+                    </div>
+                    <div class="pdf-actions">
+                        <button class="action-btn btn-remove" onclick="removePDF('${pdf.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // Drag events
+                item.addEventListener('dragstart', (e) => {
+                    draggedElement = item;
+                    item.classList.add('dragging');
+                });
+                
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('dragging');
+                    draggedElement = null;
+                });
+                
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const afterElement = getDragAfterElement(list, e.clientY);
+                    if (afterElement == null) {
+                        list.appendChild(draggedElement);
+                    } else {
+                        list.insertBefore(draggedElement, afterElement);
+                    }
+                });
+                
+                list.appendChild(item);
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.pdf-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function removePDF(id) {
+            pdfFiles = pdfFiles.filter(pdf => pdf.id != id);
+            updateDisplay();
+        }
+
+        async function mergePDFs() {
+            if (pdfFiles.length < 2) {
+                alert('Please add at least 2 PDF files to merge');
+                return;
+            }
+
+            // Get current order from DOM
+            const orderedIds = Array.from(document.querySelectorAll('.pdf-item')).map(el => el.dataset.id);
+            const orderedPDFs = orderedIds.map(id => pdfFiles.find(pdf => pdf.id == id));
+
+            document.getElementById('progressSection').classList.add('active');
+            updateProgress(0, 'Creating merged PDF...');
+
+            try {
+                const mergedPdf = await PDFDocument.create();
+                
+                for (let i = 0; i < orderedPDFs.length; i++) {
+                    const pdf = orderedPDFs[i];
+                    updateProgress((i / orderedPDFs.length) * 100, `Merging ${pdf.name}...`);
+                    
+                    const pdfDoc = await PDFDocument.load(pdf.data);
+                    const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+                    copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+                
+                updateProgress(100, 'Finalizing merged PDF...');
+                
+                const mergedPdfBytes = await mergedPdf.save();
+                downloadPDF(mergedPdfBytes);
+                
+                document.getElementById('progressSection').classList.remove('active');
+                
+                alert('PDFs merged successfully!');
+                
+            } catch (error) {
+                document.getElementById('progressSection').classList.remove('active');
+                alert('Error merging PDFs: ' + error.message);
+                console.error('Merge error:', error);
+            }
+        }
+
+        function updateProgress(percentage, message) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = message;
+        }
+
+        function downloadPDF(pdfBytes) {
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'merged_document.pdf';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

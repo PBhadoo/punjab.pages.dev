@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Purpose Tools | Punjab Investigation Tools</title>
+    <meta name="description" content="Free online PDF and image tools - Merge, split, compress, convert PDFs and images client-side. 100% privacy-focused.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/homepage.css">
+    
+    <style>
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 40px 0;
+        }
+        
+        .category-section {
+            margin-bottom: 50px;
+        }
+        
+        .category-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .category-title i {
+            color: var(--accent-color);
+        }
+        
+        .tool-card.coming-soon {
+            opacity: 0.6;
+            position: relative;
+        }
+        
+        .tool-card.coming-soon::after {
+            content: 'Coming Soon';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--accent-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">General Purpose Tools</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-toolbox"></i> General Purpose Tools</h1>
+                <p>Free online PDF and image tools with 100% client-side processing. Your files never leave your device.</p>
+            </div>
+        </section>
+
+        <!-- Tools Container -->
+        <section class="tools-container">
+            
+            <!-- PDF Tools -->
+            <div class="category-section">
+                <h2 class="category-title">
+                    <i class="fas fa-file-pdf"></i>
+                    PDF Tools
+                </h2>
+                <div class="tools-grid">
+                    <!-- Images to PDF -->
+                    <a href="images-to-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-images"></i>
+                        </div>
+                        <h3 class="tool-title">Images to PDF</h3>
+                        <p class="tool-description">Convert JPG, PNG, WebP images to PDF. Combine multiple images into one PDF document.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- PDF to Images -->
+                    <a href="pdf-to-images/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-file-image"></i>
+                        </div>
+                        <h3 class="tool-title">PDF to Images</h3>
+                        <p class="tool-description">Convert PDF pages to JPG or PNG. Extract all or specific pages.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Merge PDFs -->
+                    <a href="merge-pdfs/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-object-group"></i>
+                        </div>
+                        <h3 class="tool-title">Merge PDFs</h3>
+                        <p class="tool-description">Combine multiple PDF files into one document. Drag to reorder.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Split PDF -->
+                    <a href="split-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-scissors"></i>
+                        </div>
+                        <h3 class="tool-title">Split PDF</h3>
+                        <p class="tool-description">Extract specific pages or split PDF into separate files. Range selection supported.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Compress PDF -->
+                    <a href="compress-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-file-zipper"></i>
+                        </div>
+                        <h3 class="tool-title">Compress PDF</h3>
+                        <p class="tool-description">Reduce PDF file size while maintaining quality. Perfect for email attachments.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Rotate PDF -->
+                    <a href="rotate-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-rotate"></i>
+                        </div>
+                        <h3 class="tool-title">Rotate PDF</h3>
+                        <p class="tool-description">Rotate PDF pages by 90, 180, or 270 degrees. Select specific pages or all.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Delete PDF Pages -->
+                    <a href="delete-pdf-pages/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-trash-alt"></i>
+                        </div>
+                        <h3 class="tool-title">Delete PDF Pages</h3>
+                        <p class="tool-description">Remove unwanted pages from PDF. Select and delete specific pages.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Reorder PDF Pages -->
+                    <a href="reorder-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-arrows-up-down"></i>
+                        </div>
+                        <h3 class="tool-title">Reorder Pages</h3>
+                        <p class="tool-description">Rearrange PDF pages in any order. Drag and drop interface for easy sorting.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Add Page Numbers -->
+                    <a href="add-page-numbers/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-list-ol"></i>
+                        </div>
+                        <h3 class="tool-title">Add Page Numbers</h3>
+                        <p class="tool-description">Insert page numbers to PDF. Customize position, format, and starting number.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Add Watermark -->
+                    <a href="add-pdf-watermark/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-stamp"></i>
+                        </div>
+                        <h3 class="tool-title">Add Watermark</h3>
+                        <p class="tool-description">Add text or image watermark to PDF. Adjust transparency and position.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Protect PDF -->
+                    <a href="protect-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h3 class="tool-title">Protect PDF</h3>
+                        <p class="tool-description">Add password protection to PDF files. Encrypt documents securely.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Unlock PDF -->
+                    <a href="unlock-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-unlock"></i>
+                        </div>
+                        <h3 class="tool-title">Unlock PDF</h3>
+                        <p class="tool-description">Remove password protection from PDF. Requires original password.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Image Tools -->
+            <div class="category-section">
+                <h2 class="category-title">
+                    <i class="fas fa-image"></i>
+                    Image Tools
+                </h2>
+                <div class="tools-grid">
+                    <!-- Compress Images -->
+                    <a href="compress-images/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-compress-alt"></i>
+                        </div>
+                        <h3 class="tool-title">Compress Images</h3>
+                        <p class="tool-description">Reduce image file size while maintaining quality. Supports JPG, PNG, WebP.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Convert Images -->
+                    <a href="convert-images/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-repeat"></i>
+                        </div>
+                        <h3 class="tool-title">Convert Images</h3>
+                        <p class="tool-description">Convert between JPG, PNG, WebP, GIF formats. Batch conversion supported.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Resize Images -->
+                    <a href="resize-images/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-maximize"></i>
+                        </div>
+                        <h3 class="tool-title">Resize Images</h3>
+                        <p class="tool-description">Change image dimensions by pixels or percentage. Maintain aspect ratio.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Crop Images -->
+                    <a href="crop-images/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-crop"></i>
+                        </div>
+                        <h3 class="tool-title">Crop Images</h3>
+                        <p class="tool-description">Trim images to specific dimensions. Visual crop with aspect ratios.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Rotate Images -->
+                    <a href="rotate-images/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-rotate"></i>
+                        </div>
+                        <h3 class="tool-title">Rotate Images</h3>
+                        <p class="tool-description">Rotate by 90°, 180°, 270° or custom angle. Flip horizontal/vertical.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Image to Base64 -->
+                    <a href="image-base64/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h3 class="tool-title">Image ↔ Base64</h3>
+                        <p class="tool-description">Convert images to Base64 strings and decode Base64 back to images.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Add Watermark to Images -->
+                    <a href="watermark-images/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-certificate"></i>
+                        </div>
+                        <h3 class="tool-title">Watermark Images</h3>
+                        <p class="tool-description">Add text or logo watermark to images. Batch processing supported.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- QR Code Tools -->
+            <div class="category-section">
+                <h2 class="category-title">
+                    <i class="fas fa-qrcode"></i>
+                    QR Code Tools
+                </h2>
+                <div class="tools-grid">
+                    <!-- Generate QR Code -->
+                    <a href="/qrcode/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                        <h3 class="tool-title">Generate QR Code</h3>
+                        <p class="tool-description">Create QR codes from text, URLs, or data. Customize size and error correction.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Decode QR Code -->
+                    <a href="/qrcode/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-barcode"></i>
+                        </div>
+                        <h3 class="tool-title">Decode QR Code</h3>
+                        <p class="tool-description">Scan and decode QR codes from images. Extract hidden data instantly.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Image to QR Code -->
+                    <a href="/general/image-to-qr/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <h3 class="tool-title">Image to QR Code</h3>
+                        <p class="tool-description">Embed image data in QR code. Convert images to QR-scannable format.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-camera"></i> Embed</span>
+                            <span class="tag available"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- QR Code to Image -->
+                    <a href="/general/qr-to-image/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-file-image"></i>
+                        </div>
+                        <h3 class="tool-title">QR to Image</h3>
+                        <p class="tool-description">Extract embedded image from QR code. Decode and save original image.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-download"></i> Extract</span>
+                            <span class="tag available"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Utility Tools -->
+            <div class="category-section">
+                <h2 class="category-title">
+                    <i class="fas fa-wrench"></i>
+                    Utility Tools
+                </h2>
+                <div class="tools-grid">
+                    <!-- File Format Detector -->
+                    <a href="/general/file-format-detector/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-magnifying-glass"></i>
+                        </div>
+                        <h3 class="tool-title">File Format Detector</h3>
+                        <p class="tool-description">Identify true file type by analyzing magic bytes. Detect file signature.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-fingerprint"></i> Detect</span>
+                            <span class="tag available"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Batch File Rename -->
+                    <a href="/general/batch-rename/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-pen-to-square"></i>
+                        </div>
+                        <h3 class="tool-title">Batch Rename</h3>
+                        <p class="tool-description">Rename multiple files at once. Pattern-based naming with preview.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-layer-group"></i> Batch</span>
+                            <span class="tag available"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- Text to PDF -->
+                    <a href="/general/text-to-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-file-lines"></i>
+                        </div>
+                        <h3 class="tool-title">Text to PDF</h3>
+                        <p class="tool-description">Convert plain text to PDF. Customize font, size, and margins.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-file-pdf"></i> Generate</span>
+                            <span class="tag available"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+
+                    <!-- HTML to PDF -->
+                    <a href="/general/html-to-pdf/" class="tool-card">
+                        <div class="tool-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <h3 class="tool-title">HTML to PDF</h3>
+                        <p class="tool-description">Convert HTML content to PDF. Preserve styles and formatting.</p>
+                        <div class="tool-tags">
+                            <span class="tag"><i class="fas fa-shield-alt"></i> Client-side</span>
+                            <span class="tag"><i class="fas fa-code"></i> Convert</span>
+                            <span class="tag available"><i class="fas fa-check"></i> Available</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Info Section -->
+        <section class="info-section">
+            <div class="info-card">
+                <div class="info-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="info-content">
+                    <h3>100% Privacy Focused</h3>
+                    <p>All processing happens in your browser. No files are uploaded to any server. Your data stays on your device.</p>
+                </div>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Lightning Fast</h3>
+                    <p>Client-side processing means no waiting for uploads or downloads. Instant results with modern web technologies.</p>
+                </div>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Open Source</h3>
+                    <p>All tools are open source and transparent. You can verify the code and contribute improvements.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="homepage-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3><i class="fas fa-shield-halved"></i> Punjab Investigation Tools</h3>
+                <p>Professional digital forensics platform for law enforcement agencies. All tools operate client-side ensuring data privacy and security.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://upload.indiacode.nic.in/schedulefile?aid=AC_CEN_5_23_00049_2023-47_1719292804654&rid=1163" target="_blank">Official BSA Form <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://www.indiacode.nic.in/handle/123456789/20063" target="_blank">BSA 2023 Full Text <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></a></li>
+                    <li><a href="https://github.com/PBhadoo/punjab.pages.dev" target="_blank">GitHub Source <i class="fab fa-github" style="font-size: 0.8rem;"></i></a></li>
+                    <li><a href="/sitemap.xml">Sitemap</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/disclaimer.html">Disclaimer</a></li>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+
+    <script>
+        // Set current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
