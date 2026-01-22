@@ -111,8 +111,46 @@
             margin: 20px 0;
         }
         
-        .file-actions button {
+        .file-actions .btn-secondary {
             flex: 1;
+            padding: 12px 20px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #818cf8;
+            border-radius: 8px;
+            color: #818cf8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .file-actions .btn-secondary:hover {
+            background: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .split-btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .split-btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
         }
     </style>
 </head>
@@ -265,7 +303,7 @@ The live word count, character count, and page estimation will update as you typ
                 </div>
             </div>
             
-            <button class="split-btn" onclick="generatePDF()" style="margin-top: 30px;">
+            <button class="split-btn" onclick="generatePDF()">
                 <i class="fas fa-file-pdf"></i> Generate PDF
             </button>
         </div>

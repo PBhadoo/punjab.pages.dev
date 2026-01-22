@@ -253,6 +253,15 @@
             </div>
         </section>
 
+        <!-- Processing Indicator -->
+        <div class="progress-section" id="progressSection">
+            <h3><i class="fas fa-spinner fa-spin"></i> Processing...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Analyzing file...</div>
+        </div>
+
         <!-- Detector Results -->
         <div class="detector-results" id="detectorResults" style="display: none;">
             <h3><i class="fas fa-fingerprint"></i> Detection Results</h3>
@@ -531,6 +540,10 @@
                 return;
             }
             
+            // Show progress
+            document.getElementById('progressSection').classList.add('active');
+            updateProgress(10, 'Preparing to fetch URL...');
+            
             try {
                 // Extract filename from URL for extension detection
                 const urlObj = new URL(url);
@@ -542,15 +555,20 @@
                 document.getElementById('fileName').textContent = filename;
                 document.getElementById('fileExtension').textContent = extension || 'none';
                 
+                updateProgress(20, 'Fetching first 1KB from URL...');
+                
                 // Try direct fetch with Range header first
                 let bytes;
                 try {
+                    updateProgress(30, 'Attempting direct fetch...');
                     const response = await fetch(url, {
                         headers: { 'Range': 'bytes=0-1023' },
                         mode: 'cors'
                     });
                     
                     if (!response.ok) throw new Error('Direct fetch failed');
+                    
+                    updateProgress(50, 'Reading response bytes...');
                     
                     // Read response but enforce 1KB limit
                     const reader = response.body.getReader();
@@ -579,9 +597,13 @@
                     }
                     bytes = allBytes;
                     
+                    updateProgress(70, 'Bytes fetched successfully!');
+                    
                 } catch (directError) {
                     // CORS blocked or server error - use Cloudflare proxy
                     console.log('Direct fetch failed, using proxy:', directError.message);
+                    
+                    updateProgress(40, 'CORS blocked - using Cloudflare proxy...');
                     
                     const proxyResponse = await fetch('/api/detect-format', {
                         method: 'POST',
@@ -593,9 +615,13 @@
                         throw new Error('Proxy fetch failed: ' + await proxyResponse.text());
                     }
                     
+                    updateProgress(70, 'Proxy fetch successful!');
+                    
                     const data = await proxyResponse.json();
                     bytes = new Uint8Array(data.bytes);
                 }
+                
+                updateProgress(80, 'Analyzing magic bytes...');
                 
                 // Display file size (approximate)
                 document.getElementById('fileSize').textContent = 'Unknown (URL)';
@@ -606,16 +632,30 @@
                     .join('');
                 document.getElementById('magicBytes').innerHTML = magicBytes;
                 
+                updateProgress(90, 'Detecting file format...');
+                
                 // Detect format
                 const detectedFormat = detectFormat(bytes);
                 displayResults(detectedFormat, extension);
                 
-                document.getElementById('detectorResults').style.display = 'block';
+                updateProgress(100, 'Complete!');
+                
+                setTimeout(() => {
+                    document.getElementById('progressSection').classList.remove('active');
+                    document.getElementById('detectorResults').style.display = 'block';
+                    document.getElementById('detectorResults').scrollIntoView({ behavior: 'smooth' });
+                }, 500);
                 
             } catch (error) {
+                document.getElementById('progressSection').classList.remove('active');
                 alert('Error analyzing URL: ' + error.message);
                 console.error('URL analysis error:', error);
             }
+        }
+        
+        function updateProgress(percentage, message) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = message;
         }
     </script>
 </body>

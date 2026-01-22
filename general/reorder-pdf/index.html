@@ -17,6 +17,12 @@
     <!-- pdf-lib -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     
+    <!-- PDF.js for rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
@@ -79,7 +85,7 @@
         
         .pages-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
@@ -111,16 +117,31 @@
             background: rgba(233, 69, 96, 0.1);
         }
         
-        .page-icon {
-            font-size: 48px;
-            color: #818cf8;
-            margin-bottom: 10px;
+        .page-canvas-container {
+            background: white;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            min-height: 150px;
+            position: relative;
+        }
+        
+        .page-canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
         }
         
         .page-number {
             font-weight: 600;
             color: var(--text-primary);
             font-size: 16px;
+            margin-top: 10px;
         }
         
         .page-badge {
@@ -334,6 +355,13 @@
         <!-- Pages Container -->
         <div class="pages-container" id="pagesContainer">
             <h3><i class="fas fa-grip-vertical"></i> Drag & Drop Pages to Reorder</h3>
+            
+            <div id="memoryWarning" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px; display: none;">
+                <p style="color: #ffc107; margin: 0; font-size: 14px;">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Rendering many pages may cause performance issues or browser crashes due to memory constraints. Consider processing in batches if you experience issues.
+                </p>
+            </div>
+            
             <div class="instruction-box">
                 <i class="fas fa-hand-pointer"></i> Click and drag any page to reorder. Release to drop in new position.
             </div>
@@ -393,6 +421,7 @@
 
     <script>
         let pdfDoc = null;
+        let pdfJsDoc = null;
         let pdfBytes = null;
         let fileName = '';
         let pageOrder = [];
@@ -435,11 +464,21 @@
             
             try {
                 pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                
+                // Load with PDF.js for rendering
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                pdfJsDoc = await loadingTask.promise;
+                
                 const pageCount = pdfDoc.getPageCount();
                 
                 // Initialize page order
                 originalOrder = Array.from({ length: pageCount }, (_, i) => i);
                 pageOrder = [...originalOrder];
+                
+                // Show memory warning for large PDFs
+                if (pageCount > 20) {
+                    document.getElementById('memoryWarning').style.display = 'block';
+                }
                 
                 // Display info
                 document.getElementById('pdfPages').textContent = pageCount;
@@ -449,27 +488,42 @@
                 document.getElementById('pdfInfo').classList.add('active');
                 document.getElementById('pagesContainer').classList.add('active');
                 
-                renderPages();
+                await renderPages();
             } catch (error) {
                 alert('Error loading PDF: ' + error.message);
             }
         }
 
-        function renderPages() {
+        async function renderPages() {
             const grid = document.getElementById('pagesGrid');
             grid.innerHTML = '';
             
-            pageOrder.forEach((originalIndex, currentIndex) => {
+            for (let currentIndex = 0; currentIndex < pageOrder.length; currentIndex++) {
+                const originalIndex = pageOrder[currentIndex];
                 const pageItem = document.createElement('div');
                 pageItem.className = 'page-item';
                 pageItem.draggable = true;
                 pageItem.dataset.index = currentIndex;
                 
-                pageItem.innerHTML = `
-                    <div class="page-icon"><i class="fas fa-file-pdf"></i></div>
-                    <div class="page-number">Page ${originalIndex + 1}</div>
-                    <div class="page-badge">Position ${currentIndex + 1}</div>
-                `;
+                // Canvas container
+                const canvasContainer = document.createElement('div');
+                canvasContainer.className = 'page-canvas-container';
+                
+                const canvas = document.createElement('canvas');
+                canvas.className = 'page-canvas';
+                
+                const pageNumber = document.createElement('div');
+                pageNumber.className = 'page-number';
+                pageNumber.textContent = `Page ${originalIndex + 1}`;
+                
+                const pageBadge = document.createElement('div');
+                pageBadge.className = 'page-badge';
+                pageBadge.textContent = `Position ${currentIndex + 1}`;
+                
+                canvasContainer.appendChild(canvas);
+                pageItem.appendChild(canvasContainer);
+                pageItem.appendChild(pageNumber);
+                pageItem.appendChild(pageBadge);
                 
                 // Drag events
                 pageItem.addEventListener('dragstart', handleDragStart);
@@ -478,7 +532,25 @@
                 pageItem.addEventListener('drop', handleDrop);
                 
                 grid.appendChild(pageItem);
-            });
+                
+                // Render page thumbnail
+                await renderPageThumbnail(originalIndex + 1, canvas);
+            }
+        }
+        
+        async function renderPageThumbnail(pageNum, canvas) {
+            const page = await pdfJsDoc.getPage(pageNum);
+            const scale = 0.5;
+            const viewport = page.getViewport({ scale });
+            
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
         }
 
         let draggedElement = null;

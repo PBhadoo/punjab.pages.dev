@@ -146,6 +146,89 @@
             text-align: center;
         }
         
+        .progress-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .progress-section.active {
+            display: block;
+        }
+        
+        .progress-section h3 {
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: var(--text-primary);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 15px;
+        }
+        
+        .split-btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .split-btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-secondary {
+            padding: 12px 20px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #818cf8;
+            border-radius: 8px;
+            color: #818cf8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        
         .stats-label {
             font-size: 13px;
             color: var(--text-secondary);
@@ -283,7 +366,7 @@
         </div>
 
         <!-- Progress Section -->
-        <div class="progress-section" id="progressSection">
+        <div class="progress-section" id="progressSection" style="display: none;">
             <h3><i class="fas fa-spinner fa-spin"></i> Compressing PDF...</h3>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>

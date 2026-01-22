@@ -17,6 +17,12 @@
     <!-- pdf-lib -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     
+    <!-- PDF.js for rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
@@ -32,7 +38,7 @@
         
         .page-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
             margin: 25px 0;
         }
@@ -41,7 +47,7 @@
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid var(--card-border);
             border-radius: 10px;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
@@ -56,6 +62,26 @@
         .page-card.to-delete {
             background: rgba(239, 68, 68, 0.2);
             border-color: #ef4444;
+        }
+        
+        .page-canvas-container {
+            background: white;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            min-height: 150px;
+            position: relative;
+        }
+        
+        .page-canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
         }
         
         .page-number {
@@ -143,6 +169,84 @@
             color: var(--text-secondary);
             text-transform: uppercase;
         }
+        
+        .progress-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .progress-section.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 25px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), #ff6b9d);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .progress-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .split-btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .split-btn:hover {
+            background: #c43d59;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-color);
+        }
     </style>
 </head>
 <body>
@@ -196,6 +300,13 @@
         <!-- Page Manager -->
         <div class="page-manager" id="pageManager" style="display: none;">
             <h3><i class="fas fa-edit"></i> Select Pages to Delete</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Click on page thumbnails to mark for deletion. Red pages will be removed.</p>
+            
+            <div id="memoryWarning" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px; display: none;">
+                <p style="color: #ffc107; margin: 0; font-size: 14px;">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Rendering many pages may cause performance issues or browser crashes due to memory constraints. Consider processing in batches if you experience issues.
+                </p>
+            </div>
             
             <div class="stats-info">
                 <div class="stat-item">
@@ -226,7 +337,7 @@
         </div>
 
         <!-- Progress Section -->
-        <div class="progress-section" id="progressSection">
+        <div class="progress-section" id="progressSection" style="display: none;">
             <h3><i class="fas fa-spinner fa-spin"></i> Processing PDF...</h3>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
@@ -336,14 +447,24 @@
             pdfFileName = file.name;
             const arrayBuffer = await file.arrayBuffer();
             pdfDocument = await PDFDocument.load(arrayBuffer);
+            
+            // Load with PDF.js for rendering
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            pdfJsDoc = await loadingTask.promise;
+            
             totalPageCount = pdfDocument.getPageCount();
             
-            generatePageGrid();
+            // Show memory warning for large PDFs
+            if (totalPageCount > 20) {
+                document.getElementById('memoryWarning').style.display = 'block';
+            }
+            
+            await generatePageGrid();
             updateStats();
             document.getElementById('pageManager').style.display = 'block';
         }
 
-        function generatePageGrid() {
+        async function generatePageGrid() {
             const grid = document.getElementById('pageGrid');
             grid.innerHTML = '';
             document.getElementById('totalPages').textContent = totalPageCount;
@@ -351,14 +472,52 @@
             for (let i = 1; i <= totalPageCount; i++) {
                 const card = document.createElement('div');
                 card.className = 'page-card';
-                card.innerHTML = `
-                    <i class="fas fa-trash delete-icon"></i>
-                    <div class="page-number">${i}</div>
-                    <div class="page-status">Keep</div>
-                `;
+                card.dataset.pageNum = i;
+                
+                const deleteIcon = document.createElement('i');
+                deleteIcon.className = 'fas fa-trash delete-icon';
+                
+                const canvasContainer = document.createElement('div');
+                canvasContainer.className = 'page-canvas-container';
+                
+                const canvas = document.createElement('canvas');
+                canvas.className = 'page-canvas';
+                
+                const pageNumber = document.createElement('div');
+                pageNumber.className = 'page-number';
+                pageNumber.textContent = i;
+                
+                const pageStatus = document.createElement('div');
+                pageStatus.className = 'page-status';
+                pageStatus.textContent = 'Keep';
+                
+                canvasContainer.appendChild(canvas);
+                card.appendChild(deleteIcon);
+                card.appendChild(canvasContainer);
+                card.appendChild(pageNumber);
+                card.appendChild(pageStatus);
+                
                 card.onclick = () => togglePageForDeletion(i, card);
                 grid.appendChild(card);
+                
+                // Render page thumbnail
+                await renderPageThumbnail(i, canvas);
             }
+        }
+        
+        async function renderPageThumbnail(pageNum, canvas) {
+            const page = await pdfJsDoc.getPage(pageNum);
+            const scale = 0.5;
+            const viewport = page.getViewport({ scale });
+            
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
         }
 
         function togglePageForDeletion(pageNum, element) {
@@ -494,6 +653,7 @@
 
         function reset() {
             pdfDocument = null;
+            pdfJsDoc = null;
             modifiedPDFBytes = null;
             pdfFileName = '';
             pagesToDelete.clear();
@@ -502,6 +662,7 @@
             document.getElementById('pageManager').style.display = 'none';
             document.getElementById('progressSection').classList.remove('active');
             document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('memoryWarning').style.display = 'none';
             
             fileInput.value = '';
         }

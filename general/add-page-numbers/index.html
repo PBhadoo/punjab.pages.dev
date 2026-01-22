@@ -17,6 +17,12 @@
     <!-- pdf-lib -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     
+    <!-- PDF.js for rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
@@ -149,7 +155,7 @@
         
         .color-input-wrapper input[type="color"] {
             width: 60px;
-            height: 45px;
+            height: 40px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -157,6 +163,8 @@
         
         .color-input-wrapper input[type="text"] {
             flex: 1;
+            pointer-events: none;
+            opacity: 0.7;
         }
         
         .add-btn {
@@ -171,6 +179,15 @@
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(233, 69, 96, 0.4);
         }
         
         .add-btn:hover {
@@ -260,6 +277,276 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
         }
+        
+        .preview-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            display: none;
+        }
+        
+        .preview-section.active {
+            display: block;
+        }
+        
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .preview-canvas-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .preview-canvas-container {
+            position: relative;
+            max-width: 50%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: max-width 0.3s ease;
+        }
+        
+        .preview-canvas-container.size-small {
+            max-width: 20%;
+        }
+        
+        .preview-canvas-container.size-medium {
+            max-width: 40%;
+        }
+        
+        .preview-canvas-container.size-large {
+            max-width: 65%;
+        }
+        
+        .preview-canvas-container.size-full {
+            max-width: 90%;
+        }
+        
+        .preview-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        
+        .preview-page-number {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+        
+        .preview-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .preview-nav-btn {
+            padding: 12px 20px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            color: #818cf8;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+        
+        .preview-nav-btn:hover:not(:disabled) {
+            background: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .preview-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .page-slider-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .page-slider {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .page-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #818cf8;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(129, 140, 248, 0.4);
+        }
+        
+        .page-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #818cf8;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 2px 8px rgba(129, 140, 248, 0.4);
+        }
+        
+        .page-info {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .reset-btn {
+            padding: 10px 20px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: #ef4444;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .reset-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        
+        .upload-section.hidden {
+            display: none;
+        }
+        
+        .position-adjust {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+        }
+        
+        .position-adjust-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .arrow-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+            gap: 5px;
+        }
+        
+        .arrow-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 6px;
+            color: #818cf8;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .arrow-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .arrow-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .arrow-btn.center {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        .arrow-btn.center:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .offset-display {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+        
+        .size-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+        }
+        
+        .size-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .size-btn {
+            padding: 6px 12px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 6px;
+            color: #818cf8;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .size-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+        
+        .size-btn.active {
+            background: rgba(99, 102, 241, 0.4);
+            border-color: #818cf8;
+        }
     </style>
 </head>
 <body>
@@ -326,6 +613,78 @@
                     <div class="info-value" id="pdfName">-</div>
                     <div class="info-label">Filename</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Live Preview Section -->
+        <div class="preview-section" id="previewSection">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0;"><i class="fas fa-eye"></i> Live Preview</h3>
+                <button class="reset-btn" onclick="resetTool()">
+                    <i class="fas fa-rotate-left"></i> Start Over
+                </button>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Upload a PDF to see exactly where page numbers will appear</p>
+            
+            <div class="size-controls">
+                <span class="size-label">Preview Size:</span>
+                <button class="size-btn" onclick="setPreviewSize('small')">Small</button>
+                <button class="size-btn active" onclick="setPreviewSize('medium')">Medium</button>
+                <button class="size-btn" onclick="setPreviewSize('large')">Large</button>
+                <button class="size-btn" onclick="setPreviewSize('full')">Full</button>
+            </div>
+            
+            <div class="preview-container">
+                <div class="preview-canvas-wrapper">
+                    <div class="preview-canvas-container" id="canvasContainer">
+                        <canvas class="preview-canvas" id="previewCanvas"></canvas>
+                        <div class="preview-page-number" id="previewPageNumber"></div>
+                    </div>
+                </div>
+                
+                <div class="preview-controls">
+                    <button class="preview-nav-btn" id="prevBtn" onclick="navigatePage(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    
+                    <div class="page-slider-container">
+                        <input type="range" class="page-slider" id="pageSlider" min="1" value="1" oninput="sliderChanged()">
+                        <div class="page-info" id="pageInfo">Page 1 of 1</div>
+                    </div>
+                    
+                    <button class="preview-nav-btn" id="nextBtn" onclick="navigatePage(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fine-tune Position -->
+        <div class="preview-section" id="fineTuneSection" style="padding: 20px;">
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-arrows-alt"></i> Fine-tune Position</h3>
+            <div class="position-adjust" style="margin: 0;">
+                <div class="arrow-controls">
+                    <div></div>
+                    <button class="arrow-btn" onclick="adjustPosition(0, -5)" title="Move Up">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <div></div>
+                    <button class="arrow-btn" onclick="adjustPosition(-5, 0)" title="Move Left">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="arrow-btn center" onclick="resetOffset()" title="Reset Position">
+                        <i class="fas fa-rotate-left"></i>
+                    </button>
+                    <button class="arrow-btn" onclick="adjustPosition(5, 0)" title="Move Right">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <div></div>
+                    <button class="arrow-btn" onclick="adjustPosition(0, 5)" title="Move Down">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                    <div></div>
+                </div>
+                <div class="offset-display" id="offsetDisplay">Offset: X: 0px, Y: 0px</div>
             </div>
         </div>
 
@@ -440,13 +799,116 @@
 
     <script>
         let pdfDoc = null;
+        let pdfJsDoc = null;
         let pdfBytes = null;
         let fileName = '';
         let selectedPosition = 'bottom-center';
+        let manualOffsetX = 0;
+        let manualOffsetY = 0;
+        let previewSize = 'medium';
+        
+        // Load settings from localStorage on page load
+        function loadSettings() {
+            const saved = localStorage.getItem('addPageNumbersSettings');
+            if (saved) {
+                try {
+                    const settings = JSON.parse(saved);
+                    selectedPosition = settings.position || 'bottom-center';
+                    manualOffsetX = settings.offsetX || 0;
+                    manualOffsetY = settings.offsetY || 0;
+                    previewSize = settings.previewSize || 'medium';
+                    
+                    document.getElementById('fontSize').value = settings.fontSize || 12;
+                    document.getElementById('fontColor').value = settings.fontColor || '#000000';
+                    document.getElementById('fontColorHex').value = settings.fontColor || '#000000';
+                    document.getElementById('startNumber').value = settings.startNumber || 1;
+                    document.getElementById('format').value = settings.format || 'simple';
+                    document.getElementById('offsetDisplay').textContent = `Offset: X: ${manualOffsetX}px, Y: ${manualOffsetY}px`;
+                    
+                    // Set active position button
+                    document.querySelectorAll('.position-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.onclick.toString().includes(selectedPosition)) {
+                            btn.classList.add('active');
+                        }
+                    });
+                    
+                    // Set preview size
+                    setPreviewSize(previewSize, false);
+                } catch (e) {
+                    console.log('Error loading settings:', e);
+                }
+            }
+        }
+        
+        // Save settings to localStorage
+        function saveSettings() {
+            const settings = {
+                position: selectedPosition,
+                offsetX: manualOffsetX,
+                offsetY: manualOffsetY,
+                fontSize: parseInt(document.getElementById('fontSize').value),
+                fontColor: document.getElementById('fontColor').value,
+                startNumber: parseInt(document.getElementById('startNumber').value),
+                format: document.getElementById('format').value,
+                previewSize: previewSize
+            };
+            localStorage.setItem('addPageNumbersSettings', JSON.stringify(settings));
+        }
+        
+        function setPreviewSize(size, save = true) {
+            previewSize = size;
+            const container = document.getElementById('canvasContainer');
+            container.className = 'preview-canvas-container size-' + size;
+            
+            // Update active button
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event?.target?.classList.add('active');
+            
+            if (save) saveSettings();
+        }
+        
+        function adjustPosition(deltaX, deltaY) {
+            manualOffsetX += deltaX;
+            manualOffsetY += deltaY;
+            document.getElementById('offsetDisplay').textContent = `Offset: X: ${manualOffsetX}px, Y: ${manualOffsetY}px`;
+            saveSettings();
+            updatePreview();
+        }
+        
+        function resetOffset() {
+            manualOffsetX = 0;
+            manualOffsetY = 0;
+            document.getElementById('offsetDisplay').textContent = `Offset: X: 0px, Y: 0px`;
+            saveSettings();
+            updatePreview();
+        }
+
+        // Load settings on page load
+        loadSettings();
 
         // Color picker sync
         document.getElementById('fontColor').addEventListener('input', (e) => {
             document.getElementById('fontColorHex').value = e.target.value;
+            saveSettings();
+            updatePreview();
+        });
+        
+        document.getElementById('fontSize').addEventListener('input', () => {
+            saveSettings();
+            updatePreview();
+        });
+        
+        document.getElementById('startNumber').addEventListener('input', () => {
+            saveSettings();
+            updatePreview();
+        });
+        
+        document.getElementById('format').addEventListener('change', () => {
+            saveSettings();
+            updatePreview();
         });
 
         // Upload handling
@@ -486,23 +948,216 @@
             
             try {
                 pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                
+                // Load with PDF.js for rendering
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                pdfJsDoc = await loadingTask.promise;
+                
                 const pageCount = pdfDoc.getPageCount();
                 
                 document.getElementById('pdfPages').textContent = pageCount;
                 document.getElementById('pdfSize').textContent = formatBytes(file.size);
                 document.getElementById('pdfName').textContent = fileName;
                 
+                document.querySelector('.upload-section').classList.add('hidden');
                 document.getElementById('pdfInfo').classList.add('active');
+                document.getElementById('previewSection').classList.add('active');
+                document.getElementById('fineTuneSection').classList.add('active');
                 document.getElementById('controlsContainer').classList.add('active');
+                
+                await renderPreview();
             } catch (error) {
                 alert('Error loading PDF: ' + error.message);
             }
         }
 
+        function resetTool() {
+            // Clear all data
+            pdfDoc = null;
+            pdfJsDoc = null;
+            pdfBytes = null;
+            fileName = '';
+            currentPreviewPage = 1;
+            manualOffsetX = 0;
+            manualOffsetY = 0;
+            
+            // Reset file input
+            document.getElementById('fileInput').value = '';
+            
+            // Hide all sections
+            document.querySelector('.upload-section').classList.remove('hidden');
+            document.getElementById('pdfInfo').classList.remove('active');
+            document.getElementById('previewSection').classList.remove('active');
+            document.getElementById('fineTuneSection').classList.remove('active');
+            document.getElementById('controlsContainer').classList.remove('active');
+            document.getElementById('progressSection').classList.remove('active');
+            document.getElementById('resultsSection').classList.remove('active');
+            
+            // Clear canvas
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Reset form values
+            document.getElementById('fontSize').value = '12';
+            document.getElementById('fontColor').value = '#000000';
+            document.getElementById('fontColorHex').value = '#000000';
+            document.getElementById('startNumber').value = '1';
+            document.getElementById('format').value = 'simple';
+            
+            // Reset position to default (bottom-center)
+            selectedPosition = 'bottom-center';
+            document.getElementById('offsetDisplay').textContent = 'Offset: X: 0px, Y: 0px';
+            document.querySelectorAll('.position-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.position-btn').forEach(btn => {
+                if (btn.onclick.toString().includes('bottom-center')) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+        
         function selectPosition(position) {
             selectedPosition = position;
             document.querySelectorAll('.position-btn').forEach(btn => btn.classList.remove('active'));
             event.target.closest('.position-btn').classList.add('active');
+            saveSettings();
+            updatePreview();
+        }
+        
+        let currentPreviewPage = 1;
+        
+        async function renderPreview() {
+            const pageCount = pdfJsDoc.numPages;
+            const slider = document.getElementById('pageSlider');
+            slider.max = pageCount;
+            slider.value = 1;
+            currentPreviewPage = 1;
+            
+            updateNavigationButtons();
+            await renderCurrentPage();
+        }
+        
+        async function renderCurrentPage() {
+            const canvas = document.getElementById('previewCanvas');
+            const pageNumberElement = document.getElementById('previewPageNumber');
+            const pageCount = pdfJsDoc.numPages;
+            
+            document.getElementById('pageInfo').textContent = `Page ${currentPreviewPage} of ${pageCount}`;
+            
+            const page = await pdfJsDoc.getPage(currentPreviewPage);
+            const scale = 1.2;
+            const viewport = page.getViewport({ scale });
+            
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+            
+            updatePageNumber(currentPreviewPage, pageNumberElement, canvas);
+        }
+        
+        function navigatePage(direction) {
+            const pageCount = pdfJsDoc.numPages;
+            currentPreviewPage += direction;
+            
+            if (currentPreviewPage < 1) currentPreviewPage = 1;
+            if (currentPreviewPage > pageCount) currentPreviewPage = pageCount;
+            
+            document.getElementById('pageSlider').value = currentPreviewPage;
+            updateNavigationButtons();
+            renderCurrentPage();
+        }
+        
+        function sliderChanged() {
+            currentPreviewPage = parseInt(document.getElementById('pageSlider').value);
+            updateNavigationButtons();
+            renderCurrentPage();
+        }
+        
+        function updateNavigationButtons() {
+            const pageCount = pdfJsDoc.numPages;
+            document.getElementById('prevBtn').disabled = currentPreviewPage === 1;
+            document.getElementById('nextBtn').disabled = currentPreviewPage === pageCount;
+        }
+        
+        async function updatePreview() {
+            if (!pdfJsDoc) return;
+            
+            const canvas = document.getElementById('previewCanvas');
+            const pageNumberElement = document.getElementById('previewPageNumber');
+            
+            if (canvas && pageNumberElement) {
+                updatePageNumber(currentPreviewPage, pageNumberElement, canvas);
+            }
+        }
+        
+        function updatePageNumber(pageNum, element, canvas) {
+            const fontSize = parseInt(document.getElementById('fontSize').value);
+            const fontColor = document.getElementById('fontColor').value;
+            const startNumber = parseInt(document.getElementById('startNumber').value);
+            const format = document.getElementById('format').value;
+            const totalPages = pdfJsDoc.numPages;
+            
+            const currentNumber = pageNum - 1 + startNumber;
+            let text = '';
+            
+            switch (format) {
+                case 'simple':
+                    text = `${currentNumber}`;
+                    break;
+                case 'page':
+                    text = `Page ${currentNumber}`;
+                    break;
+                case 'of':
+                    text = `Page ${currentNumber} of ${totalPages + startNumber - 1}`;
+                    break;
+            }
+            
+            element.textContent = text;
+            element.style.fontSize = `${fontSize * 1.2}px`;
+            element.style.color = fontColor;
+            
+            const margin = 10;
+            
+            // Position the page number with manual offsets
+            element.style.transform = 'none';
+            element.style.top = 'auto';
+            element.style.bottom = 'auto';
+            element.style.left = 'auto';
+            element.style.right = 'auto';
+            
+            switch (selectedPosition) {
+                case 'top-left':
+                    element.style.top = `${margin + manualOffsetY}px`;
+                    element.style.left = `${margin + manualOffsetX}px`;
+                    break;
+                case 'top-center':
+                    element.style.top = `${margin + manualOffsetY}px`;
+                    element.style.left = `calc(50% + ${manualOffsetX}px)`;
+                    element.style.transform = 'translateX(-50%)';
+                    break;
+                case 'top-right':
+                    element.style.top = `${margin + manualOffsetY}px`;
+                    element.style.right = `${margin - manualOffsetX}px`;
+                    break;
+                case 'bottom-left':
+                    element.style.bottom = `${margin - manualOffsetY}px`;
+                    element.style.left = `${margin + manualOffsetX}px`;
+                    break;
+                case 'bottom-center':
+                    element.style.bottom = `${margin - manualOffsetY}px`;
+                    element.style.left = `calc(50% + ${manualOffsetX}px)`;
+                    element.style.transform = 'translateX(-50%)';
+                    break;
+                case 'bottom-right':
+                    element.style.bottom = `${margin - manualOffsetY}px`;
+                    element.style.right = `${margin - manualOffsetX}px`;
+                    break;
+            }
         }
 
         async function addPageNumbers() {
@@ -538,31 +1193,35 @@
                     const textWidth = fontSize * text.length * 0.6; // Approximate width
                     const margin = 30;
                     
+                    // Convert pixel offsets to PDF points (1.2 scale factor from preview)
+                    const offsetXPoints = manualOffsetX / 1.2;
+                    const offsetYPoints = manualOffsetY / 1.2;
+                    
                     let x, y;
                     switch (selectedPosition) {
                         case 'top-left':
-                            x = margin;
-                            y = height - margin;
+                            x = margin + offsetXPoints;
+                            y = height - margin - offsetYPoints;
                             break;
                         case 'top-center':
-                            x = (width - textWidth) / 2;
-                            y = height - margin;
+                            x = (width - textWidth) / 2 + offsetXPoints;
+                            y = height - margin - offsetYPoints;
                             break;
                         case 'top-right':
-                            x = width - textWidth - margin;
-                            y = height - margin;
+                            x = width - textWidth - margin - offsetXPoints;
+                            y = height - margin - offsetYPoints;
                             break;
                         case 'bottom-left':
-                            x = margin;
-                            y = margin;
+                            x = margin + offsetXPoints;
+                            y = margin + offsetYPoints;
                             break;
                         case 'bottom-center':
-                            x = (width - textWidth) / 2;
-                            y = margin;
+                            x = (width - textWidth) / 2 + offsetXPoints;
+                            y = margin + offsetYPoints;
                             break;
                         case 'bottom-right':
-                            x = width - textWidth - margin;
-                            y = margin;
+                            x = width - textWidth - margin - offsetXPoints;
+                            y = margin + offsetYPoints;
                             break;
                     }
                     
