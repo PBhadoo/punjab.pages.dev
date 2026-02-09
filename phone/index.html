@@ -1624,6 +1624,15 @@
                 `${lines.length} lines → ${unique.length} valid unique numbers` + (unique.length > 1000 ? ' (max 1000)' : '');
         }
 
+        // Safe fetch helper: returns parsed JSON or null on any error
+        async function safeFetchJSON(url) {
+            try {
+                const r = await fetch(url);
+                if (!r.ok) return null;
+                return await r.json();
+            } catch(e) { return null; }
+        }
+
         // Check a single number against all 4 operators sequentially (short-circuit on match)
         async function checkSingleNumber(number) {
             const dbInfo = lookupIndianOperator(number);
@@ -1638,56 +1647,44 @@
             };
 
             // 1. Jio
-            try {
-                const r = await fetch(`/reliancejioapi/${number}`);
-                const d = await r.json();
-                if (d.isJio) {
-                    result.currentOperator = 'Jio';
-                    result.type = d.billingType || 'Unknown';
-                    result.status = 'Active';
-                    result.live = true;
-                    return result;
-                }
-            } catch(e) {}
+            const jio = await safeFetchJSON(`/reliancejioapi/${number}`);
+            if (jio && jio.isJio) {
+                result.currentOperator = 'Jio';
+                result.type = jio.billingType || 'Unknown';
+                result.status = 'Active';
+                result.live = true;
+                return result;
+            }
 
             // 2. BSNL
-            try {
-                const r = await fetch(`/bsnlapi/${number}`);
-                const d = await r.json();
-                if (d.isBsnl) {
-                    result.currentOperator = 'BSNL';
-                    result.type = 'Prepaid';
-                    result.status = 'Active';
-                    result.live = true;
-                    return result;
-                }
-            } catch(e) {}
+            const bsnl = await safeFetchJSON(`/bsnlapi/${number}`);
+            if (bsnl && bsnl.isBsnl) {
+                result.currentOperator = 'BSNL';
+                result.type = 'Prepaid';
+                result.status = 'Active';
+                result.live = true;
+                return result;
+            }
 
             // 3. Airtel
-            try {
-                const r = await fetch(`/airtelapi/${number}?t=${Date.now()}`);
-                const d = await r.json();
-                if (d.isAirtel) {
-                    result.currentOperator = 'Airtel';
-                    result.type = d.subscriberType || 'Unknown';
-                    result.status = d.status === 'ACTIV' ? 'Active' : (d.status || 'Unknown');
-                    result.live = true;
-                    return result;
-                }
-            } catch(e) {}
+            const airtel = await safeFetchJSON(`/airtelapi/${number}?t=${Date.now()}`);
+            if (airtel && airtel.isAirtel) {
+                result.currentOperator = 'Airtel';
+                result.type = airtel.subscriberType || 'Unknown';
+                result.status = airtel.status === 'ACTIV' ? 'Active' : (airtel.status || 'Unknown');
+                result.live = true;
+                return result;
+            }
 
             // 4. Vi
-            try {
-                const r = await fetch(`/viapi/${number}?t=${Date.now()}`);
-                const d = await r.json();
-                if (d.isVi) {
-                    result.currentOperator = 'Vi';
-                    result.type = d.subscriberType || 'Unknown';
-                    result.status = (d.custStatus === 'ACTIVE' || d.custStatus === 'NOTSUSPENDED') ? 'Active' : (d.custStatus || 'Unknown');
-                    result.live = true;
-                    return result;
-                }
-            } catch(e) {}
+            const vi = await safeFetchJSON(`/viapi/${number}?t=${Date.now()}`);
+            if (vi && vi.isVi) {
+                result.currentOperator = 'Vi';
+                result.type = vi.subscriberType || 'Unknown';
+                result.status = (vi.custStatus === 'ACTIVE' || vi.custStatus === 'NOTSUSPENDED') ? 'Active' : (vi.custStatus || 'Unknown');
+                result.live = true;
+                return result;
+            }
 
             // None matched
             result.currentOperator = 'Other/Unknown';
@@ -1734,6 +1731,29 @@
             let completed = 0;
             const BATCH_SIZE = 10;
 
+            // Helper to render a result row
+            function renderRow(result) {
+                const row = document.createElement('tr');
+                row.id = 'bulkRow_' + result.index;
+                row.style.borderBottom = '1px solid rgba(99,102,241,0.15)';
+                const opColor = result.live ? '#10b981' : '#6b7280';
+                row.innerHTML = `
+                    <td style="padding:8px 12px;">${result.index}</td>
+                    <td style="padding:8px 12px;">${result.number}</td>
+                    <td style="padding:8px 12px;">${result.origOperator}</td>
+                    <td style="padding:8px 12px;">${result.origCircle}</td>
+                    <td style="padding:8px 12px;color:${opColor};font-weight:600;">${result.currentOperator}</td>
+                    <td style="padding:8px 12px;">${result.type}</td>
+                    <td style="padding:8px 12px;">${result.status}</td>
+                `;
+                // Replace existing row or append
+                const existing = document.getElementById('bulkRow_' + result.index);
+                if (existing) existing.replaceWith(row);
+                else tbody.appendChild(row);
+            }
+
+            const delay = ms => new Promise(r => setTimeout(r, ms));
+
             for (let i = 0; i < total; i += BATCH_SIZE) {
                 const batch = numbers.slice(i, i + BATCH_SIZE);
                 const batchNum = Math.floor(i / BATCH_SIZE) + 1;
@@ -1742,34 +1762,54 @@
 
                 // Fire all 10 in parallel, collect results
                 const batchResults = await Promise.all(
-                    batch.map((num, batchIdx) => checkSingleNumber(num))
+                    batch.map(num => checkSingleNumber(num))
                 );
 
-                // Now render all 10 rows in order
+                // Render all rows in order
                 batchResults.forEach((result, batchIdx) => {
                     const globalIdx = i + batchIdx;
                     result.index = globalIdx + 1;
                     bulkResults[globalIdx] = result;
-
-                    const row = document.createElement('tr');
-                    row.style.borderBottom = '1px solid rgba(99,102,241,0.15)';
-                    const opColor = result.live ? '#10b981' : '#6b7280';
-                    row.innerHTML = `
-                        <td style="padding:8px 12px;">${result.index}</td>
-                        <td style="padding:8px 12px;">${result.number}</td>
-                        <td style="padding:8px 12px;">${result.origOperator}</td>
-                        <td style="padding:8px 12px;">${result.origCircle}</td>
-                        <td style="padding:8px 12px;color:${opColor};font-weight:600;">${result.currentOperator}</td>
-                        <td style="padding:8px 12px;">${result.type}</td>
-                        <td style="padding:8px 12px;">${result.status}</td>
-                    `;
-                    tbody.appendChild(row);
+                    renderRow(result);
                 });
 
                 completed += batch.length;
                 const pct = Math.round((completed / total) * 100);
                 progressBar.style.width = pct + '%';
                 progressPercent.textContent = pct + '%';
+
+                // 2-second delay between batches to avoid rate limiting
+                if (i + BATCH_SIZE < total) {
+                    progressText.textContent = `Batch ${batchNum}/${totalBatches} done. Waiting 2s before next batch...`;
+                    await delay(2000);
+                }
+            }
+
+            // Retry pass: re-check numbers that came back as Other/Unknown (may be API errors)
+            const failedIndices = bulkResults
+                .map((r, idx) => (r && r.currentOperator === 'Other/Unknown') ? idx : -1)
+                .filter(idx => idx !== -1);
+            
+            if (failedIndices.length > 0 && failedIndices.length <= 200) {
+                progressText.textContent = `Retrying ${failedIndices.length} unresolved numbers...`;
+                progressBar.style.width = '95%';
+                await delay(3000); // wait 3 seconds before retry
+
+                for (let ri = 0; ri < failedIndices.length; ri += BATCH_SIZE) {
+                    const retryBatch = failedIndices.slice(ri, ri + BATCH_SIZE);
+                    const retryResults = await Promise.all(
+                        retryBatch.map(idx => checkSingleNumber(numbers[idx]))
+                    );
+                    retryResults.forEach((result, j) => {
+                        const idx = retryBatch[j];
+                        if (result.live) {
+                            result.index = idx + 1;
+                            bulkResults[idx] = result;
+                            renderRow(result);
+                        }
+                    });
+                    if (ri + BATCH_SIZE < failedIndices.length) await delay(2000);
+                }
             }
 
             // Done
