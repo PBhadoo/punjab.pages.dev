@@ -135,10 +135,11 @@
                         <tbody id="bulkResultBody"></tbody>
                     </table>
                 </div>
-                <div class="action-buttons" style="margin-top:20px;">
+                <div class="action-buttons" id="bulkActionButtons" style="margin-top:20px;display:none;">
                     <button class="action-btn" onclick="copyBulkTSV()"><i class="fas fa-copy"></i> Copy for Excel (TSV)</button>
                     <button class="action-btn" onclick="downloadBulkCSV()"><i class="fas fa-file-csv"></i> Download CSV</button>
                     <button class="action-btn" onclick="downloadBulkPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+                    <button class="action-btn" id="bulkRetryBtn" style="display:none;background:rgba(245,158,11,0.2);border-color:rgba(245,158,11,0.5);" onclick="retryFailedNumbers()"><i class="fas fa-redo"></i> Retry Failed (<span id="bulkFailedCount">0</span>)</button>
                     <button class="action-btn" onclick="document.getElementById('bulkResultsSection').style.display='none';"><i class="fas fa-times"></i> Close</button>
                 </div>
             </div>
@@ -275,6 +276,22 @@
             <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools | Data source: hstsethi/in-mob-prefix (CC BY 4.0)</p>
         </div>
     </footer>
+
+    <!-- Floating Bulk Progress (visible when scrolled away from main progress) -->
+    <div id="floatingBulkProgress" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(10,10,30,0.95);border-top:2px solid var(--accent-color);padding:10px 20px;backdrop-filter:blur(10px);">
+        <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:15px;">
+            <div class="loading-spinner" style="width:24px;height:24px;min-width:24px;margin:0;border-width:3px;"></div>
+            <div style="flex:1;">
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-secondary);margin-bottom:4px;">
+                    <span id="floatingProgressText">Processing...</span>
+                    <span id="floatingProgressPercent">0%</span>
+                </div>
+                <div style="width:100%;height:6px;background:rgba(99,102,241,0.2);border-radius:3px;overflow:hidden;">
+                    <div id="floatingProgressBar" style="width:0%;height:100%;background:var(--accent-color);border-radius:3px;transition:width 0.3s;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="toast" id="toast">
         <i class="fas fa-check-circle"></i>
@@ -1582,6 +1599,7 @@
 
         // ========== BULK LOOKUP FUNCTIONS ==========
         let bulkResults = []; // Store results for export
+        let bulkNumbers = []; // Store numbers for retry
         let bulkRunning = false;
 
         // Clean and extract a 10-digit Indian number from any format
@@ -1707,10 +1725,16 @@
             }
 
             bulkRunning = true;
+            bulkNumbers = numbers;
             bulkResults = new Array(numbers.length);
             const btn = document.getElementById('bulkLookupBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            // Hide action buttons during processing, show floating bar
+            document.getElementById('bulkActionButtons').style.display = 'none';
+            document.getElementById('bulkRetryBtn').style.display = 'none';
+            document.getElementById('floatingBulkProgress').style.display = 'block';
 
             // Show progress
             const progressDiv = document.getElementById('bulkProgress');
@@ -1777,6 +1801,10 @@
                 const pct = Math.round((completed / total) * 100);
                 progressBar.style.width = pct + '%';
                 progressPercent.textContent = pct + '%';
+                // Sync floating progress
+                document.getElementById('floatingProgressText').textContent = progressText.textContent;
+                document.getElementById('floatingProgressPercent').textContent = pct + '%';
+                document.getElementById('floatingProgressBar').style.width = pct + '%';
 
                 // 2-second delay between batches to avoid rate limiting
                 if (i + BATCH_SIZE < total) {
@@ -1813,14 +1841,28 @@
             }
 
             // Done
+            const liveCount = bulkResults.filter(r => r && r.live).length;
+            const failedCount = bulkResults.filter(r => r && r.currentOperator === 'Other/Unknown').length;
             progressText.textContent = `Completed: ${total} numbers processed`;
             progressPercent.textContent = '100%';
             progressBar.style.width = '100%';
-            document.getElementById('bulkResultSummary').textContent = `${total} numbers processed | ${bulkResults.filter(r => r && r.live).length} verified with live operator`;
+            document.getElementById('bulkResultSummary').textContent = `${total} numbers processed | ${liveCount} verified | ${failedCount} unresolved`;
             
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-rocket"></i> Start Bulk Lookup';
             bulkRunning = false;
+
+            // Hide floating bar, show action buttons
+            document.getElementById('floatingBulkProgress').style.display = 'none';
+            document.getElementById('bulkActionButtons').style.display = 'flex';
+
+            // Show retry button if there are failed numbers
+            if (failedCount > 0) {
+                document.getElementById('bulkRetryBtn').style.display = 'inline-flex';
+                document.getElementById('bulkFailedCount').textContent = failedCount;
+            } else {
+                document.getElementById('bulkRetryBtn').style.display = 'none';
+            }
 
             document.getElementById('bulkResultsSection').scrollIntoView({ behavior: 'smooth' });
             showToast(`Bulk lookup complete: ${total} numbers`);
@@ -1932,6 +1974,96 @@
 
             doc.save(`Bulk_Phone_Lookup_${new Date().toISOString().slice(0,10)}.pdf`);
             showToast('PDF downloaded');
+        }
+
+        // Retry failed numbers on-demand
+        async function retryFailedNumbers() {
+            if (bulkRunning) { showToast('Already processing'); return; }
+            const failedIndices = bulkResults
+                .map((r, idx) => (r && r.currentOperator === 'Other/Unknown') ? idx : -1)
+                .filter(idx => idx !== -1);
+            if (failedIndices.length === 0) { showToast('No failed numbers to retry'); return; }
+
+            bulkRunning = true;
+            const retryBtn = document.getElementById('bulkRetryBtn');
+            retryBtn.disabled = true;
+            retryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Retrying...';
+            document.getElementById('bulkActionButtons').style.display = 'none';
+            document.getElementById('floatingBulkProgress').style.display = 'block';
+
+            const progressText = document.getElementById('bulkProgressText');
+            const progressBar = document.getElementById('bulkProgressBar');
+            const progressPercent = document.getElementById('bulkProgressPercent');
+            const delay = ms => new Promise(r => setTimeout(r, ms));
+            const BATCH_SIZE = 10;
+            const tbody = document.getElementById('bulkResultBody');
+
+            function renderRow(result) {
+                const row = document.createElement('tr');
+                row.id = 'bulkRow_' + result.index;
+                row.style.borderBottom = '1px solid rgba(99,102,241,0.15)';
+                const opColor = result.live ? '#10b981' : '#6b7280';
+                row.innerHTML = `
+                    <td style="padding:8px 12px;">${result.index}</td>
+                    <td style="padding:8px 12px;">${result.number}</td>
+                    <td style="padding:8px 12px;">${result.origOperator}</td>
+                    <td style="padding:8px 12px;">${result.origCircle}</td>
+                    <td style="padding:8px 12px;color:${opColor};font-weight:600;">${result.currentOperator}</td>
+                    <td style="padding:8px 12px;">${result.type}</td>
+                    <td style="padding:8px 12px;">${result.status}</td>
+                `;
+                const existing = document.getElementById('bulkRow_' + result.index);
+                if (existing) existing.replaceWith(row);
+                else tbody.appendChild(row);
+            }
+
+            let resolved = 0;
+            progressText.textContent = `Retrying ${failedIndices.length} failed numbers...`;
+            progressBar.style.width = '0%';
+            await delay(2000);
+
+            for (let ri = 0; ri < failedIndices.length; ri += BATCH_SIZE) {
+                const batch = failedIndices.slice(ri, ri + BATCH_SIZE);
+                const pct = Math.round(((ri) / failedIndices.length) * 100);
+                progressText.textContent = `Retry: ${ri + 1}-${Math.min(ri + batch.length, failedIndices.length)} of ${failedIndices.length}...`;
+                progressBar.style.width = pct + '%';
+                progressPercent.textContent = pct + '%';
+                document.getElementById('floatingProgressText').textContent = progressText.textContent;
+                document.getElementById('floatingProgressBar').style.width = pct + '%';
+                document.getElementById('floatingProgressPercent').textContent = pct + '%';
+
+                const results = await Promise.all(batch.map(idx => checkSingleNumber(bulkNumbers[idx])));
+                results.forEach((result, j) => {
+                    const idx = batch[j];
+                    if (result.live) {
+                        result.index = idx + 1;
+                        bulkResults[idx] = result;
+                        renderRow(result);
+                        resolved++;
+                    }
+                });
+                if (ri + BATCH_SIZE < failedIndices.length) await delay(2000);
+            }
+
+            // Done
+            const newFailedCount = bulkResults.filter(r => r && r.currentOperator === 'Other/Unknown').length;
+            const liveCount = bulkResults.filter(r => r && r.live).length;
+            progressText.textContent = `Retry done: ${resolved} resolved, ${newFailedCount} still unresolved`;
+            progressBar.style.width = '100%';
+            progressPercent.textContent = '100%';
+            document.getElementById('bulkResultSummary').textContent = `${bulkResults.length} numbers | ${liveCount} verified | ${newFailedCount} unresolved`;
+
+            bulkRunning = false;
+            retryBtn.disabled = false;
+            retryBtn.innerHTML = `<i class="fas fa-redo"></i> Retry Failed (<span id="bulkFailedCount">${newFailedCount}</span>)`;
+            document.getElementById('floatingBulkProgress').style.display = 'none';
+            document.getElementById('bulkActionButtons').style.display = 'flex';
+            if (newFailedCount > 0) {
+                retryBtn.style.display = 'inline-flex';
+            } else {
+                retryBtn.style.display = 'none';
+            }
+            showToast(`Retry complete: ${resolved} newly resolved`);
         }
 
         // Download results as CSV
