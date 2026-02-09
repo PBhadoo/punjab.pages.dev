@@ -137,6 +137,7 @@
                 </div>
                 <div class="action-buttons" id="bulkActionButtons" style="margin-top:20px;display:none;">
                     <button class="action-btn" onclick="copyBulkTSV()"><i class="fas fa-copy"></i> Copy for Excel (TSV)</button>
+                    <button class="action-btn" onclick="copyBulkMain()"><i class="fas fa-columns"></i> Copy Main Columns</button>
                     <button class="action-btn" onclick="downloadBulkCSV()"><i class="fas fa-file-csv"></i> Download CSV</button>
                     <button class="action-btn" onclick="downloadBulkPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
                     <button class="action-btn" id="bulkRetryBtn" style="display:none;background:rgba(245,158,11,0.2);border-color:rgba(245,158,11,0.5);" onclick="retryFailedNumbers()"><i class="fas fa-redo"></i> Retry Failed (<span id="bulkFailedCount">0</span>)</button>
@@ -1877,6 +1878,17 @@
             });
             navigator.clipboard.writeText(tsv);
             showToast('Results copied as TSV (paste into Excel)');
+        }
+
+        // Copy only Number and Current Operator columns (TSV for Excel)
+        function copyBulkMain() {
+            if (!bulkResults.length) { showToast('No results to copy'); return; }
+            let tsv = 'Number\tCurrent Operator\n';
+            bulkResults.forEach(r => {
+                if (r) tsv += `${r.number}\t${r.currentOperator}\n`;
+            });
+            navigator.clipboard.writeText(tsv);
+            showToast('Number + Operator copied (paste into Excel)');
         }
 
         // Download results as PDF
