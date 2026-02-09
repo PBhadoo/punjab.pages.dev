@@ -138,6 +138,7 @@
                 <div class="action-buttons" style="margin-top:20px;">
                     <button class="action-btn" onclick="copyBulkTSV()"><i class="fas fa-copy"></i> Copy for Excel (TSV)</button>
                     <button class="action-btn" onclick="downloadBulkCSV()"><i class="fas fa-file-csv"></i> Download CSV</button>
+                    <button class="action-btn" onclick="downloadBulkPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
                     <button class="action-btn" onclick="document.getElementById('bulkResultsSection').style.display='none';"><i class="fas fa-times"></i> Close</button>
                 </div>
             </div>
@@ -1785,6 +1786,103 @@
             });
             navigator.clipboard.writeText(tsv);
             showToast('Results copied as TSV (paste into Excel)');
+        }
+
+        // Download results as PDF
+        function downloadBulkPDF() {
+            if (!bulkResults.length) { showToast('No results to download'); return; }
+            showToast('Generating PDF...');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape');
+            
+            // Header
+            doc.setFillColor(26, 26, 46);
+            doc.rect(0, 0, 297, 30, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.text('Bulk Phone Number Lookup Report', 15, 15);
+            doc.setFontSize(9);
+            doc.text(`Generated: ${new Date().toLocaleString()} | ${bulkResults.length} numbers | Punjab Investigation Tools`, 15, 23);
+
+            // Table header
+            const headers = ['#', 'Number', 'Original Operator', 'Circle', 'Current Operator', 'Type', 'Status'];
+            const colX = [15, 28, 60, 110, 155, 210, 245];
+            const colW = [13, 32, 50, 45, 55, 35, 45];
+            let y = 38;
+
+            doc.setFillColor(99, 102, 241);
+            doc.rect(10, y - 5, 277, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            headers.forEach((h, i) => doc.text(h, colX[i], y));
+
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+            y += 7;
+
+            const liveResults = bulkResults.filter(r => r && r.live).length;
+            
+            bulkResults.forEach((r, idx) => {
+                if (!r) return;
+                if (y > 190) {
+                    doc.addPage('landscape');
+                    y = 20;
+                    // Repeat header on new page
+                    doc.setFillColor(99, 102, 241);
+                    doc.rect(10, y - 5, 277, 8, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'bold');
+                    headers.forEach((h, i) => doc.text(h, colX[i], y));
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    y += 7;
+                }
+                // Alternate row bg
+                if (idx % 2 === 0) {
+                    doc.setFillColor(245, 245, 255);
+                    doc.rect(10, y - 4, 277, 7, 'F');
+                }
+                doc.setFontSize(7.5);
+                doc.setTextColor(0, 0, 0);
+                doc.text(String(r.index), colX[0], y);
+                doc.text(r.number, colX[1], y);
+                doc.text(r.origOperator, colX[2], y);
+                doc.text(r.origCircle, colX[3], y);
+                // Color current operator
+                if (r.live) {
+                    doc.setTextColor(16, 185, 129);
+                } else {
+                    doc.setTextColor(107, 114, 128);
+                }
+                doc.text(r.currentOperator, colX[4], y);
+                doc.setTextColor(0, 0, 0);
+                doc.text(r.type, colX[5], y);
+                doc.text(r.status, colX[6], y);
+                y += 7;
+            });
+
+            // Summary footer
+            y += 5;
+            if (y > 185) { doc.addPage('landscape'); y = 20; }
+            doc.setFillColor(240, 253, 244);
+            doc.rect(10, y - 4, 277, 12, 'F');
+            doc.setTextColor(6, 95, 70);
+            doc.setFontSize(9);
+            doc.text(`Summary: ${bulkResults.length} numbers processed | ${liveResults} verified with live operator | ${bulkResults.length - liveResults} unverified/other`, 15, y + 3);
+
+            // Footer
+            doc.setTextColor(128, 128, 128);
+            doc.setFontSize(8);
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let p = 1; p <= pageCount; p++) {
+                doc.setPage(p);
+                doc.text(`Page ${p} of ${pageCount} | Punjab Investigation Tools | punjab.pages.dev`, 15, 200);
+            }
+
+            doc.save(`Bulk_Phone_Lookup_${new Date().toISOString().slice(0,10)}.pdf`);
+            showToast('PDF downloaded');
         }
 
         // Download results as CSV
