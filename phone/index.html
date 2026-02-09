@@ -1696,7 +1696,7 @@
             return result;
         }
 
-        // Process numbers in parallel batches of 10
+        // Process numbers in strict batches of 10: finish batch → render rows → next batch
         async function startBulkLookup() {
             if (bulkRunning) { showToast('Bulk lookup already running'); return; }
             const raw = document.getElementById('bulkInput').value;
@@ -1710,7 +1710,7 @@
             }
 
             bulkRunning = true;
-            bulkResults = [];
+            bulkResults = new Array(numbers.length);
             const btn = document.getElementById('bulkLookupBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
@@ -1721,6 +1721,9 @@
             const progressBar = document.getElementById('bulkProgressBar');
             const progressText = document.getElementById('bulkProgressText');
             const progressPercent = document.getElementById('bulkProgressPercent');
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Starting...';
+            progressPercent.textContent = '0%';
 
             // Show results section with empty table
             document.getElementById('bulkResultsSection').style.display = 'block';
@@ -1733,13 +1736,21 @@
 
             for (let i = 0; i < total; i += BATCH_SIZE) {
                 const batch = numbers.slice(i, i + BATCH_SIZE);
-                const promises = batch.map(async (num, batchIdx) => {
+                const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+                const totalBatches = Math.ceil(total / BATCH_SIZE);
+                progressText.textContent = `Batch ${batchNum}/${totalBatches} — Processing ${completed + 1}-${Math.min(completed + batch.length, total)} of ${total}...`;
+
+                // Fire all 10 in parallel, collect results
+                const batchResults = await Promise.all(
+                    batch.map((num, batchIdx) => checkSingleNumber(num))
+                );
+
+                // Now render all 10 rows in order
+                batchResults.forEach((result, batchIdx) => {
                     const globalIdx = i + batchIdx;
-                    const result = await checkSingleNumber(num);
                     result.index = globalIdx + 1;
                     bulkResults[globalIdx] = result;
 
-                    // Add row to table immediately
                     const row = document.createElement('tr');
                     row.style.borderBottom = '1px solid rgba(99,102,241,0.15)';
                     const opColor = result.live ? '#10b981' : '#6b7280';
@@ -1753,21 +1764,19 @@
                         <td style="padding:8px 12px;">${result.status}</td>
                     `;
                     tbody.appendChild(row);
-
-                    completed++;
-                    const pct = Math.round((completed / total) * 100);
-                    progressBar.style.width = pct + '%';
-                    progressText.textContent = `Processing ${completed} of ${total}...`;
-                    progressPercent.textContent = pct + '%';
                 });
-                await Promise.all(promises);
+
+                completed += batch.length;
+                const pct = Math.round((completed / total) * 100);
+                progressBar.style.width = pct + '%';
+                progressPercent.textContent = pct + '%';
             }
 
             // Done
             progressText.textContent = `Completed: ${total} numbers processed`;
             progressPercent.textContent = '100%';
             progressBar.style.width = '100%';
-            document.getElementById('bulkResultSummary').textContent = `${total} numbers processed | ${bulkResults.filter(r => r.live).length} verified with live operator`;
+            document.getElementById('bulkResultSummary').textContent = `${total} numbers processed | ${bulkResults.filter(r => r && r.live).length} verified with live operator`;
             
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-rocket"></i> Start Bulk Lookup';
