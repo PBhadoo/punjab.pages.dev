@@ -6,6 +6,9 @@
  * Returns: { isVi: true/false, brand, circle, subscriberType, status, ... }
  * 
  * Encryption: AES-128-CBC with PBKDF2 key derivation (SHA1, 100 iterations)
+ * 
+ * Updated: Uses new wildfly API endpoint with multipart/form-data
+ * and methodname header (replaces old /bin/selected/prepaidrechargevalidation)
  */
 
 // Circle ID to name mapping for Vi
@@ -47,26 +50,6 @@ function bytesToHex(bytes) {
     return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Convert hex string to bytes
-function hexToBytes(hex) {
-    const bytes = new Uint8Array(hex.length / 2);
-    for (let i = 0; i < hex.length; i += 2) {
-        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-    }
-    return bytes;
-}
-
-// PKCS7 padding
-function pkcs7Pad(data, blockSize) {
-    const padding = blockSize - (data.length % blockSize);
-    const padded = new Uint8Array(data.length + padding);
-    padded.set(data);
-    for (let i = data.length; i < padded.length; i++) {
-        padded[i] = padding;
-    }
-    return padded;
-}
-
 // PBKDF2 with SHA1 - Web Crypto implementation
 async function pbkdf2(password, salt, iterations, keyLength) {
     const encoder = new TextEncoder();
@@ -95,7 +78,6 @@ async function pbkdf2(password, salt, iterations, keyLength) {
 }
 
 // AES-CBC encryption using Web Crypto
-// Web Crypto AES-CBC adds PKCS7 padding, but we need to verify output matches Python
 async function aesEncrypt(plaintext, key, iv) {
     const cryptoKey = await crypto.subtle.importKey(
         'raw',
@@ -124,7 +106,7 @@ async function encryptViPayload(dataToEncrypt) {
     const iv = randomBytes(16);
     const passphrase = randomBytes(16);
     
-    // Convert passphrase to hex string (Vi uses .toString() which gives hex)
+    // Convert passphrase to hex string
     const passphraseHex = bytesToHex(passphrase);
     
     // Derive key using PBKDF2 (SHA1, 100 iterations, 16 bytes key)
@@ -142,30 +124,43 @@ async function encryptViPayload(dataToEncrypt) {
     };
 }
 
-// Call Vi API
+// Generate a random multipart boundary
+function generateBoundary() {
+    return '----WebKitFormBoundary' + bytesToHex(randomBytes(8));
+}
+
+// Call Vi API using the new wildfly endpoint with multipart/form-data
 async function checkViNumber(phoneNumber) {
-    // Prepare payload - JSON.stringify produces no spaces by default
+    // Prepare payload
     const payload = JSON.stringify({ mobNumber: phoneNumber });
     
     // Encrypt
     const encrypted = await encryptViPayload(payload);
     
+    // Build multipart/form-data body (matching what Vi website sends)
+    const boundary = generateBoundary();
+    const body = `--${boundary}\r\nContent-Disposition: form-data; name="mobile"\r\n\r\n${JSON.stringify(encrypted)}\r\n--${boundary}--\r\n`;
+    
     const headers = {
-        'Accept': '*/*',
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Accept': 'application/json, text/plain, */*',
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
         'Origin': 'https://www.myvi.in',
         'Referer': 'https://www.myvi.in/prepaid/online-mobile-recharge',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+        'methodname': 'numberValidation',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
     };
     
-    const body = 'mobile=' + JSON.stringify(encrypted);
-    
-    const response = await fetch('https://www.myvi.in/bin/selected/prepaidrechargevalidation', {
+    const response = await fetch('https://www.myvi.in/wildfly/consumer/api/vodafoneidea/web', {
         method: 'POST',
         headers: headers,
         body: body
     });
+    
+    if (!response.ok) {
+        throw new Error(`Vi API HTTP error: ${response.status}`);
+    }
     
     return await response.json();
 }
@@ -195,33 +190,82 @@ export async function onRequest(context) {
         }), { status: 400, headers: corsHeaders });
     }
     
-    try {
-        const data = await checkViNumber(number);
-        
-        const isVi = data.STATUS === 'SUCCESS';
-        
-        const result = {
-            number: number,
-            isVi: isVi,
-            status: data.STATUS,
-            brand: data.brand || null,
-            subscriberType: data.subscriberType || null,
-            circle: data.circle || null,
-            circleId: data.circleId || null,
-            circleName: VI_CIRCLES[data.circleId] || null,
-            custStatus: data.cust_status || null,
-            isMigrated: data.isMigrated || null,
-            timestamp: new Date().toISOString(),
-            source: 'vi-api'
-        };
-        
-        return new Response(JSON.stringify(result), { headers: corsHeaders });
-        
-    } catch (error) {
-        return new Response(JSON.stringify({
-            error: 'API Error',
-            message: error.message,
-            number: number
-        }), { status: 500, headers: corsHeaders });
+    // Server-side retry logic - retry up to 3 times with fresh encryption each time
+    const maxRetries = 3;
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const responseData = await checkViNumber(number);
+            
+            // Check if we got a valid response structure
+            // New API: outer STATUS is always SUCCESS for HTTP 200
+            // Inner data.status tells us if the number is Vi or not
+            if (responseData && responseData.STATUS === 'SUCCESS' && responseData.data) {
+                const innerData = responseData.data;
+                const isVi = innerData.status === 'SUCCESS';
+                
+                const result = {
+                    number: number,
+                    isVi: isVi,
+                    status: innerData.status || responseData.STATUS,
+                    brand: innerData.brand || null,
+                    subscriberType: innerData.subscriberType || null,
+                    circle: innerData.circle || null,
+                    circleId: innerData.circleId || null,
+                    circleName: VI_CIRCLES[innerData.circleId] || null,
+                    custStatus: innerData.customerStatus || null,
+                    isMigrated: innerData.isMigrated || null,
+                    timestamp: new Date().toISOString(),
+                    source: 'vi-api',
+                    attempt: attempt
+                };
+                
+                return new Response(JSON.stringify(result), { headers: corsHeaders });
+            }
+            
+            // If we got a response but STATUS is FAILURE or missing data, retry
+            // This handles the intermittent FAILURE responses from Vi
+            if (responseData && responseData.STATUS === 'FAILURE') {
+                lastError = new Error('Vi API returned FAILURE status');
+                continue; // retry
+            }
+            
+            // Unexpected response structure - still return what we have
+            const result = {
+                number: number,
+                isVi: false,
+                status: responseData?.STATUS || 'UNKNOWN',
+                brand: null,
+                subscriberType: null,
+                circle: null,
+                circleId: null,
+                circleName: null,
+                custStatus: null,
+                isMigrated: null,
+                timestamp: new Date().toISOString(),
+                source: 'vi-api',
+                attempt: attempt,
+                rawStatus: responseData?.STATUS
+            };
+            
+            return new Response(JSON.stringify(result), { headers: corsHeaders });
+            
+        } catch (error) {
+            lastError = error;
+            // Only retry on network/parsing errors, not on clear responses
+            if (attempt < maxRetries) {
+                // Small delay before retry (50ms * attempt)
+                await new Promise(resolve => setTimeout(resolve, 50 * attempt));
+            }
+        }
     }
+    
+    // All retries exhausted
+    return new Response(JSON.stringify({
+        error: 'API Error',
+        message: lastError?.message || 'Vi API failed after all retries',
+        number: number,
+        retries: maxRetries
+    }), { status: 500, headers: corsHeaders });
 }

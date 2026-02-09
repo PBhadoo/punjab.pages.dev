@@ -78,6 +78,71 @@
             </div>
         </section>
 
+        <!-- Bulk Lookup Section -->
+        <section class="input-section" id="bulkSection">
+            <div class="input-group">
+                <h3><i class="fas fa-list-ol"></i> Bulk Number Lookup (Indian Numbers Only)</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 10px;">
+                    <i class="fas fa-info-circle"></i> Paste up to 1000 Indian mobile numbers (one per line) or upload a .txt file. Numbers are checked against all 4 operators in parallel (10 at a time).
+                </p>
+                <textarea id="bulkInput" class="input-field" placeholder="Paste numbers here, one per line. Supports:&#10;9876543210&#10;+91 98765 43210&#10;+919876543210&#10;91-9876543210&#10;098765 43210" rows="6" style="width:100%;resize:vertical;font-family:'JetBrains Mono',monospace;font-size:0.85rem;"></textarea>
+                <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+                    <label class="action-btn" style="cursor:pointer;margin:0;display:inline-flex;align-items:center;gap:6px;">
+                        <i class="fas fa-file-upload"></i> Upload .txt
+                        <input type="file" id="bulkFileInput" accept=".txt,.csv" style="display:none;" onchange="handleBulkFile(event)">
+                    </label>
+                    <button class="verify-btn" onclick="startBulkLookup()" id="bulkLookupBtn">
+                        <i class="fas fa-rocket"></i> Start Bulk Lookup
+                    </button>
+                    <span id="bulkCountLabel" style="color:var(--text-secondary);font-size:0.85rem;"></span>
+                </div>
+                <!-- Progress -->
+                <div id="bulkProgress" style="display:none;margin-top:15px;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-secondary);margin-bottom:5px;">
+                        <span id="bulkProgressText">Processing...</span>
+                        <span id="bulkProgressPercent">0%</span>
+                    </div>
+                    <div style="width:100%;height:8px;background:rgba(99,102,241,0.2);border-radius:4px;overflow:hidden;">
+                        <div id="bulkProgressBar" style="width:0%;height:100%;background:var(--accent-color);border-radius:4px;transition:width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bulk Results Section -->
+        <section class="results-section" id="bulkResultsSection" style="display:none;">
+            <div class="result-card">
+                <div class="result-header">
+                    <div class="result-icon valid"><i class="fas fa-table"></i></div>
+                    <div class="result-title">
+                        <h3>Bulk Lookup Results</h3>
+                        <p id="bulkResultSummary">0 numbers processed</p>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;margin-top:15px;">
+                    <table id="bulkResultTable" style="width:100%;border-collapse:collapse;font-size:0.85rem;font-family:'JetBrains Mono',monospace;">
+                        <thead>
+                            <tr style="background:rgba(99,102,241,0.15);text-align:left;">
+                                <th style="padding:10px 12px;border-bottom:2px solid rgba(99,102,241,0.3);">#</th>
+                                <th style="padding:10px 12px;border-bottom:2px solid rgba(99,102,241,0.3);">Number</th>
+                                <th style="padding:10px 12px;border-bottom:2px solid rgba(99,102,241,0.3);">Original Operator</th>
+                                <th style="padding:10px 12px;border-bottom:2px solid rgba(99,102,241,0.3);">Circle</th>
+                                <th style="padding:10px 12px;border-bottom:2px solid rgba(99,102,241,0.3);">Current Operator</th>
+                                <th style="padding:10px 12px;border-bottom:2px solid rgba(99,102,241,0.3);">Type</th>
+                                <th style="padding:10px 12px;border-bottom:2px solid rgba(99,102,241,0.3);">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulkResultBody"></tbody>
+                    </table>
+                </div>
+                <div class="action-buttons" style="margin-top:20px;">
+                    <button class="action-btn" onclick="copyBulkTSV()"><i class="fas fa-copy"></i> Copy for Excel (TSV)</button>
+                    <button class="action-btn" onclick="downloadBulkCSV()"><i class="fas fa-file-csv"></i> Download CSV</button>
+                    <button class="action-btn" onclick="document.getElementById('bulkResultsSection').style.display='none';"><i class="fas fa-times"></i> Close</button>
+                </div>
+            </div>
+        </section>
+
         <section class="results-section" id="resultsSection" style="display: none;">
             <div class="result-card" id="resultCard">
                 <div class="result-header">
@@ -1062,51 +1127,30 @@
                     </div>
                 `;
                 
-                // Call Vi API with retry logic
-                const maxRetries = 3;
+                // Call Vi API (server handles retries internally for FAILURE responses)
                 let viData = null;
                 let lastError = null;
                 
-                for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                    try {
-                        if (attempt > 1) {
-                            viCheckContent.innerHTML = `
-                                <div style="text-align: center; padding: 20px;">
-                                    <div class="loading-spinner" style="width: 30px; height: 30px; margin: 0 auto 10px;"></div>
-                                    <p style="color: var(--text-secondary);">Checking Vi network status... (Attempt ${attempt}/${maxRetries})</p>
-                                </div>
-                            `;
-                            // Small delay between retries
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                        }
-                        
-                        const viResponse = await fetch(`/viapi/${parsed.nationalNumber}?t=${Date.now()}`);
-                        const responseData = await viResponse.json();
-                        
-                        // Check if it's an actual success response (not an API failure from Vi)
-                        // Retry if: HTTP error, has error field, OR status is FAILURE (Vi API returned failure)
-                        if (viResponse.ok && responseData && !responseData.error && responseData.status !== 'FAILURE') {
-                            viData = responseData;
-                            lastViResult = viData;
-                            break; // Success, exit retry loop
-                        } else if (responseData.status === 'FAILURE') {
-                            // Vi API returned FAILURE - retry
-                            console.warn(`Vi API attempt ${attempt}: Vi returned FAILURE, retrying...`);
-                            lastError = new Error('Vi API returned FAILURE');
-                        } else {
-                            lastError = new Error(responseData.error || 'API returned error');
-                        }
-                    } catch (error) {
-                        console.warn(`Vi API attempt ${attempt} failed:`, error);
-                        lastError = error;
+                try {
+                    const viResponse = await fetch(`/viapi/${parsed.nationalNumber}?t=${Date.now()}`);
+                    const responseData = await viResponse.json();
+                    
+                    if (viResponse.ok && responseData && !responseData.error) {
+                        viData = responseData;
+                        lastViResult = viData;
+                    } else {
+                        lastError = new Error(responseData.error || responseData.message || 'API returned error');
                     }
+                } catch (error) {
+                    console.warn('Vi API call failed:', error);
+                    lastError = error;
                 }
                 
                 // Process the result
                 if (viData) {
                     if (viData.isVi) {
-                        const statusColor = viData.custStatus === 'NOTSUSPENDED' ? '#10b981' : '#f59e0b';
-                        const statusText = viData.custStatus === 'NOTSUSPENDED' ? 'Active' : (viData.custStatus || 'Unknown');
+                        const statusColor = (viData.custStatus === 'ACTIVE' || viData.custStatus === 'NOTSUSPENDED') ? '#10b981' : '#f59e0b';
+                        const statusText = (viData.custStatus === 'ACTIVE' || viData.custStatus === 'NOTSUSPENDED') ? 'Active' : (viData.custStatus || 'Unknown');
                         const typeColor = viData.subscriberType === 'PREPAID' ? '#10b981' : '#6366f1';
                         
                         viCheckContent.innerHTML = `
@@ -1233,7 +1277,7 @@
                                 <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #ef4444;"></i>
                                 <div>
                                     <div style="font-weight: 600; color: var(--text-primary);">Could not check Vi status</div>
-                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">API unavailable after ${maxRetries} attempts. Try again later.</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">API unavailable. Try again later.</div>
                                 </div>
                             </div>
                         `;
@@ -1534,6 +1578,231 @@
         document.getElementById('phoneInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') lookupPhone();
         });
+
+        // ========== BULK LOOKUP FUNCTIONS ==========
+        let bulkResults = []; // Store results for export
+        let bulkRunning = false;
+
+        // Clean and extract a 10-digit Indian number from any format
+        function cleanIndianNumber(raw) {
+            if (!raw) return null;
+            // Remove all non-digit characters
+            let digits = raw.replace(/\D/g, '');
+            // Handle various prefixes
+            if (digits.startsWith('0091')) digits = digits.substring(4);
+            else if (digits.startsWith('091')) digits = digits.substring(3);
+            else if (digits.startsWith('91') && digits.length >= 12) digits = digits.substring(2);
+            else if (digits.startsWith('0') && digits.length === 11) digits = digits.substring(1);
+            // Must be exactly 10 digits starting with 6-9
+            if (digits.length === 10 && /^[6-9]/.test(digits)) return digits;
+            return null;
+        }
+
+        // Handle file upload
+        function handleBulkFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('bulkInput').value = e.target.result;
+                updateBulkCount();
+                showToast(`File loaded: ${file.name}`);
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // reset so same file can be re-uploaded
+        }
+
+        // Update count label on textarea input
+        document.getElementById('bulkInput').addEventListener('input', updateBulkCount);
+        function updateBulkCount() {
+            const raw = document.getElementById('bulkInput').value;
+            const lines = raw.split(/[\n\r,;]+/).map(l => l.trim()).filter(Boolean);
+            const valid = lines.map(cleanIndianNumber).filter(Boolean);
+            const unique = [...new Set(valid)];
+            document.getElementById('bulkCountLabel').textContent = 
+                `${lines.length} lines → ${unique.length} valid unique numbers` + (unique.length > 1000 ? ' (max 1000)' : '');
+        }
+
+        // Check a single number against all 4 operators sequentially (short-circuit on match)
+        async function checkSingleNumber(number) {
+            const dbInfo = lookupIndianOperator(number);
+            const result = {
+                number: number,
+                origOperator: dbInfo ? dbInfo.operator : 'Unknown',
+                origCircle: dbInfo ? dbInfo.circle : 'Unknown',
+                currentOperator: '',
+                type: '',
+                status: '',
+                live: false
+            };
+
+            // 1. Jio
+            try {
+                const r = await fetch(`/reliancejioapi/${number}`);
+                const d = await r.json();
+                if (d.isJio) {
+                    result.currentOperator = 'Jio';
+                    result.type = d.billingType || 'Unknown';
+                    result.status = 'Active';
+                    result.live = true;
+                    return result;
+                }
+            } catch(e) {}
+
+            // 2. BSNL
+            try {
+                const r = await fetch(`/bsnlapi/${number}`);
+                const d = await r.json();
+                if (d.isBsnl) {
+                    result.currentOperator = 'BSNL';
+                    result.type = 'Prepaid';
+                    result.status = 'Active';
+                    result.live = true;
+                    return result;
+                }
+            } catch(e) {}
+
+            // 3. Airtel
+            try {
+                const r = await fetch(`/airtelapi/${number}?t=${Date.now()}`);
+                const d = await r.json();
+                if (d.isAirtel) {
+                    result.currentOperator = 'Airtel';
+                    result.type = d.subscriberType || 'Unknown';
+                    result.status = d.status === 'ACTIV' ? 'Active' : (d.status || 'Unknown');
+                    result.live = true;
+                    return result;
+                }
+            } catch(e) {}
+
+            // 4. Vi
+            try {
+                const r = await fetch(`/viapi/${number}?t=${Date.now()}`);
+                const d = await r.json();
+                if (d.isVi) {
+                    result.currentOperator = 'Vi';
+                    result.type = d.subscriberType || 'Unknown';
+                    result.status = (d.custStatus === 'ACTIVE' || d.custStatus === 'NOTSUSPENDED') ? 'Active' : (d.custStatus || 'Unknown');
+                    result.live = true;
+                    return result;
+                }
+            } catch(e) {}
+
+            // None matched
+            result.currentOperator = 'Other/Unknown';
+            result.type = '-';
+            result.status = 'Not found on Jio/BSNL/Airtel/Vi';
+            return result;
+        }
+
+        // Process numbers in parallel batches of 10
+        async function startBulkLookup() {
+            if (bulkRunning) { showToast('Bulk lookup already running'); return; }
+            const raw = document.getElementById('bulkInput').value;
+            const lines = raw.split(/[\n\r,;]+/).map(l => l.trim()).filter(Boolean);
+            const valid = lines.map(cleanIndianNumber).filter(Boolean);
+            let numbers = [...new Set(valid)]; // deduplicate
+            if (numbers.length === 0) { showToast('No valid Indian mobile numbers found'); return; }
+            if (numbers.length > 1000) {
+                numbers = numbers.slice(0, 1000);
+                showToast('Limited to first 1000 numbers');
+            }
+
+            bulkRunning = true;
+            bulkResults = [];
+            const btn = document.getElementById('bulkLookupBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            // Show progress
+            const progressDiv = document.getElementById('bulkProgress');
+            progressDiv.style.display = 'block';
+            const progressBar = document.getElementById('bulkProgressBar');
+            const progressText = document.getElementById('bulkProgressText');
+            const progressPercent = document.getElementById('bulkProgressPercent');
+
+            // Show results section with empty table
+            document.getElementById('bulkResultsSection').style.display = 'block';
+            const tbody = document.getElementById('bulkResultBody');
+            tbody.innerHTML = '';
+
+            const total = numbers.length;
+            let completed = 0;
+            const BATCH_SIZE = 10;
+
+            for (let i = 0; i < total; i += BATCH_SIZE) {
+                const batch = numbers.slice(i, i + BATCH_SIZE);
+                const promises = batch.map(async (num, batchIdx) => {
+                    const globalIdx = i + batchIdx;
+                    const result = await checkSingleNumber(num);
+                    result.index = globalIdx + 1;
+                    bulkResults[globalIdx] = result;
+
+                    // Add row to table immediately
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid rgba(99,102,241,0.15)';
+                    const opColor = result.live ? '#10b981' : '#6b7280';
+                    row.innerHTML = `
+                        <td style="padding:8px 12px;">${result.index}</td>
+                        <td style="padding:8px 12px;">${result.number}</td>
+                        <td style="padding:8px 12px;">${result.origOperator}</td>
+                        <td style="padding:8px 12px;">${result.origCircle}</td>
+                        <td style="padding:8px 12px;color:${opColor};font-weight:600;">${result.currentOperator}</td>
+                        <td style="padding:8px 12px;">${result.type}</td>
+                        <td style="padding:8px 12px;">${result.status}</td>
+                    `;
+                    tbody.appendChild(row);
+
+                    completed++;
+                    const pct = Math.round((completed / total) * 100);
+                    progressBar.style.width = pct + '%';
+                    progressText.textContent = `Processing ${completed} of ${total}...`;
+                    progressPercent.textContent = pct + '%';
+                });
+                await Promise.all(promises);
+            }
+
+            // Done
+            progressText.textContent = `Completed: ${total} numbers processed`;
+            progressPercent.textContent = '100%';
+            progressBar.style.width = '100%';
+            document.getElementById('bulkResultSummary').textContent = `${total} numbers processed | ${bulkResults.filter(r => r.live).length} verified with live operator`;
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-rocket"></i> Start Bulk Lookup';
+            bulkRunning = false;
+
+            document.getElementById('bulkResultsSection').scrollIntoView({ behavior: 'smooth' });
+            showToast(`Bulk lookup complete: ${total} numbers`);
+        }
+
+        // Copy results as TSV (tab-separated) for Excel paste
+        function copyBulkTSV() {
+            if (!bulkResults.length) { showToast('No results to copy'); return; }
+            let tsv = '#\tNumber\tOriginal Operator\tCircle\tCurrent Operator\tType\tStatus\n';
+            bulkResults.forEach(r => {
+                if (r) tsv += `${r.index}\t${r.number}\t${r.origOperator}\t${r.origCircle}\t${r.currentOperator}\t${r.type}\t${r.status}\n`;
+            });
+            navigator.clipboard.writeText(tsv);
+            showToast('Results copied as TSV (paste into Excel)');
+        }
+
+        // Download results as CSV
+        function downloadBulkCSV() {
+            if (!bulkResults.length) { showToast('No results to download'); return; }
+            let csv = '#,Number,Original Operator,Circle,Current Operator,Type,Status\n';
+            bulkResults.forEach(r => {
+                if (r) csv += `${r.index},"${r.number}","${r.origOperator}","${r.origCircle}","${r.currentOperator}","${r.type}","${r.status}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Bulk_Phone_Lookup_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('CSV downloaded');
+        }
     </script>
     <!-- Hit Counter -->
     <div style="text-align: center; padding: 20px 0;">
