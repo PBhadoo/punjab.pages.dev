@@ -1643,10 +1643,13 @@
                 `${lines.length} lines → ${unique.length} valid unique numbers` + (unique.length > 1000 ? ' (max 1000)' : '');
         }
 
-        // Safe fetch helper: returns parsed JSON or null on any error
+        // Safe fetch helper: returns parsed JSON or null on any error (5s timeout)
         async function safeFetchJSON(url) {
             try {
-                const r = await fetch(url);
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 5000);
+                const r = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeout);
                 if (!r.ok) return null;
                 return await r.json();
             } catch(e) { return null; }
@@ -1698,7 +1701,10 @@
             // 4. Vi (need to distinguish API failure from "not Vi")
             let viResult = null;
             try {
-                const vr = await fetch(`/viapi/${number}?t=${Date.now()}`);
+                const viController = new AbortController();
+                const viTimeout = setTimeout(() => viController.abort(), 5000);
+                const vr = await fetch(`/viapi/${number}?t=${Date.now()}`, { signal: viController.signal });
+                clearTimeout(viTimeout);
                 if (vr.ok) {
                     viResult = await vr.json();
                 } else {
