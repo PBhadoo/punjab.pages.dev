@@ -1689,7 +1689,7 @@
             const airtel = await safeFetchJSON(`/airtelapi/${number}?t=${Date.now()}`);
             if (airtel && airtel.isAirtel) {
                 result.currentOperator = 'Airtel';
-                result.type = airtel.subscriberType || 'Unknown';
+                result.type = airtel.lineOfBusiness || 'Prepaid';
                 result.status = airtel.status === 'ACTIV' ? 'Active' : (airtel.status || 'Unknown');
                 result.live = true;
                 return result;
