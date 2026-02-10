@@ -76,9 +76,7 @@ async function makeViRequest(phoneNumber) {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
         },
-        body: body,
-        // Cloudflare Workers: ensure no response caching
-        cf: { cacheTtl: 0, cacheEverything: false }
+        body: body
     });
     
     if (!response.ok) {
