@@ -1695,17 +1695,38 @@
                 return result;
             }
 
-            // 4. Vi
-            const vi = await safeFetchJSON(`/viapi/${number}?t=${Date.now()}`);
-            if (vi && vi.isVi) {
+            // 4. Vi (need to distinguish API failure from "not Vi")
+            let viResult = null;
+            try {
+                const vr = await fetch(`/viapi/${number}?t=${Date.now()}`);
+                if (vr.ok) {
+                    viResult = await vr.json();
+                } else {
+                    // Vi API returned 500 or other error
+                    result.currentOperator = 'Vi Check Failed';
+                    result.type = '-';
+                    result.status = 'Vi API error (500)';
+                    result.live = false;
+                    result.viFailed = true;
+                    return result;
+                }
+            } catch(e) {
+                result.currentOperator = 'Vi Check Failed';
+                result.type = '-';
+                result.status = 'Vi API unreachable';
+                result.live = false;
+                result.viFailed = true;
+                return result;
+            }
+            if (viResult && viResult.isVi) {
                 result.currentOperator = 'Vi';
-                result.type = vi.subscriberType || 'Unknown';
-                result.status = (vi.custStatus === 'ACTIVE' || vi.custStatus === 'NOTSUSPENDED') ? 'Active' : (vi.custStatus || 'Unknown');
+                result.type = viResult.subscriberType || 'Unknown';
+                result.status = (viResult.custStatus === 'ACTIVE' || viResult.custStatus === 'NOTSUSPENDED') ? 'Active' : (viResult.custStatus || 'Unknown');
                 result.live = true;
                 return result;
             }
 
-            // None matched
+            // None matched and no API errors
             result.currentOperator = 'Other/Unknown';
             result.type = '-';
             result.status = 'Not found on Jio/BSNL/Airtel/Vi';
@@ -1761,16 +1782,18 @@
                 const row = document.createElement('tr');
                 row.id = 'bulkRow_' + result.index;
                 row.style.borderBottom = '1px solid rgba(99,102,241,0.15)';
-                const opColor = result.live ? '#10b981' : '#6b7280';
+                const opColor = result.live ? '#10b981' : (result.viFailed ? '#ef4444' : '#6b7280');
+                const rowBg = result.viFailed ? 'background:rgba(239,68,68,0.08);' : '';
                 row.innerHTML = `
-                    <td style="padding:8px 12px;">${result.index}</td>
-                    <td style="padding:8px 12px;">${result.number}</td>
+                    <td style="padding:8px 12px;${result.viFailed?'color:#ef4444;':''}">${result.index}</td>
+                    <td style="padding:8px 12px;${result.viFailed?'color:#ef4444;':''}">${result.number}</td>
                     <td style="padding:8px 12px;">${result.origOperator}</td>
                     <td style="padding:8px 12px;">${result.origCircle}</td>
                     <td style="padding:8px 12px;color:${opColor};font-weight:600;">${result.currentOperator}</td>
-                    <td style="padding:8px 12px;">${result.type}</td>
-                    <td style="padding:8px 12px;">${result.status}</td>
+                    <td style="padding:8px 12px;${result.viFailed?'color:#ef4444;':''}">${result.type}</td>
+                    <td style="padding:8px 12px;${result.viFailed?'color:#ef4444;':''}">${result.status}</td>
                 `;
+                if (rowBg) row.style.cssText += rowBg;
                 // Replace existing row or append
                 const existing = document.getElementById('bulkRow_' + result.index);
                 if (existing) existing.replaceWith(row);
@@ -1816,7 +1839,7 @@
 
             // Retry pass: re-check numbers that came back as Other/Unknown (may be API errors)
             const failedIndices = bulkResults
-                .map((r, idx) => (r && r.currentOperator === 'Other/Unknown') ? idx : -1)
+                .map((r, idx) => (r && (r.currentOperator === 'Other/Unknown' || r.viFailed)) ? idx : -1)
                 .filter(idx => idx !== -1);
             
             if (failedIndices.length > 0 && failedIndices.length <= 200) {
@@ -1843,7 +1866,7 @@
 
             // Done
             const liveCount = bulkResults.filter(r => r && r.live).length;
-            const failedCount = bulkResults.filter(r => r && r.currentOperator === 'Other/Unknown').length;
+            const failedCount = bulkResults.filter(r => r && (r.currentOperator === 'Other/Unknown' || r.viFailed)).length;
             progressText.textContent = `Completed: ${total} numbers processed`;
             progressPercent.textContent = '100%';
             progressBar.style.width = '100%';
@@ -1992,7 +2015,7 @@
         async function retryFailedNumbers() {
             if (bulkRunning) { showToast('Already processing'); return; }
             const failedIndices = bulkResults
-                .map((r, idx) => (r && r.currentOperator === 'Other/Unknown') ? idx : -1)
+                .map((r, idx) => (r && (r.currentOperator === 'Other/Unknown' || r.viFailed)) ? idx : -1)
                 .filter(idx => idx !== -1);
             if (failedIndices.length === 0) { showToast('No failed numbers to retry'); return; }
 
@@ -2058,7 +2081,7 @@
             }
 
             // Done
-            const newFailedCount = bulkResults.filter(r => r && r.currentOperator === 'Other/Unknown').length;
+            const newFailedCount = bulkResults.filter(r => r && (r.currentOperator === 'Other/Unknown' || r.viFailed)).length;
             const liveCount = bulkResults.filter(r => r && r.live).length;
             progressText.textContent = `Retry done: ${resolved} resolved, ${newFailedCount} still unresolved`;
             progressBar.style.width = '100%';
