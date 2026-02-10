@@ -1834,6 +1834,9 @@
                 const pct = Math.round((completed / total) * 100);
                 progressBar.style.width = pct + '%';
                 progressPercent.textContent = pct + '%';
+                // Update summary in real time
+                const liveNow = bulkResults.filter(r => r && r.live).length;
+                document.getElementById('bulkResultSummary').textContent = `${completed}/${total} processed | ${liveNow} verified`;
                 // Sync floating progress
                 document.getElementById('floatingProgressText').textContent = progressText.textContent;
                 document.getElementById('floatingProgressPercent').textContent = pct + '%';
