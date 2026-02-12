@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Address Lookup | Punjab Investigation Tools</title>
+    <meta name="description" content="Comprehensive IP address lookup - country, ISP, ASN, VPN/proxy/Tor detection, geolocation, risk score. Bulk lookup with PDF reports and Excel export.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+    .mode-tabs{display:flex;gap:8px;margin-bottom:20px}.mode-tab{padding:10px 24px;border:2px solid var(--card-border);background:var(--card-bg);color:var(--text-primary);border-radius:8px;cursor:pointer;font-weight:600;transition:all .2s;font-size:.95rem}.mode-tab.active{background:var(--accent-color);color:#fff;border-color:var(--accent-color)}.mode-tab:hover:not(.active){border-color:var(--accent-color)}.single-mode,.bulk-mode{display:none}.single-mode.active,.bulk-mode.active{display:block}.ip-input-row{display:flex;gap:10px;margin-bottom:16px}.ip-input-row input{flex:1;padding:12px 16px;border:2px solid var(--card-border);border-radius:10px;background:rgba(0,0,0,.3);color:var(--text-primary);font-size:1rem;font-family:'JetBrains Mono',monospace}.ip-input-row input:focus{outline:none;border-color:var(--accent-secondary);box-shadow:0 0 15px rgba(0,217,255,.15)}.ibtn{padding:12px 24px;border:none;border-radius:10px;cursor:pointer;font-weight:600;font-size:.9rem;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}.ibtn-p{background:linear-gradient(135deg,var(--accent-color),#c73654);color:#fff}.ibtn-p:hover{transform:translateY(-1px);box-shadow:0 5px 15px rgba(233,69,96,.3)}.ibtn-s{background:var(--card-bg);color:var(--text-primary);border:1px solid var(--card-border)}.ibtn-s:hover{border-color:var(--accent-secondary)}.ibtn-g{background:#28a745;color:#fff}.ibtn:disabled{opacity:.5;cursor:not-allowed}.ibtn-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.bulk-ta{width:100%;min-height:150px;padding:12px 16px;border:2px solid var(--card-border);border-radius:10px;background:rgba(0,0,0,.3);color:var(--text-primary);font-size:.9rem;font-family:'JetBrains Mono',monospace;resize:vertical;margin-bottom:12px}.bulk-ta:focus{outline:none;border-color:var(--accent-secondary)}.bulk-ta::placeholder{color:var(--text-secondary)}
+    .irc{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:24px;margin-bottom:20px}.irh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--card-border);flex-wrap:wrap;gap:10px}.irh h3{margin:0;font-size:1.2rem;display:flex;align-items:center;gap:10px}.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}.b-res{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}.b-vpn{background:rgba(255,193,7,.15);color:#ffc107;border:1px solid rgba(255,193,7,.3)}.b-prx{background:rgba(253,126,20,.15);color:#fd7e14;border:1px solid rgba(253,126,20,.3)}.b-tor{background:rgba(220,53,69,.15);color:#dc3545;border:1px solid rgba(220,53,69,.3)}.b-dc{background:rgba(111,66,193,.15);color:#6f42c1;border:1px solid rgba(111,66,193,.3)}.b-cld{background:rgba(13,202,240,.15);color:#0dcaf0;border:1px solid rgba(13,202,240,.3)}.b-mob{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.3)}.b-edu{background:rgba(32,201,151,.15);color:#20c997;border:1px solid rgba(32,201,151,.3)}.b-gov{background:rgba(13,110,253,.15);color:#0d6efd;border:1px solid rgba(13,110,253,.3)}.b-unk{background:rgba(108,117,125,.15);color:#6c757d;border:1px solid rgba(108,117,125,.3)}
+    .igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}.isec{background:rgba(0,0,0,.2);border:1px solid var(--card-border);border-radius:10px;padding:16px}.isec h4{margin:0 0 12px;font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;color:var(--accent-secondary);display:flex;align-items:center;gap:8px}.irow{display:flex;justify-content:space-between;padding:5px 0;font-size:.85rem;border-bottom:1px solid rgba(255,255,255,.05)}.irow:last-child{border-bottom:none}.il{color:var(--text-secondary);font-weight:500}.iv{color:var(--text-primary);font-weight:600;text-align:right;word-break:break-all;max-width:60%;font-family:'JetBrains Mono',monospace;font-size:.8rem}
+    .riskm{display:flex;align-items:center;gap:10px;margin-top:10px}.riskb{flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}.riskf{height:100%;border-radius:4px;transition:width .5s}.rl{background:#28a745}.rm{background:#ffc107}.rh{background:#fd7e14}.rc{background:#dc3545}.rlab{font-size:.8rem;font-weight:700;min-width:60px}
+    .mapc{width:100%;height:200px;border-radius:10px;overflow:hidden;margin-top:12px;border:1px solid var(--card-border)}.mapc iframe{width:100%;height:100%;border:none}
+    .spn{width:22px;height:22px;border:3px solid rgba(34,211,238,.3);border-top-color:#22d3ee;border-radius:50%;animation:sp .8s linear infinite;display:inline-block}@keyframes sp{to{transform:rotate(360deg)}}.pbc{width:100%;background:rgba(255,255,255,.1);border-radius:6px;height:6px;overflow:hidden;margin:8px 0}.pbf{height:100%;background:var(--accent-secondary);border-radius:6px;transition:width .3s}
+    .btw{overflow-x:auto;margin-top:16px;border-radius:10px;border:1px solid var(--card-border)}.bt{width:100%;border-collapse:collapse;font-size:.8rem;min-width:1400px}.bt th,.bt td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--card-border);white-space:nowrap}.bt th{background:rgba(0,0,0,.3);font-weight:700;color:var(--accent-secondary);text-transform:uppercase;font-size:.7rem;letter-spacing:.5px;position:sticky;top:0;z-index:1}.bt tr:hover{background:rgba(255,255,255,.03)}.bt .err{background:rgba(220,53,69,.08)}
+    .hid{display:none!important}.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--card-bg);border:1px solid var(--card-border);padding:12px 24px;border-radius:10px;color:var(--text-primary);font-size:.9rem;z-index:9999;transition:transform .3s;display:flex;align-items:center;gap:8px}.toast.show{transform:translateX(-50%) translateY(0)}
+    .lov{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,10,20,.92);display:flex;justify-content:center;align-items:center;z-index:10000}.lov .spn{width:50px;height:50px;border-width:4px}
+    @media(max-width:768px){.igrid{grid-template-columns:1fr}.ip-input-row,.ibtn-group,.mode-tabs{flex-direction:column}}
+    </style>
+</head>
+<body>
+    <header class="header"><div class="header-container">
+        <a href="/" class="logo" style="text-decoration:none;color:inherit"><div class="logo-icon"><i class="fas fa-shield-halved"></i></div><div class="logo-text"><span class="logo-title">Punjab Investigation Tools</span><span class="logo-subtitle">IP Address Lookup</span></div></a>
+        <div class="header-actions"><a href="/" class="back-home-btn"><i class="fas fa-home"></i> All Tools</a></div>
+    </div></header>
+    <main class="main-content">
+        <section class="hero-section"><div class="hero-content"><h1><i class="fas fa-globe"></i> IP Address Lookup</h1><p>Comprehensive IP intelligence — country, ISP, ASN, VPN/proxy/Tor detection, geolocation, risk score & more</p></div></section>
+        <section class="input-section"><div class="input-group">
+            <div class="mode-tabs">
+                <button class="mode-tab active" onclick="swMode('single')"><i class="fas fa-search"></i> Single IP</button>
+                <button class="mode-tab" onclick="swMode('bulk')"><i class="fas fa-list"></i> Bulk Lookup</button>
+            </div>
+            <div class="single-mode active" id="singleMode">
+                <h3><i class="fas fa-keyboard"></i> Enter IP Address</h3>
+                <div class="ip-input-row">
+                    <input type="text" id="ipIn" placeholder="e.g. 8.8.8.8 or 2001:4860:4860::8888" autocomplete="off" spellcheck="false">
+                    <button class="ibtn ibtn-p" id="lookBtn" onclick="doLookup()"><i class="fas fa-search"></i> Lookup</button>
+                    <button class="ibtn ibtn-s" onclick="doMyIP()"><i class="fas fa-satellite-dish"></i> My IP</button>
+                </div>
+                <p style="color:var(--text-secondary);font-size:.85rem"><i class="fas fa-info-circle"></i> Data aggregated from ip-api.com, ipwho.is, ipapi.co via Cloudflare Pages Function + Cloudflare Radar API (if configured).</p>
+            </div>
+            <div class="bulk-mode" id="bulkMode">
+                <h3><i class="fas fa-list-ol"></i> Bulk IP Lookup</h3>
+                <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:10px"><i class="fas fa-info-circle"></i> Enter up to 100 IPs, one per line.</p>
+                <textarea class="bulk-ta" id="bulkIn" placeholder="Enter IPs, one per line:&#10;8.8.8.8&#10;1.1.1.1&#10;208.67.222.222"></textarea>
+                <div class="ibtn-group">
+                    <button class="ibtn ibtn-p" id="bulkBtn" onclick="doBulk()"><i class="fas fa-rocket"></i> Lookup All</button>
+                    <button class="ibtn ibtn-s" onclick="document.getElementById('bulkIn').value=''"><i class="fas fa-trash"></i> Clear</button>
+                </div>
+            </div>
+        </div></section>
+        <section id="sRes" style="display:none"><div id="sOut"></div>
+            <div class="action-buttons" id="sAct" style="display:none">
+                <button class="action-btn" onclick="cpSingle()"><i class="fas fa-copy"></i> Copy Result</button>
+                <button class="action-btn" onclick="cpExcel()"><i class="fas fa-table"></i> Copy for Excel</button>
+                <button class="action-btn" onclick="pdfSingle()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+            </div>
+        </section>
+        <section id="bRes" style="display:none"><div class="result-card">
+            <div class="result-header"><div class="result-icon valid"><i class="fas fa-table"></i></div><div class="result-title"><h3>Bulk IP Lookup Results</h3><p id="bSum">0 IPs processed</p></div></div>
+            <div id="bLoad" class="hid"><div style="display:flex;align-items:center;gap:10px;padding:15px"><div class="spn"></div><span id="bStat">Processing...</span></div><div class="pbc"><div class="pbf" id="bProg" style="width:0%"></div></div></div>
+            <div class="ibtn-group" id="bExp" style="display:none">
+                <button class="ibtn ibtn-s" onclick="cpBulkExcel()"><i class="fas fa-copy"></i> Copy for Excel</button>
+                <button class="ibtn ibtn-g" onclick="pdfBulkSingle()"><i class="fas fa-file-pdf"></i> Single PDF Report</button>
+                <button class="ibtn ibtn-g" onclick="pdfBulkMulti()"><i class="fas fa-file-pdf"></i> Multi PDF Reports</button>
+            </div>
+            <div id="bTbl"></div>
+        </div></section>
+        <div id="lov" class="lov hid"><div style="text-align:center"><div class="spn" style="width:50px;height:50px;margin:0 auto 15px"></div><h3 style="color:var(--text-primary)" id="lovTxt">Looking up IP...</h3><p style="color:var(--text-secondary)">Querying multiple intelligence sources...</p></div></div>
+        <section class="info-section" style="margin-top:40px"><h3><i class="fas fa-info-circle"></i> About IP Lookup</h3>
+            <div class="info-grid" style="margin-top:20px">
+                <div class="info-card"><div class="info-icon"><i class="fas fa-map-marker-alt"></i></div><h4>Geolocation</h4><p>Country, region, city, coordinates, timezone from multiple databases.</p></div>
+                <div class="info-card"><div class="info-icon"><i class="fas fa-server"></i></div><h4>Network Details</h4><p>ISP, organization, ASN, reverse DNS, network range, connection type.</p></div>
+                <div class="info-card"><div class="info-icon"><i class="fas fa-shield-alt"></i></div><h4>Threat Detection</h4><p>VPN, proxy, Tor, datacenter/cloud, residential detection with risk scoring.</p></div>
+            </div>
+        </section>
+    </main>
+    <footer class="footer"><div class="footer-content">
+        <p><i class="fas fa-cloud"></i> Data aggregated via Cloudflare Pages Function from ip-api.com, ipwho.is, ipapi.co + Cloudflare Radar (if CF_API_TOKEN configured).</p>
+        <p>&copy; 2024-<span id="yr"></span> Punjab Investigation Tools</p>
+    </div></footer>
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg">Done</span></div>
+    <script src="app.js"></script>
+    <div style="text-align:center;padding:20px 0"><img src="https://hits.sh/punjab.pages.dev.svg?view=today-total&style=for-the-badge&label=Punjab&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter"/></div>
+</body>
+</html>
