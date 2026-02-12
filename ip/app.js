@@ -5,8 +5,28 @@ function flag(c){if(!c||c.length!==2)return'🏳️';return String.fromCodePoint
 function swMode(m){document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&m==='single')||(i===1&&m==='bulk')));document.getElementById('singleMode').classList.toggle('active',m==='single');document.getElementById('bulkMode').classList.toggle('active',m==='bulk')}
 function validIP(ip){ip=ip.trim();if(/^(\d{1,3}\.){3}\d{1,3}$/.test(ip))return ip.split('.').every(n=>parseInt(n)>=0&&parseInt(n)<=255);return/^[0-9a-fA-F:]+$/.test(ip)&&ip.includes(':')}
 function fmtOff(s){const h=Math.floor(Math.abs(s)/3600),m=Math.floor((Math.abs(s)%3600)/60);return'UTC'+(s>=0?'+':'-')+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')}
-function ipType(d){if(d.isTor)return'Tor Exit Node';if(d.isVPN)return'VPN';if(d.isProxy&&d.isHosting)return'Hosting/Proxy';if(d.isProxy)return'Proxy';if(d.isRelay)return'Relay';if(d.isHosting)return'Datacenter/Cloud';if(d.isMobile)return'Mobile/Cellular';var o=((d.org||'')+' '+(d.isp||'')).toLowerCase();if(/amazon|aws|google cloud|microsoft azure|digitalocean|linode|vultr|ovh|hetzner|oracle|alibaba|cloudflare/.test(o))return'Cloud Provider';if(/university|college|\.edu|academic/.test(o))return'Education';if(/government|govt|\.gov/.test(o))return'Government';return'Residential'}
-function calcRisk(d){var s=0;if(d.isTor)s+=40;if(d.isVPN)s+=25;if(d.isProxy)s+=30;if(d.isHosting)s+=15;if(d.isRelay)s+=10;return Math.min(s,100)}
+// Known VPN/proxy provider patterns (ISP/Org names)
+var VPN_PROVIDERS=/cloudflare|warp|mullvad|nordvpn|expressvpn|surfshark|protonvpn|proton ag|cyberghost|private internet access|ipvanish|hotspot shield|tunnelbear|windscribe|hide\.me|purevpn|vypr|strongvpn|astrill|torguard|airvpn|ivpn|mozilla vpn|psiphon|ultrasurf|lantern|1\.1\.1\.1|kaspersky|bitdefender vpn|avast.*vpn|avg.*vpn|adguard vpn|f-secure/i;
+var DATACENTER_PROVIDERS=/amazon|aws|google cloud|gcp|microsoft azure|digitalocean|linode|akamai|vultr|ovh|hetzner|oracle cloud|alibaba cloud|tencent cloud|scaleway|contabo|ionos|rackspace|leaseweb|choopa|hostwinds|kamatera|upcloud|packet|equinix/i;
+
+function ipType(d){
+    if(d.isTor)return'Tor Exit Node';
+    if(d.isVPN)return'VPN';
+    // Check ISP/Org against known VPN providers
+    var o=(d.org||'')+'|'+(d.isp||'')+'|'+(d.asnName||'');
+    if(VPN_PROVIDERS.test(o)){d.isVPN=true;d.detectedVPN=true;return'VPN';}
+    if(d.isProxy&&d.isHosting)return'Hosting/Proxy';
+    if(d.isProxy)return'Proxy';
+    if(d.isRelay)return'Relay';
+    if(d.isHosting)return'Datacenter/Cloud';
+    if(d.isMobile)return'Mobile/Cellular';
+    var ol=o.toLowerCase();
+    if(DATACENTER_PROVIDERS.test(ol))return'Cloud Provider';
+    if(/university|college|\.edu|academic/.test(ol))return'Education';
+    if(/government|govt|\.gov/.test(ol))return'Government';
+    return'Residential';
+}
+function calcRisk(d){var s=0;if(d.isTor)s+=40;if(d.isVPN||d.detectedVPN)s+=25;if(d.isProxy)s+=30;if(d.isHosting)s+=15;if(d.isRelay)s+=10;return Math.min(s,100)}
 function bc(t){return{'Residential':'b-res','VPN':'b-vpn','Proxy':'b-prx','Hosting/Proxy':'b-prx','Tor Exit Node':'b-tor','Datacenter/Cloud':'b-dc','Cloud Provider':'b-cld','Mobile/Cellular':'b-mob','Relay':'b-vpn','Education':'b-edu','Government':'b-gov'}[t]||'b-unk'}
 function rcls(s){return s<=10?'rl':s<=30?'rm':s<=60?'rh':'rc'}
 function rlbl(s){return s<=10?'Low':s<=30?'Medium':s<=60?'High':'Critical'}
