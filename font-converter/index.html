@@ -156,6 +156,12 @@
                 </div>
             </div>
 
+            <!-- All fonts preview -->
+            <div class="editor-card" id="allFontsPanel" style="display:none;">
+                <h3 class="section-title"><i class="fas fa-eye"></i> All Fonts Preview</h3>
+                <div id="allFontsPreviews"></div>
+            </div>
+
             <!-- How it works -->
             <div class="editor-card">
                 <h3 class="section-title"><i class="fas fa-circle-info"></i> How It Works</h3>
@@ -259,14 +265,62 @@
             autoConvert();
         }
 
+        const allFonts = ['unicode','anmol','asees','joy','dr_chatrik','gurbani','satluj'];
+
         function autoConvert() {
             const input = document.getElementById('_text_in').value;
             if (input.trim()) {
                 try { _convert(); } catch(e) {}
+                updateAllFontsPreviews();
             } else {
                 document.getElementById('_text_out').value = '';
+                document.getElementById('allFontsPanel').style.display = 'none';
             }
             updateStats();
+        }
+
+        function updateAllFontsPreviews() {
+            const fromFont = document.getElementById('_from').value;
+            const toFont = document.getElementById('_to').value;
+            const input = document.getElementById('_text_in').value;
+            if (!input.trim()) {
+                document.getElementById('allFontsPanel').style.display = 'none';
+                return;
+            }
+
+            // Get remaining fonts (exclude the two already shown above)
+            const remaining = allFonts.filter(f => f !== fromFont && f !== toFont);
+            if (remaining.length === 0) {
+                document.getElementById('allFontsPanel').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('allFontsPanel').style.display = 'block';
+            const container = document.getElementById('allFontsPreviews');
+            container.innerHTML = '';
+
+            remaining.forEach(font => {
+                try {
+                    const converted = PunjabiFontConvertor.convert(input, font, fromFont);
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '16px';
+                    div.innerHTML = `
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                            <span style="font-size:0.9rem;color:var(--text-secondary);font-weight:500;">${fontNameMap[font] || font}</span>
+                            <button class="tool-btn" onclick="copyPreviewText(this)" style="font-size:0.8rem;padding:4px 10px;"><i class="fas fa-copy"></i> Copy</button>
+                        </div>
+                        <textarea readonly style="width:100%;min-height:80px;padding:12px;font-family:${fontFamilyMap[font] || "'Noto Sans Gurmukhi'"};font-size:1.1rem;line-height:1.8;background:rgba(0,0,0,0.25);border:1px solid var(--card-border);border-radius:10px;color:var(--text-primary);resize:vertical;box-sizing:border-box;">${converted}</textarea>
+                    `;
+                    container.appendChild(div);
+                } catch(e) {}
+            });
+        }
+
+        function copyPreviewText(btn) {
+            const textarea = btn.closest('div').parentElement.querySelector('textarea');
+            if (textarea && textarea.value) {
+                navigator.clipboard.writeText(textarea.value).then(() => showToast('Copied!'));
+            }
         }
 
         function swapFonts() {
@@ -284,14 +338,9 @@
             updateStats();
         }
 
-        // Live conversion on input
+        // Live conversion on input — triggers all font previews too
         document.getElementById('_text_in').addEventListener('input', function() {
-            if (this.value.trim()) {
-                _convert();
-            } else {
-                document.getElementById('_text_out').value = '';
-            }
-            updateStats();
+            autoConvert();
         });
 
         function updateStats() {
