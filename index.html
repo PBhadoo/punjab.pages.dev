@@ -135,7 +135,7 @@
                     <span class="stat-label">Client-Side Processing</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number">18+</span>
+                    <span class="stat-number">20+</span>
                     <span class="stat-label">Investigation Tools</span>
                 </div>
                 <div class="stat-item">
@@ -152,7 +152,13 @@
                 <p>Select a tool to get started with your digital evidence analysis</p>
             </div>
 
-            <div class="tools-grid">
+            <!-- Search Bar -->
+            <div style="max-width:600px;margin:0 auto 30px;position:relative;">
+                <i class="fas fa-search" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:1rem;"></i>
+                <input type="text" id="toolSearch" placeholder="Search tools... (e.g. PDF, hash, font, image, QR)" oninput="filterTools()" style="width:100%;padding:14px 16px 14px 44px;background:rgba(0,0,0,0.3);border:2px solid var(--card-border);border-radius:12px;color:var(--text-primary);font-size:1rem;box-sizing:border-box;outline:none;transition:border-color 0.3s;" onfocus="this.style.borderColor='var(--accent-secondary)'" onblur="this.style.borderColor='var(--card-border)'">
+            </div>
+
+            <div class="tools-grid" id="toolsGrid">
                 <!-- General Tools - Available -->
                 <a href="general/" class="tool-card available">
                     <span class="tool-badge available">Available</span>
@@ -423,6 +429,36 @@
                     </div>
                 </a>
 
+                <!-- Gurmukhi Pad - Available -->
+                <a href="transliterate/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <h3>Gurmukhi Pad — ਗੁਰਮੁਖੀ ਪੈਡ</h3>
+                    <p>Type in English, get Punjabi (Gurmukhi) text instantly. Live transliteration with suggestions powered by Google Input Tools API.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Punjabi Typing</span>
+                        <span class="feature-tag">Transliteration</span>
+                        <span class="feature-tag">Live Suggestions</span>
+                    </div>
+                </a>
+
+                <!-- Gurmukhi Font Converter - Available -->
+                <a href="font-converter/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                        <i class="fas fa-repeat"></i>
+                    </div>
+                    <h3>Gurmukhi Font Converter</h3>
+                    <p>Convert Punjabi text between 7 Gurmukhi fonts — Unicode (Raavi), AnmolLipi, Asees, GurbaniLipi, DrChatrik, Joy & Satluj. All fonts preview at once.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">7 Fonts</span>
+                        <span class="feature-tag">AnmolLipi ↔ Unicode</span>
+                        <span class="feature-tag">Live Convert</span>
+                    </div>
+                </a>
+
                 <!-- More Coming Soon -->
                 <div class="tool-card coming-soon">
                     <span class="tool-badge coming-soon">Coming Soon</span>
@@ -504,8 +540,33 @@
     </footer>
 
     <script>
-        // Set current year
         document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Search/filter tools
+        function filterTools() {
+            const query = document.getElementById('toolSearch').value.toLowerCase().trim();
+            const grid = document.getElementById('toolsGrid');
+            const cards = Array.from(grid.children);
+
+            if (!query) {
+                // Reset order — show all
+                cards.forEach(c => c.style.display = '');
+                cards.forEach(c => c.style.order = '');
+                return;
+            }
+
+            let matchOrder = 0;
+            cards.forEach(card => {
+                const text = (card.textContent || '').toLowerCase();
+                if (text.includes(query)) {
+                    card.style.display = '';
+                    card.style.order = matchOrder++;
+                } else {
+                    card.style.display = 'none';
+                    card.style.order = '999';
+                }
+            });
+        }
     </script>
 
     <!-- Hit Counter -->
