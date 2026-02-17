@@ -260,6 +260,18 @@
             document.getElementById('_text_out').style.fontFamily = fontFamilyMap[toFont] || "'Noto Sans Gurmukhi', sans-serif";
             document.getElementById('inputBadge').textContent = fontNameMap[fromFont] || fromFont;
             document.getElementById('outputBadge').textContent = fontNameMap[toFont] || toFont;
+            // Auto-convert when fonts change
+            autoConvert();
+        }
+
+        function autoConvert() {
+            const input = document.getElementById('_text_in').value;
+            if (input.trim()) {
+                try { _convert(); } catch(e) {}
+            } else {
+                document.getElementById('_text_out').value = '';
+            }
+            updateStats();
         }
 
         function swapFonts() {
