@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gurmukhi Pad - Punjabi Typing | Punjab Investigation Tools</title>
+    <meta name="description" content="Type in English, get Punjabi (Gurmukhi) text instantly. Free online Punjabi transliteration tool powered by Google Input Tools.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Gurmukhi:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+
+    <style>
+        .typing-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .editor-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .editor-wrapper {
+            position: relative;
+        }
+
+        .typing-area {
+            width: 100%;
+            min-height: 250px;
+            padding: 20px;
+            font-family: 'Noto Sans Gurmukhi', 'Inter', sans-serif;
+            font-size: 1.3rem;
+            line-height: 2;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            resize: vertical;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .typing-area:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.15);
+        }
+
+        .typing-area::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        /* Suggestion popup */
+        .suggestion-popup {
+            display: none;
+            position: absolute;
+            background: #1a1a2e;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow: hidden;
+            min-width: 200px;
+        }
+
+        .suggestion-popup.show {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 10px 18px;
+            cursor: pointer;
+            font-family: 'Noto Sans Gurmukhi', sans-serif;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background: rgba(0, 217, 255, 0.15);
+        }
+
+        .suggestion-item .shortcut-key {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.08);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-left: auto;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .toolbar-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+
+        .toolbar-btn.active {
+            background: rgba(0, 217, 255, 0.2);
+            border-color: var(--accent-secondary);
+            color: var(--accent-secondary);
+        }
+
+        .char-count {
+            margin-left: auto;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 12px 0;
+            border-top: 1px solid var(--card-border);
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-item strong {
+            color: var(--accent-secondary);
+        }
+
+        /* How it works section */
+        .how-it-works {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .step-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .step-card .step-icon {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .step-card h4 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .step-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Example table */
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .example-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .example-en {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .example-arrow {
+            color: var(--accent-secondary);
+            font-size: 0.8rem;
+        }
+
+        .example-pa {
+            font-family: 'Noto Sans Gurmukhi', sans-serif;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .typing-area {
+                font-size: 1.1rem;
+                min-height: 180px;
+            }
+
+            .toolbar {
+                gap: 6px;
+            }
+
+            .toolbar-btn {
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Gurmukhi Pad</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>Online</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-language"></i> Gurmukhi Pad — ਗੁਰਮੁਖੀ ਪੈਡ</h1>
+                <p>Type in English, get Punjabi (Gurmukhi) text instantly. Just type naturally and press Space.</p>
+            </div>
+        </section>
+
+        <div class="typing-container">
+            <!-- Editor -->
+            <div class="editor-card">
+                <div class="toolbar">
+                    <button class="toolbar-btn active" id="toggleTransliteration" onclick="toggleMode()">
+                        <i class="fas fa-toggle-on"></i> <span id="modeLabel">Punjabi ON</span>
+                    </button>
+                    <button class="toolbar-btn" onclick="copyText()">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="toolbar-btn" onclick="clearText()">
+                        <i class="fas fa-trash-alt"></i> Clear
+                    </button>
+                    <button class="toolbar-btn" onclick="downloadText()">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                    <span class="char-count" id="charCount">0 chars</span>
+                </div>
+
+                <div class="editor-wrapper">
+                    <textarea class="typing-area" id="typingArea" placeholder="ਇੱਥੇ ਟਾਈਪ ਕਰੋ... (Type here in English, e.g. 'mera naam punjab hai')"></textarea>
+                    <div class="suggestion-popup" id="suggestionPopup"></div>
+                </div>
+
+                <div class="stats-bar">
+                    <span class="stat-item">Words: <strong id="wordCount">0</strong></span>
+                    <span class="stat-item">Characters: <strong id="totalChars">0</strong></span>
+                    <span class="stat-item">Mode: <strong id="currentMode">Punjabi</strong></span>
+                </div>
+            </div>
+
+            <!-- How it works -->
+            <div class="editor-card">
+                <h3 class="section-title"><i class="fas fa-circle-info"></i> How It Works</h3>
+                <div class="how-it-works">
+                    <div class="step-card">
+                        <div class="step-icon">⌨️</div>
+                        <h4>Type in English</h4>
+                        <p>Write Punjabi words using English letters, e.g. type "mera"</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-icon">💡</div>
+                        <h4>Pick a Suggestion</h4>
+                        <p>Suggestions appear as you type. Press Space to accept, or use ↑↓ to choose.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-icon">✨</div>
+                        <h4>Get Gurmukhi Text</h4>
+                        <p>"mera" becomes ਮੇਰਾ — it's that simple!</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-icon">📋</div>
+                        <h4>Copy & Use</h4>
+                        <p>Copy the Punjabi text and paste it anywhere you need.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Examples -->
+            <div class="editor-card">
+                <h3 class="section-title"><i class="fas fa-spell-check"></i> Quick Examples</h3>
+                <div class="examples-grid">
+                    <div class="example-item">
+                        <span class="example-en">mera</span>
+                        <span class="example-arrow">→</span>
+                        <span class="example-pa">ਮੇਰਾ</span>
+                    </div>
+                    <div class="example-item">
+                        <span class="example-en">punjab</span>
+                        <span class="example-arrow">→</span>
+                        <span class="example-pa">ਪੰਜਾਬ</span>
+                    </div>
+                    <div class="example-item">
+                        <span class="example-en">sat sri akaal</span>
+                        <span class="example-arrow">→</span>
+                        <span class="example-pa">ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ</span>
+                    </div>
+                    <div class="example-item">
+                        <span class="example-en">namaste</span>
+                        <span class="example-arrow">→</span>
+                        <span class="example-pa">ਨਮਸਤੇ</span>
+                    </div>
+                    <div class="example-item">
+                        <span class="example-en">india</span>
+                        <span class="example-arrow">→</span>
+                        <span class="example-pa">ਇੰਡੀਆ</span>
+                    </div>
+                    <div class="example-item">
+                        <span class="example-en">police</span>
+                        <span class="example-arrow">→</span>
+                        <span class="example-pa">ਪੁਲਿਸ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024-<span id="currentYear"></span> Punjab Investigation Tools. Transliteration powered by Google Input Tools.</p>
+        </div>
+    </footer>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // State
+        let transliterationEnabled = true;
+        let currentWord = '';
+        let currentWordStart = -1;
+        let suggestions = [];
+        let selectedIndex = 0;
+        let debounceTimer = null;
+
+        // Conversion queue — processes words sequentially to avoid position conflicts
+        let conversionQueue = [];
+        let isProcessingQueue = false;
+
+        const typingArea = document.getElementById('typingArea');
+        const popup = document.getElementById('suggestionPopup');
+
+        // Toggle transliteration mode
+        function toggleMode() {
+            transliterationEnabled = !transliterationEnabled;
+            const btn = document.getElementById('toggleTransliteration');
+            const label = document.getElementById('modeLabel');
+            const modeDisplay = document.getElementById('currentMode');
+
+            if (transliterationEnabled) {
+                btn.classList.add('active');
+                btn.querySelector('i').className = 'fas fa-toggle-on';
+                label.textContent = 'Punjabi ON';
+                modeDisplay.textContent = 'Punjabi';
+            } else {
+                btn.classList.remove('active');
+                btn.querySelector('i').className = 'fas fa-toggle-off';
+                label.textContent = 'English';
+                modeDisplay.textContent = 'English';
+            }
+            hidePopup();
+            typingArea.focus();
+        }
+
+        // Fetch transliteration suggestions from Google API directly
+        async function fetchSuggestions(word) {
+            if (!word || word.length === 0) return [];
+            try {
+                const url = `https://inputtools.google.com/request?text=${encodeURIComponent(word)}&itc=pa-t-i0-und&num=5&cp=0&cs=1&ie=utf-8&oe=utf-8`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data[0] === 'SUCCESS' && data[1] && data[1][0] && data[1][0][1]) {
+                    return data[1][0][1];
+                }
+            } catch (e) {
+                console.error('Transliteration error:', e);
+            }
+            return [];
+        }
+
+        // Get current English word being typed (before cursor)
+        function getCurrentWord() {
+            const pos = typingArea.selectionStart;
+            const text = typingArea.value;
+            let start = pos - 1;
+            while (start >= 0 && /[a-zA-Z]/.test(text[start])) {
+                start--;
+            }
+            start++;
+            const word = text.substring(start, pos);
+            return { word, start, end: pos };
+        }
+
+        // Find an English word in the text and replace it with Gurmukhi
+        // Uses regex word boundary search — safe even if positions shifted
+        function replaceEnglishWord(englishWord, gurmukhiWord) {
+            const text = typingArea.value;
+            // Find the English word surrounded by non-alpha chars (or start/end)
+            const regex = new RegExp('(^|[^a-zA-Z])(' + englishWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')([^a-zA-Z]|$)');
+            const match = regex.exec(text);
+            if (match) {
+                const matchStart = match.index + match[1].length;
+                const matchEnd = matchStart + englishWord.length;
+                const cursorPos = typingArea.selectionStart;
+                const shift = gurmukhiWord.length - englishWord.length;
+                typingArea.value = text.substring(0, matchStart) + gurmukhiWord + text.substring(matchEnd);
+                // Adjust cursor
+                if (cursorPos >= matchEnd) {
+                    typingArea.selectionStart = typingArea.selectionEnd = cursorPos + shift;
+                } else if (cursorPos > matchStart) {
+                    typingArea.selectionStart = typingArea.selectionEnd = matchStart + gurmukhiWord.length;
+                }
+                updateStats();
+                return true;
+            }
+            return false;
+        }
+
+        // Queue a word for background conversion
+        function queueConversion(word) {
+            // Don't queue duplicates
+            if (!conversionQueue.includes(word)) {
+                conversionQueue.push(word);
+            }
+            processQueue();
+        }
+
+        // Process conversion queue one at a time
+        async function processQueue() {
+            if (isProcessingQueue || conversionQueue.length === 0) return;
+            isProcessingQueue = true;
+
+            while (conversionQueue.length > 0) {
+                const word = conversionQueue.shift();
+                // Check if this word still exists in the text (hasn't been manually converted)
+                const text = typingArea.value;
+                const regex = new RegExp('(^|[^a-zA-Z])' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-zA-Z]|$)');
+                if (regex.test(text)) {
+                    const items = await fetchSuggestions(word);
+                    if (items.length > 0) {
+                        replaceEnglishWord(word, items[0]);
+                    }
+                }
+            }
+
+            isProcessingQueue = false;
+        }
+
+        // Show suggestion popup near cursor
+        function showPopup(items) {
+            if (items.length === 0) {
+                hidePopup();
+                return;
+            }
+            suggestions = items;
+            selectedIndex = 0;
+
+            popup.innerHTML = items.map((item, i) => `
+                <div class="suggestion-item ${i === 0 ? 'active' : ''}" data-index="${i}" onmousedown="selectSuggestion(${i})">
+                    <span>${item}</span>
+                    <span class="shortcut-key">${i + 1}</span>
+                </div>
+            `).join('');
+
+            const textBeforeCursor = typingArea.value.substring(0, typingArea.selectionStart);
+            const lines = textBeforeCursor.split('\n');
+            const lineHeight = parseFloat(getComputedStyle(typingArea).lineHeight) || 28;
+            const lineNum = lines.length;
+
+            popup.style.left = '20px';
+            popup.style.top = (lineNum * lineHeight + 10) + 'px';
+            popup.classList.add('show');
+        }
+
+        function hidePopup() {
+            popup.classList.remove('show');
+            suggestions = [];
+            selectedIndex = 0;
+            currentWord = '';
+            currentWordStart = -1;
+        }
+
+        // Replace current English word with selected Gurmukhi suggestion
+        function selectSuggestion(index) {
+            if (index < 0 || index >= suggestions.length) return;
+            const replacement = suggestions[index];
+            const wordToReplace = currentWord;
+
+            // Use regex-based replacement to be safe against position shifts
+            if (wordToReplace) {
+                replaceEnglishWord(wordToReplace, replacement);
+            } else {
+                // Fallback to position-based
+                const text = typingArea.value;
+                const start = currentWordStart;
+                const end = typingArea.selectionStart;
+                typingArea.value = text.substring(0, start) + replacement + text.substring(end);
+                const newPos = start + replacement.length;
+                typingArea.selectionStart = typingArea.selectionEnd = newPos;
+            }
+            hidePopup();
+            updateStats();
+            typingArea.focus();
+        }
+
+        // Track the last known English word being typed
+        let lastEnglishWord = '';
+
+        // Handle input events
+        typingArea.addEventListener('input', function (e) {
+            updateStats();
+            if (!transliterationEnabled) return;
+
+            const { word, start } = getCurrentWord();
+
+            // If we were typing an English word and now moved past it, queue it for conversion
+            if (lastEnglishWord && lastEnglishWord.length > 0 && word !== lastEnglishWord) {
+                // Check if the old word is NOT the beginning of the new word (user still typing same word)
+                if (!word.startsWith(lastEnglishWord) || word === '') {
+                    queueConversion(lastEnglishWord);
+                    hidePopup();
+                }
+            }
+
+            lastEnglishWord = word;
+
+            if (word.length > 0) {
+                currentWord = word;
+                currentWordStart = start;
+
+                // Debounce API calls for showing suggestions
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(async () => {
+                    const items = await fetchSuggestions(word);
+                    const current = getCurrentWord();
+                    if (current.word === word) {
+                        showPopup(items);
+                    }
+                }, 200);
+            } else {
+                hidePopup();
+            }
+        });
+
+        // Handle key events for suggestion navigation
+        typingArea.addEventListener('keydown', function (e) {
+            // If popup is showing, handle navigation
+            if (popup.classList.contains('show')) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex + 1) % suggestions.length;
+                    updateSelection();
+                    return;
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex - 1 + suggestions.length) % suggestions.length;
+                    updateSelection();
+                    return;
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    lastEnglishWord = '';
+                    selectSuggestion(selectedIndex);
+                    return;
+                } else if (e.key === ' ') {
+                    if (suggestions.length > 0 && currentWord.length > 0) {
+                        e.preventDefault();
+                        lastEnglishWord = '';
+                        selectSuggestion(selectedIndex);
+                        const pos = typingArea.selectionStart;
+                        typingArea.value = typingArea.value.substring(0, pos) + ' ' + typingArea.value.substring(pos);
+                        typingArea.selectionStart = typingArea.selectionEnd = pos + 1;
+                        updateStats();
+                    }
+                    return;
+                } else if (e.key === 'Escape') {
+                    lastEnglishWord = '';
+                    hidePopup();
+                    return;
+                } else if (e.key >= '1' && e.key <= '5') {
+                    const idx = parseInt(e.key) - 1;
+                    if (idx < suggestions.length) {
+                        e.preventDefault();
+                        lastEnglishWord = '';
+                        selectSuggestion(idx);
+                    }
+                    return;
+                }
+            }
+
+            // Space/Enter with no popup — queue the current word for conversion
+            if ((e.key === ' ' || e.key === 'Enter') && transliterationEnabled && !popup.classList.contains('show')) {
+                const { word } = getCurrentWord();
+                if (word.length > 0) {
+                    // Let the space/enter go through naturally, then convert the word
+                    lastEnglishWord = '';
+                    setTimeout(() => queueConversion(word), 10);
+                }
+            }
+        });
+
+        function updateSelection() {
+            popup.querySelectorAll('.suggestion-item').forEach((el, i) => {
+                el.classList.toggle('active', i === selectedIndex);
+            });
+        }
+
+        // Hide popup when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!popup.contains(e.target) && e.target !== typingArea) {
+                hidePopup();
+            }
+        });
+
+        // Update stats
+        function updateStats() {
+            const text = typingArea.value;
+            document.getElementById('charCount').textContent = text.length + ' chars';
+            document.getElementById('totalChars').textContent = text.length;
+            document.getElementById('wordCount').textContent = text.trim() ? text.trim().split(/\s+/).length : 0;
+        }
+
+        // Toolbar actions
+        function copyText() {
+            const text = typingArea.value;
+            if (!text) {
+                showToast('Nothing to copy!');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!');
+            });
+        }
+
+        function clearText() {
+            typingArea.value = '';
+            hidePopup();
+            updateStats();
+            typingArea.focus();
+        }
+
+        function downloadText() {
+            const text = typingArea.value;
+            if (!text) {
+                showToast('Nothing to download!');
+                return;
+            }
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'gurmukhi-text.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('File downloaded!');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            if (toast && toastMsg) {
+                toastMsg.textContent = msg;
+                toast.classList.add('active');
+                setTimeout(() => toast.classList.remove('active'), 3000);
+            }
+        }
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev/transliterate.svg?view=today-total&style=for-the-badge&label=Gurmukhi+Pad&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+</body>
+</html>

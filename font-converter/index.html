@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gurmukhi Font Converter | Punjab Investigation Tools</title>
+    <meta name="description" content="Convert Punjabi text between AnmolLipi, Raavi (Unicode), Asees, Joy, DrChatrik, GurbaniLipi, Satluj and Gurmukhi fonts instantly.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Gurmukhi:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+    <!-- Punjabi font faces -->
+    <link rel="stylesheet" href="punjabi-font.css">
+
+    <style>
+        .converter-container { max-width: 950px; margin: 0 auto; }
+        .editor-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 25px; margin-bottom: 20px; }
+        .section-title { font-size: 1.1rem; margin-bottom: 15px; color: var(--accent-secondary); display: flex; align-items: center; gap: 10px; }
+
+        .direction-bar { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .font-select { padding: 10px 16px; border: 2px solid var(--card-border); border-radius: 10px; background: rgba(0,0,0,0.3); color: var(--text-primary); font-size: 0.95rem; cursor: pointer; font-weight: 500; appearance: none; -webkit-appearance: none; min-width: 160px; }
+        .font-select:focus { outline: none; border-color: var(--accent-secondary); }
+        .font-select option { background: #1a1a2e; color: var(--text-primary); }
+        .direction-label { color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; }
+        .swap-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--card-border); background: rgba(255,255,255,0.05); color: var(--accent-secondary); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .swap-btn:hover { background: rgba(0, 217, 255, 0.2); transform: rotate(180deg); }
+
+        .text-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel-label { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .panel-label span { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+        .panel-label .font-badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; background: rgba(0,217,255,0.15); color: var(--accent-secondary); }
+
+        .text-area { width: 100%; min-height: 350px; padding: 16px; font-size: 1.2rem; line-height: 1.9; background: rgba(0,0,0,0.3); border: 2px solid var(--card-border); border-radius: 12px; color: var(--text-primary); resize: vertical; transition: border-color 0.3s; box-sizing: border-box; white-space: pre-wrap; word-wrap: break-word; }
+        .text-area:focus { outline: none; border-color: var(--accent-secondary); box-shadow: 0 0 15px rgba(0,217,255,0.12); }
+        .text-area::placeholder { color: var(--text-secondary); opacity: 0.5; }
+        #_text_in { font-family: 'Noto Sans Gurmukhi', sans-serif; }
+        #_text_out { font-family: 'Noto Sans Gurmukhi', sans-serif; }
+
+        .toolbar-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .tool-btn { padding: 7px 14px; background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+        .tool-btn:hover { background: rgba(255,255,255,0.15); color: var(--text-primary); }
+        .stats-row { display: flex; gap: 18px; padding: 10px 0 0; font-size: 0.82rem; color: var(--text-secondary); flex-wrap: wrap; }
+        .stats-row strong { color: var(--accent-secondary); }
+        .convert-btn { display: block; width: 100%; padding: 14px; margin: 18px 0 0; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--accent-color), #c73654); color: #fff; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .convert-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(233,69,96,0.35); }
+
+        .how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 12px; }
+        .how-card { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 16px; text-align: center; }
+        .how-card .icon { font-size: 1.6rem; margin-bottom: 8px; }
+        .how-card h4 { font-size: 0.92rem; margin-bottom: 6px; color: var(--text-primary); }
+        .how-card p { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+
+        .font-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .font-chip { padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; background: rgba(0,217,255,0.1); color: var(--accent-secondary); border: 1px solid rgba(0,217,255,0.2); }
+
+        @media (max-width: 768px) {
+            .text-panels { grid-template-columns: 1fr; }
+            .text-area { min-height: 200px; font-size: 1rem; }
+            .direction-bar { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration:none;color:inherit;">
+                <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Gurmukhi Font Converter</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn"><i class="fas fa-home"></i> All Tools</a>
+                <div class="status-badge"><span class="status-dot"></span><span>Online</span></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-repeat"></i> Gurmukhi Font Converter</h1>
+                <p>Convert Punjabi text between 9 Gurmukhi fonts instantly — AnmolLipi, Unicode (Raavi), Asees, Joy, DrChatrik, GurbaniLipi, Satluj & more.</p>
+            </div>
+        </section>
+
+        <div class="converter-container">
+            <div class="editor-card">
+                <!-- Direction selector -->
+                <div class="direction-bar">
+                    <div>
+                        <div class="direction-label">Convert From</div>
+                        <select class="font-select" id="_from" onchange="updateFontPreview()">
+                            <option value="unicode" selected>Unicode (Raavi)</option>
+                            <option value="anmol">AnmolLipi</option>
+                            <option value="asees">Asees</option>
+                            <option value="joy">Joy</option>
+                            <option value="dr_chatrik">DrChatrik</option>
+                            <option value="gurbani">GurbaniLipi</option>
+                            <option value="satluj">Satluj</option>
+                            <option value="gurmukhi">Gurmukhi</option>
+                            <option value="awaze">Awaze</option>
+                        </select>
+                    </div>
+                    <button class="swap-btn" onclick="swapFonts()" title="Swap direction">
+                        <i class="fas fa-arrows-rotate"></i>
+                    </button>
+                    <div>
+                        <div class="direction-label">Convert To</div>
+                        <select class="font-select" id="_to" onchange="updateFontPreview()">
+                            <option value="unicode">Unicode (Raavi)</option>
+                            <option value="anmol" selected>AnmolLipi</option>
+                            <option value="asees">Asees</option>
+                            <option value="joy">Joy</option>
+                            <option value="dr_chatrik">DrChatrik</option>
+                            <option value="gurbani">GurbaniLipi</option>
+                            <option value="satluj">Satluj</option>
+                            <option value="gurmukhi">Gurmukhi</option>
+                            <option value="awaze">Awaze</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="text-panels">
+                    <div>
+                        <div class="panel-label">
+                            <span>Input</span>
+                            <span class="font-badge" id="inputBadge">Unicode (Raavi)</span>
+                        </div>
+                        <textarea class="text-area" id="_text_in" placeholder="Paste your Punjabi text here..."></textarea>
+                        <div class="toolbar-row">
+                            <button class="tool-btn" onclick="pasteInput()"><i class="fas fa-paste"></i> Paste</button>
+                            <button class="tool-btn" onclick="clearAll()"><i class="fas fa-trash-alt"></i> Clear</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="panel-label">
+                            <span>Output</span>
+                            <span class="font-badge" id="outputBadge">AnmolLipi</span>
+                        </div>
+                        <textarea class="text-area" id="_text_out" placeholder="Converted text will appear here..." readonly></textarea>
+                        <div class="toolbar-row">
+                            <button class="tool-btn" onclick="copyOutput()"><i class="fas fa-copy"></i> Copy</button>
+                            <button class="tool-btn" onclick="downloadOutput()"><i class="fas fa-download"></i> Download</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="convert-btn" onclick="_convert()">
+                    <i class="fas fa-bolt"></i> Convert Now
+                </button>
+
+                <div class="stats-row">
+                    <span>Input: <strong id="inChars">0</strong> chars</span>
+                    <span>Output: <strong id="outChars">0</strong> chars</span>
+                </div>
+            </div>
+
+            <!-- How it works -->
+            <div class="editor-card">
+                <h3 class="section-title"><i class="fas fa-circle-info"></i> How It Works</h3>
+                <div class="how-grid">
+                    <div class="how-card">
+                        <div class="icon">📋</div>
+                        <h4>Paste Text</h4>
+                        <p>Paste text in any supported Gurmukhi font into the input box.</p>
+                    </div>
+                    <div class="how-card">
+                        <div class="icon">🔄</div>
+                        <h4>Pick Fonts</h4>
+                        <p>Select the source font (From) and target font (To) from the dropdowns.</p>
+                    </div>
+                    <div class="how-card">
+                        <div class="icon">⚡</div>
+                        <h4>Instant Convert</h4>
+                        <p>Character-level mapping converts your text accurately in milliseconds.</p>
+                    </div>
+                    <div class="how-card">
+                        <div class="icon">📄</div>
+                        <h4>Copy or Download</h4>
+                        <p>Copy the converted result or download it as a text file.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supported fonts -->
+            <div class="editor-card">
+                <h3 class="section-title"><i class="fas fa-font"></i> Supported Fonts</h3>
+                <div class="font-chips">
+                    <span class="font-chip">Unicode (Raavi)</span>
+                    <span class="font-chip">AnmolLipi</span>
+                    <span class="font-chip">Asees</span>
+                    <span class="font-chip">Joy</span>
+                    <span class="font-chip">DrChatrik</span>
+                    <span class="font-chip">GurbaniLipi</span>
+                    <span class="font-chip">Satluj</span>
+                    <span class="font-chip">Gurmukhi</span>
+                    <span class="font-chip">Awaze</span>
+                </div>
+                <div class="how-grid" style="margin-top:16px;">
+                    <div class="how-card" style="text-align:left;">
+                        <h4>ASCII-based Fonts</h4>
+                        <p>AnmolLipi, Asees, Joy, DrChatrik, GurbaniLipi, Satluj, Gurmukhi, Awaze — widely used in older documents, newspapers, and government offices. Each uses different ASCII character codes to display Gurmukhi glyphs.</p>
+                    </div>
+                    <div class="how-card" style="text-align:left;">
+                        <h4>Unicode (Raavi)</h4>
+                        <p>The standard Unicode Gurmukhi font used in modern computing, web, and mobile. Unicode range: U+0A00 – U+0A7F. Converting to Unicode ensures your text works everywhere.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024-<span id="currentYear"></span> Punjab Investigation Tools. All processing happens locally in your browser.</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"><span id="toastMessage"></span></div>
+
+    <!-- Conversion engine from typingbaba.com -->
+    <script src="punjabi-converter.js"></script>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const fontFamilyMap = {
+            'unicode': "'Noto Sans Gurmukhi', sans-serif",
+            'anmol': "'anmol', sans-serif",
+            'asees': "'asees', sans-serif",
+            'joy': "'joy', sans-serif",
+            'dr_chatrik': "'dr_chatrik', sans-serif",
+            'gurbani': "'gurbani', sans-serif",
+            'satluj': "'satluj', sans-serif",
+            'gurmukhi': "'anmol', sans-serif",
+            'awaze': "'anmol', sans-serif"
+        };
+
+        const fontNameMap = {
+            'unicode': 'Unicode (Raavi)',
+            'anmol': 'AnmolLipi',
+            'asees': 'Asees',
+            'joy': 'Joy',
+            'dr_chatrik': 'DrChatrik',
+            'gurbani': 'GurbaniLipi',
+            'satluj': 'Satluj',
+            'gurmukhi': 'Gurmukhi',
+            'awaze': 'Awaze'
+        };
+
+        function updateFontPreview() {
+            const fromFont = document.getElementById('_from').value;
+            const toFont = document.getElementById('_to').value;
+            document.getElementById('_text_in').style.fontFamily = fontFamilyMap[fromFont] || "'Noto Sans Gurmukhi', sans-serif";
+            document.getElementById('_text_out').style.fontFamily = fontFamilyMap[toFont] || "'Noto Sans Gurmukhi', sans-serif";
+            document.getElementById('inputBadge').textContent = fontNameMap[fromFont] || fromFont;
+            document.getElementById('outputBadge').textContent = fontNameMap[toFont] || toFont;
+        }
+
+        function swapFonts() {
+            const fromEl = document.getElementById('_from');
+            const toEl = document.getElementById('_to');
+            const inEl = document.getElementById('_text_in');
+            const outEl = document.getElementById('_text_out');
+            const tempVal = fromEl.value;
+            fromEl.value = toEl.value;
+            toEl.value = tempVal;
+            const tempText = inEl.value;
+            inEl.value = outEl.value;
+            outEl.value = tempText;
+            updateFontPreview();
+            updateStats();
+        }
+
+        // Live conversion on input
+        document.getElementById('_text_in').addEventListener('input', function() {
+            if (this.value.trim()) {
+                _convert();
+            } else {
+                document.getElementById('_text_out').value = '';
+            }
+            updateStats();
+        });
+
+        function updateStats() {
+            document.getElementById('inChars').textContent = document.getElementById('_text_in').value.length;
+            document.getElementById('outChars').textContent = document.getElementById('_text_out').value.length;
+        }
+
+        async function pasteInput() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('_text_in').value = text;
+                document.getElementById('_text_in').dispatchEvent(new Event('input'));
+                showToast('Pasted from clipboard!');
+            } catch (e) {
+                showToast('Unable to paste. Use Ctrl+V.');
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('_text_in').value = '';
+            document.getElementById('_text_out').value = '';
+            updateStats();
+        }
+
+        function copyOutput() {
+            const text = document.getElementById('_text_out').value;
+            if (!text) { showToast('Nothing to copy!'); return; }
+            navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+        }
+
+        function downloadOutput() {
+            const text = document.getElementById('_text_out').value;
+            if (!text) { showToast('Nothing to download!'); return; }
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'converted-gurmukhi.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('File downloaded!');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            const m = document.getElementById('toastMessage');
+            if (t && m) { m.textContent = msg; t.classList.add('active'); setTimeout(() => t.classList.remove('active'), 3000); }
+        }
+
+        // Initialize font preview
+        updateFontPreview();
+    </script>
+
+    <div style="text-align:center;padding:20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev/font-converter.svg?view=today-total&style=for-the-badge&label=Font+Converter&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+</body>
+</html>
