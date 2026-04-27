@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IFSC Code Lookup | Punjab Investigation Tools</title>
+    <meta name="description" content="Lookup Indian bank IFSC codes — find bank name, branch, city and MICR code from 11-character IFSC.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://punjab.pages.dev/ifsc/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://punjab.pages.dev/ifsc/">
+    <meta property="og:title" content="IFSC Code Lookup | Punjab Investigation Tools">
+    <meta property="og:description" content="Lookup Indian bank IFSC codes — find bank name, branch, city and MICR code from 11-character IFSC.">
+    <meta property="og:image" content="https://punjab.pages.dev/og-image.svg">
+    <meta name="theme-color" content="#e94560">
+
+    <style>
+        /* ── IFSC-specific styles ── */
+        .ifsc-input {
+            flex: 1;
+            padding: 16px 22px;
+            background: rgba(0,0,0,0.35);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .ifsc-input:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 22px rgba(0,217,255,0.22);
+        }
+
+        .ifsc-input::placeholder {
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+        }
+
+        .ifsc-input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        /* IFSC breakdown visual */
+        .ifsc-breakdown {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            flex-wrap: wrap;
+            margin: 22px 0 12px;
+        }
+
+        .ifsc-seg {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+
+        .ifsc-chars {
+            display: flex;
+            gap: 3px;
+        }
+
+        .ifsc-char {
+            width: 44px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: 2px solid transparent;
+        }
+
+        .ic-bank   { background: rgba(0,217,255,0.15); border-color: rgba(0,217,255,0.4); color: #00d9ff; }
+        .ic-zero   { background: rgba(233,69,96,0.18); border-color: rgba(233,69,96,0.45); color: #e94560; }
+        .ic-branch { background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.5); color: #a78bfa; }
+        .ic-empty  { background: rgba(255,255,255,0.04); border-color: var(--card-border); color: var(--text-secondary); }
+
+        .ifsc-seg-label {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        .ifsc-sep {
+            width: 10px;
+        }
+
+        /* Result fields */
+        .bank-header {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 20px 24px;
+            background: rgba(0,217,255,0.07);
+            border: 1px solid rgba(0,217,255,0.2);
+            border-radius: 14px;
+            margin-bottom: 22px;
+        }
+
+        .bank-logo-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(0,217,255,0.25), rgba(233,69,96,0.15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: var(--accent-secondary);
+            flex-shrink: 0;
+        }
+
+        .bank-name-block h2 {
+            font-size: 1.35rem;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .bank-name-block p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        .ifsc-badge {
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--accent-secondary);
+            background: rgba(0,217,255,0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,217,255,0.3);
+            flex-shrink: 0;
+        }
+
+        .fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .field-item {
+            padding: 16px 18px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--card-border);
+            border-radius: 11px;
+        }
+
+        .field-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .field-value {
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .field-value.mono {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-secondary);
+        }
+
+        /* Spinner */
+        .spinner-wrap {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(0,217,255,0.15);
+            border-top-color: var(--accent-secondary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Status badge */
+        .status-badge-large {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 28px;
+            border-radius: 50px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .status-valid   { background: rgba(16,185,129,0.18); border: 2px solid #10b981; color: #10b981; }
+        .status-invalid { background: rgba(239,68,68,0.18);  border: 2px solid #ef4444; color: #ef4444; }
+        .status-warn    { background: rgba(245,158,11,0.18); border: 2px solid #f59e0b; color: #f59e0b; }
+
+        /* Bank code table */
+        .bank-scroll {
+            max-height: 320px;
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+        }
+
+        .bank-scroll::-webkit-scrollbar { width: 6px; }
+        .bank-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        .bank-scroll::-webkit-scrollbar-thumb { background: var(--accent-secondary); border-radius: 3px; }
+
+        .btn-row {
+            display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px;
+        }
+
+        .btn-secondary {
+            padding: 12px 22px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.12);
+            color: var(--text-primary);
+            border-color: var(--accent-secondary);
+        }
+
+        @media (max-width: 640px) {
+            .ifsc-input { font-size: 1.1rem; letter-spacing: 2px; }
+            .ifsc-char  { width: 30px; height: 38px; font-size: 1rem; }
+            .ifsc-input-row { flex-direction: column; }
+            .bank-header { flex-direction: column; align-items: flex-start; }
+            .ifsc-badge { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration:none;color:inherit">
+                <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">IFSC Code Lookup</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn"><i class="fas fa-home"></i> All Tools</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Hero -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-landmark"></i> IFSC Code Lookup</h1>
+                <p>Find bank name, branch, city, district and MICR code from any 11-character Indian Financial System Code</p>
+            </div>
+        </section>
+
+        <!-- Input -->
+        <section class="input-section">
+            <div class="input-group">
+                <h3><i class="fas fa-keyboard"></i> Enter IFSC Code</h3>
+                <div class="ifsc-input-row">
+                    <input
+                        type="text"
+                        id="ifscInput"
+                        class="ifsc-input"
+                        placeholder="SBIN0001234"
+                        maxlength="11"
+                        autocomplete="off"
+                        spellcheck="false"
+                        oninput="onIfscInput(this)"
+                        onkeydown="if(event.key==='Enter') lookupIFSC()"
+                    >
+                    <button class="verify-btn" onclick="lookupIFSC()" id="lookupBtn">
+                        <i class="fas fa-search"></i> Lookup
+                    </button>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:8px;">
+                    Format: 4-letter bank code + <code style="color:#e94560;">0</code> + 6-char branch code (11 chars total) &nbsp;·&nbsp; e.g. <code style="font-family:'JetBrains Mono',monospace;color:var(--accent-secondary)">SBIN0001234</code>
+                </p>
+            </div>
+        </section>
+
+        <!-- Results section -->
+        <section id="resultsSection" style="display:none; max-width:960px; margin:0 auto 40px;">
+
+            <!-- Status -->
+            <div style="text-align:center;">
+                <span id="statusBadge" class="status-badge-large"></span>
+            </div>
+
+            <!-- Loading -->
+            <div id="loadingDiv" class="result-card spinner-wrap" style="display:none;">
+                <div class="spinner"></div>
+                <p style="color:var(--text-secondary);">Fetching branch details from RazorPay IFSC API...</p>
+            </div>
+
+            <!-- IFSC visual breakdown -->
+            <div class="result-card" id="breakdownCard" style="display:none;">
+                <h3 style="color:var(--accent-secondary); margin-bottom:4px; display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-chart-bar"></i> IFSC Structure Breakdown
+                </h3>
+                <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:4px;">Every IFSC is 11 characters: 4-char bank + fixed zero + 6-char branch</p>
+                <div class="ifsc-breakdown" id="ifscBreakdown"></div>
+                <div style="display:flex; flex-wrap:wrap; gap:12px 22px; margin-top:10px; padding-top:12px; border-top:1px solid var(--card-border);">
+                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;border-radius:3px;background:#00d9ff;"></div><span style="font-size:0.82rem;color:var(--text-secondary);">Chars 1–4: Bank code</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;border-radius:3px;background:#e94560;"></div><span style="font-size:0.82rem;color:var(--text-secondary);">Char 5: Always 0 (reserved)</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;border-radius:3px;background:#a78bfa;"></div><span style="font-size:0.82rem;color:var(--text-secondary);">Chars 6–11: Branch code</span></div>
+                </div>
+            </div>
+
+            <!-- Bank + branch details -->
+            <div class="result-card" id="detailsCard" style="display:none;">
+                <div class="bank-header" id="bankHeader"></div>
+                <div class="fields-grid" id="fieldsGrid"></div>
+            </div>
+
+            <!-- Offline fallback notice -->
+            <div class="warning-box" id="offlineNotice" style="display:none;">
+                <h4><i class="fas fa-wifi-slash"></i> API Unavailable — Partial Data</h4>
+                <p>Could not reach the IFSC API. Bank name is decoded from the 4-char code. For full branch details, visit the official RBI portal.</p>
+                <a href="https://www.rbi.org.in/Scripts/IFSCMICRDetails.aspx" target="_blank" rel="noopener" class="external-link" style="margin-top:10px;">
+                    <i class="fas fa-external-link-alt"></i> RBI IFSC/MICR Details
+                </a>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-secondary" onclick="copyResult()"><i class="fas fa-copy"></i> Copy Result</button>
+                <button class="btn-secondary" onclick="resetTool()"><i class="fas fa-redo"></i> Lookup Another</button>
+            </div>
+        </section>
+
+        <!-- IFSC Structure education -->
+        <section class="input-section" style="max-width:960px; margin-bottom:40px;">
+            <div class="input-group">
+                <h3><i class="fas fa-book-open"></i> IFSC Structure &amp; Common Bank Codes</h3>
+                <table class="data-table" style="margin-top:14px;">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Characters</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1–4</td><td>ABCD (letters)</td><td>Bank code — unique 4-letter identifier assigned by RBI to each bank</td></tr>
+                        <tr><td>5</td><td>0 (always zero)</td><td>Reserved for future use — always the digit zero</td></tr>
+                        <tr><td>6–11</td><td>Alphanumeric</td><td>Branch code — 6 character code identifying the specific branch</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin-top:24px; color:var(--text-primary); font-size:1rem;">Common Bank Codes</h3>
+                <div class="bank-scroll" style="margin-top:12px;">
+                    <table class="data-table" style="margin-top:0;">
+                        <thead>
+                            <tr><th>Code</th><th>Bank Name</th><th>Code</th><th>Bank Name</th></tr>
+                        </thead>
+                        <tbody id="bankCodeTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Investigation info cards -->
+        <section class="input-section" style="max-width:960px; margin-bottom:40px;">
+            <h3 style="margin-bottom:18px; color:var(--text-primary); display:flex; align-items:center; gap:10px;">
+                <i class="fas fa-circle-info" style="color:var(--accent-secondary);"></i> Investigation Uses
+            </h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-money-bill-transfer"></i></div>
+                    <h4>Transaction Tracing</h4>
+                    <p>Quickly identify the originating bank and branch of any financial transaction using the IFSC in payment records.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-location-dot"></i></div>
+                    <h4>Location Intelligence</h4>
+                    <p>Resolve branch city and district from IFSC to geo-locate banking activity in fraud or money-laundering cases.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-shield-halved"></i></div>
+                    <h4>CDR / Bank Statement Analysis</h4>
+                    <p>Cross-reference IFSC codes found in CDR-linked UPI or NEFT records with branch locations to build a timeline.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer style="text-align:center;padding:30px 20px;border-top:1px solid var(--card-border);color:var(--text-secondary);font-size:0.9rem;margin-top:40px;">
+        <p>© 2024-2026 Punjab Investigation Tools. <a href="/disclaimer.html" style="color:var(--accent-secondary)">Disclaimer</a> · <a href="/privacy.html" style="color:var(--accent-secondary)">Privacy</a> · <a href="/terms.html" style="color:var(--accent-secondary)">Terms</a></p>
+    </footer>
+
+    <script>
+        // ── Comprehensive bank code map ──
+        const BANK_MAP = {
+            SBIN: 'State Bank of India',
+            HDFC: 'HDFC Bank',
+            ICIC: 'ICICI Bank',
+            PUNB: 'Punjab National Bank',
+            UBIN: 'Union Bank of India',
+            UTIB: 'Axis Bank',
+            KKBK: 'Kotak Mahindra Bank',
+            BARB: 'Bank of Baroda',
+            CNRB: 'Canara Bank',
+            IOBA: 'Indian Overseas Bank',
+            BKID: 'Bank of India',
+            INDB: 'IndusInd Bank',
+            YESB: 'Yes Bank',
+            IDFB: 'IDFC First Bank',
+            FDRL: 'Federal Bank',
+            KVBL: 'Karur Vysya Bank',
+            SIBL: 'South Indian Bank',
+            SRCB: 'Saraswat Co-operative Bank',
+            MAHB: 'Bank of Maharashtra',
+            ALLA: 'Allahabad Bank (now Indian Bank)',
+            ANDB: 'Andhra Bank (now Union Bank)',
+            CORP: 'Corporation Bank (now Union Bank)',
+            VIJB: 'Vijaya Bank (now Bank of Baroda)',
+            DENA: 'Dena Bank (now Bank of Baroda)',
+            ORBC: 'Oriental Bank (now PNB)',
+            UCBA: 'UCO Bank',
+            UCBI: 'UCO Bank',
+            PSIB: 'Punjab & Sind Bank',
+            NKGS: 'NKGSB Co-operative Bank',
+            SCBL: 'Standard Chartered Bank',
+            CITI: 'Citibank',
+            HSBC: 'HSBC Bank',
+            DEUT: 'Deutsche Bank',
+            DBSS: 'DBS Bank India',
+            RATN: 'RBL Bank',
+            ESAF: 'ESAF Small Finance Bank',
+            AUBL: 'AU Small Finance Bank',
+            FSFB: 'Fincare Small Finance Bank',
+            JSFB: 'Jana Small Finance Bank',
+            APGB: 'Andhra Pradesh Grameena Bank',
+            IBKL: 'IDBI Bank',
+            CBIN: 'Central Bank of India',
+            USFB: 'Ujjivan Small Finance Bank',
+            ESFB: 'Equitas Small Finance Bank',
+            ZCBL: 'Zoroastrian Co-op Bank',
+            TMBL: 'Tamilnad Mercantile Bank',
+            DCBL: 'DCB Bank',
+            LKBK: 'Lakshmi Vilas Bank',
+            SVCB: 'Shamrao Vithal Co-op Bank',
+            COSB: 'Cosmos Co-operative Bank',
+            GDCB: 'Gopinath Patil Parsik Bank',
+            KAIJ: 'Karnataka Bank',
+            KVGB: 'Karnataka Vikas Grameena Bank',
+            DLXB: 'Dhanlaxmi Bank',
+            AIRP: 'Airtel Payments Bank',
+            FINO: 'Fino Payments Bank',
+            IPOS: 'India Post Payments Bank',
+            PAYTM: 'Paytm Payments Bank',
+            NSPB: 'NSDL Payments Bank',
+        };
+
+        const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+        let lastResult = null;
+        let lastIFSC = '';
+
+        function onIfscInput(el) {
+            el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
+        }
+
+        async function lookupIFSC() {
+            const raw = document.getElementById('ifscInput').value.trim().toUpperCase();
+            lastIFSC = raw;
+            const section = document.getElementById('resultsSection');
+            section.style.display = 'block';
+
+            // Hide all sub-sections
+            hideAll();
+
+            // Status badge
+            const badge = document.getElementById('statusBadge');
+
+            if (!IFSC_REGEX.test(raw)) {
+                badge.className = 'status-badge-large status-invalid';
+                badge.innerHTML = '<i class="fas fa-circle-xmark"></i> INVALID FORMAT';
+                document.getElementById('breakdownCard').style.display = 'block';
+                renderBreakdown(raw);
+                section.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
+            badge.className = 'status-badge-large status-valid';
+            badge.innerHTML = '<i class="fas fa-circle-check"></i> VALID FORMAT';
+            document.getElementById('breakdownCard').style.display = 'block';
+            renderBreakdown(raw);
+
+            // Show spinner
+            document.getElementById('loadingDiv').style.display = 'block';
+            section.scrollIntoView({ behavior: 'smooth' });
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                const resp = await fetch(`https://ifsc.razorpay.com/${raw}`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                document.getElementById('loadingDiv').style.display = 'none';
+                lastResult = data;
+                renderDetails(data, raw);
+            } catch (err) {
+                document.getElementById('loadingDiv').style.display = 'none';
+                // Offline fallback
+                const bankCode = raw.slice(0, 4);
+                const bankName = BANK_MAP[bankCode] || `Unknown bank (${bankCode})`;
+                lastResult = { BANK: bankName, IFSC: raw, offline: true };
+                renderOfflineDetails(raw, bankCode, bankName);
+            }
+        }
+
+        function hideAll() {
+            ['loadingDiv','breakdownCard','detailsCard','offlineNotice'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+        }
+
+        function renderBreakdown(ifsc) {
+            const container = document.getElementById('ifscBreakdown');
+            const padded = ifsc.padEnd(11, '');
+
+            const bankChars   = padded.slice(0, 4).split('');
+            const zeroChar    = padded[4] || '?';
+            const branchChars = padded.slice(5, 11).split('');
+
+            const bankHtml = bankChars.map((c, i) =>
+                `<div class="ifsc-char ic-bank">${c || '?'}</div>`
+            ).join('');
+
+            const branchHtml = branchChars.map(c =>
+                `<div class="ifsc-char ic-branch">${c || '?'}</div>`
+            ).join('');
+
+            container.innerHTML = `
+                <div class="ifsc-seg">
+                    <div class="ifsc-chars">${bankHtml}</div>
+                    <div class="ifsc-seg-label">Bank Code<br>(1–4)</div>
+                </div>
+                <div class="ifsc-sep"></div>
+                <div class="ifsc-seg">
+                    <div class="ifsc-chars"><div class="ifsc-char ic-zero">${zeroChar}</div></div>
+                    <div class="ifsc-seg-label">Reserved<br>(5)</div>
+                </div>
+                <div class="ifsc-sep"></div>
+                <div class="ifsc-seg">
+                    <div class="ifsc-chars">${branchHtml}</div>
+                    <div class="ifsc-seg-label">Branch Code<br>(6–11)</div>
+                </div>
+            `;
+        }
+
+        function renderDetails(data, ifsc) {
+            document.getElementById('detailsCard').style.display = 'block';
+
+            const bankName = data.BANK || BANK_MAP[ifsc.slice(0,4)] || ifsc.slice(0,4);
+
+            document.getElementById('bankHeader').innerHTML = `
+                <div class="bank-logo-icon"><i class="fas fa-university"></i></div>
+                <div class="bank-name-block">
+                    <h2>${bankName}</h2>
+                    <p>${data.BRANCH || 'Branch details from RazorPay API'}</p>
+                </div>
+                <div class="ifsc-badge">${ifsc}</div>
+            `;
+
+            const fields = [
+                { label: 'Bank Name',    icon: 'fa-university',      value: data.BANK || '—' },
+                { label: 'Branch',       icon: 'fa-code-branch',     value: data.BRANCH || '—' },
+                { label: 'City',         icon: 'fa-city',            value: data.CITY || '—' },
+                { label: 'District',     icon: 'fa-map',             value: data.DISTRICT || '—' },
+                { label: 'State',        icon: 'fa-flag',            value: data.STATE || '—' },
+                { label: 'Address',      icon: 'fa-location-dot',    value: data.ADDRESS || '—', wide: true },
+                { label: 'MICR Code',    icon: 'fa-barcode',         value: data.MICR || '—', mono: true },
+                { label: 'Phone',        icon: 'fa-phone',           value: data.CONTACT || '—' },
+                { label: 'RTGS Enabled', icon: 'fa-bolt',            value: data.RTGS ? 'Yes' : 'No' },
+                { label: 'NEFT Enabled', icon: 'fa-exchange-alt',    value: data.NEFT ? 'Yes' : 'No' },
+                { label: 'IMPS Enabled', icon: 'fa-mobile-alt',      value: data.IMPS ? 'Yes' : 'No' },
+                { label: 'UPI Enabled',  icon: 'fa-qrcode',          value: data.UPI  ? 'Yes' : 'No' },
+            ];
+
+            document.getElementById('fieldsGrid').innerHTML = fields.map(f => `
+                <div class="field-item" ${f.wide ? 'style="grid-column:1/-1;"' : ''}>
+                    <div class="field-label"><i class="fas ${f.icon}"></i> ${f.label}</div>
+                    <div class="field-value ${f.mono ? 'mono' : ''}">${f.value}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderOfflineDetails(ifsc, bankCode, bankName) {
+            document.getElementById('detailsCard').style.display = 'block';
+            document.getElementById('offlineNotice').style.display = 'block';
+
+            document.getElementById('bankHeader').innerHTML = `
+                <div class="bank-logo-icon"><i class="fas fa-university"></i></div>
+                <div class="bank-name-block">
+                    <h2>${bankName}</h2>
+                    <p>Branch details unavailable — API offline</p>
+                </div>
+                <div class="ifsc-badge">${ifsc}</div>
+            `;
+
+            document.getElementById('fieldsGrid').innerHTML = `
+                <div class="field-item">
+                    <div class="field-label"><i class="fas fa-university"></i> Bank Name (decoded)</div>
+                    <div class="field-value">${bankName}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label"><i class="fas fa-code"></i> Bank Code</div>
+                    <div class="field-value mono">${bankCode}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label"><i class="fas fa-code-branch"></i> Branch Code</div>
+                    <div class="field-value mono">${ifsc.slice(5)}</div>
+                </div>
+                <div class="field-item" style="grid-column:1/-1; background:rgba(245,158,11,0.07); border-color:rgba(245,158,11,0.3);">
+                    <div class="field-label" style="color:#f59e0b;"><i class="fas fa-triangle-exclamation"></i> API Status</div>
+                    <div class="field-value" style="color:#f59e0b;">Offline — full details require network access</div>
+                </div>
+            `;
+        }
+
+        function copyResult() {
+            let text = `IFSC LOOKUP REPORT\n${'='.repeat(40)}\n\n`;
+            text += `IFSC Code: ${lastIFSC}\n\n`;
+            if (lastResult) {
+                if (lastResult.offline) {
+                    text += `Bank Name : ${lastResult.BANK}\n`;
+                    text += `Bank Code : ${lastIFSC.slice(0,4)}\n`;
+                    text += `Branch Code: ${lastIFSC.slice(5)}\n`;
+                    text += `\n[API offline — full details not available]\n`;
+                } else {
+                    const d = lastResult;
+                    text += `Bank      : ${d.BANK || '—'}\n`;
+                    text += `Branch    : ${d.BRANCH || '—'}\n`;
+                    text += `City      : ${d.CITY || '—'}\n`;
+                    text += `District  : ${d.DISTRICT || '—'}\n`;
+                    text += `State     : ${d.STATE || '—'}\n`;
+                    text += `Address   : ${d.ADDRESS || '—'}\n`;
+                    text += `MICR      : ${d.MICR || '—'}\n`;
+                    text += `Phone     : ${d.CONTACT || '—'}\n`;
+                    text += `RTGS/NEFT/IMPS/UPI: ${[d.RTGS,d.NEFT,d.IMPS,d.UPI].map(Boolean).join('/')}\n`;
+                }
+            }
+            text += `\nLooked up at: ${new Date().toLocaleString()}\n`;
+            text += `Source: Punjab Investigation Tools / RazorPay IFSC API`;
+            navigator.clipboard.writeText(text).then(() => showToast('Copied!')).catch(() => showToast('Copy failed'));
+        }
+
+        function resetTool() {
+            document.getElementById('ifscInput').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+            lastResult = null; lastIFSC = '';
+            document.getElementById('ifscInput').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showToast(msg) {
+            let t = document.getElementById('_toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = '_toast';
+                t.style.cssText = 'position:fixed;bottom:30px;right:30px;background:rgba(0,217,255,0.15);border:1px solid rgba(0,217,255,0.4);color:#fff;padding:12px 22px;border-radius:10px;font-size:0.9rem;z-index:9999;transition:opacity 0.3s;';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2800);
+        }
+
+        // Populate bank code table
+        (function() {
+            const entries = Object.entries(BANK_MAP);
+            const tbody = document.getElementById('bankCodeTable');
+            const rows = Math.ceil(entries.length / 2);
+            let html = '';
+            for (let i = 0; i < rows; i++) {
+                const [c1, n1] = entries[i] || ['',''];
+                const [c2, n2] = entries[i + rows] || ['',''];
+                html += `<tr>
+                    <td>${c1}</td><td style="color:var(--text-primary);">${n1}</td>
+                    <td>${c2}</td><td style="color:var(--text-primary);">${n2}</td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+        })();
+    </script>
+    <div style="text-align:center;padding:20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev/ifsc.svg?view=today-total&style=for-the-badge&label=IFSC+Lookup&color=080e08&labelColor=9c3232" alt="Hit Counter">
+    </div>
+</body>
+</html>

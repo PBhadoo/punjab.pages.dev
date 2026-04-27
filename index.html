@@ -17,20 +17,25 @@
     <meta property="og:url" content="https://punjab.pages.dev/">
     <meta property="og:title" content="Punjab Investigation Tools | Digital Forensics Platform">
     <meta property="og:description" content="Professional-grade digital forensics tools for law enforcement. Secure, client-side processing for evidence verification under Bharatiya Sakshya Adhiniyam, 2023.">
-    <meta property="og:image" content="https://punjab.pages.dev/og-image.png">
+    <meta property="og:image" content="https://punjab.pages.dev/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Punjab Investigation Tools">
     <meta property="og:locale" content="en_IN">
-    
+
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://punjab.pages.dev/">
     <meta name="twitter:title" content="Punjab Investigation Tools | Digital Forensics Platform">
     <meta name="twitter:description" content="Professional-grade digital forensics tools for law enforcement. Secure, client-side processing for evidence verification.">
-    <meta name="twitter:image" content="https://punjab.pages.dev/og-image.png">
+    <meta name="twitter:image" content="https://punjab.pages.dev/og-image.svg">
     
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
     <!-- Additional SEO -->
-    <meta name="theme-color" content="#6366f1">
-    <meta name="msapplication-TileColor" content="#6366f1">
+    <meta name="theme-color" content="#e94560">
+    <meta name="msapplication-TileColor" content="#e94560">
     <meta name="geo.region" content="IN-PB">
     <meta name="geo.placename" content="Punjab, India">
     
@@ -135,7 +140,7 @@
                     <span class="stat-label">Client-Side Processing</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number">20+</span>
+                    <span class="stat-number">25+</span>
                     <span class="stat-label">Investigation Tools</span>
                 </div>
                 <div class="stat-item">
@@ -166,7 +171,7 @@
                         <i class="fas fa-toolbox"></i>
                     </div>
                     <h3>General Purpose Tools</h3>
-                    <p>PDF and image tools - merge, split, compress, convert, resize, and more. 24+ tools for everyday file processing needs.</p>
+                    <p>PDF and image tools — merge, split, compress, convert, resize, watermark, and more. 24+ tools for everyday file processing needs.</p>
                     <div class="tool-features">
                         <span class="feature-tag">PDF Tools</span>
                         <span class="feature-tag">Image Tools</span>
@@ -459,19 +464,80 @@
                     </div>
                 </a>
 
-                <!-- More Coming Soon -->
-                <div class="tool-card coming-soon">
-                    <span class="tool-badge coming-soon">Coming Soon</span>
-                    <div class="tool-icon more">
-                        <i class="fas fa-plus"></i>
+                <!-- Vehicle Number Decoder - Available -->
+                <a href="vehicle/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(251, 146, 60, 0.2)); color: #ef4444;">
+                        <i class="fas fa-car"></i>
                     </div>
-                    <h3>More Tools</h3>
-                    <p>Additional investigation and forensic tools are being developed. Stay tuned for updates and new features.</p>
+                    <h3>Vehicle Number Decoder</h3>
+                    <p>Decode Indian vehicle registration numbers — identify state, RTO office, series. Supports standard format and new BH (Bharat) series numbers.</p>
                     <div class="tool-features">
-                        <span class="feature-tag">In Development</span>
-                        <span class="feature-tag">Suggestions Welcome</span>
+                        <span class="feature-tag">State ID</span>
+                        <span class="feature-tag">RTO Lookup</span>
+                        <span class="feature-tag">BH Series</span>
                     </div>
-                </div>
+                </a>
+
+                <!-- GST Validator - Available -->
+                <a href="gst/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2)); color: #10b981;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <h3>GST Number Validator</h3>
+                    <p>Validate GSTIN using official checksum algorithm. Decode state code, embedded PAN, entity type and registration number from 15-digit GSTIN.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Checksum Verify</span>
+                        <span class="feature-tag">State Decode</span>
+                        <span class="feature-tag">PAN Extract</span>
+                    </div>
+                </a>
+
+                <!-- PAN Validator - Available -->
+                <a href="pan/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2)); color: #fbbf24;">
+                        <i class="fas fa-id-badge"></i>
+                    </div>
+                    <h3>PAN Card Validator</h3>
+                    <p>Validate PAN card number format and decode entity type, taxpayer category, surname initial and check digit from the 10-character PAN structure.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Format Check</span>
+                        <span class="feature-tag">Entity Type</span>
+                        <span class="feature-tag">Decode PAN</span>
+                    </div>
+                </a>
+
+                <!-- IFSC Lookup - Available -->
+                <a href="ifsc/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.2)); color: #818cf8;">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <h3>IFSC Code Lookup</h3>
+                    <p>Look up Indian bank branch details from IFSC code — bank name, branch, address, city, MICR code and UPI/RTGS/NEFT availability.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Bank Details</span>
+                        <span class="feature-tag">Branch Info</span>
+                        <span class="feature-tag">MICR Code</span>
+                    </div>
+                </a>
+
+                <!-- Age Calculator - Available -->
+                <a href="age-calculator/" class="tool-card available">
+                    <span class="tool-badge available">Available</span>
+                    <div class="tool-icon" style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(6, 182, 212, 0.2)); color: #14b8a6;">
+                        <i class="fas fa-calendar-days"></i>
+                    </div>
+                    <h3>Age & Date Calculator</h3>
+                    <p>Calculate exact age, days between dates, day of week for any date. Includes working day counts, zodiac signs — useful for investigation timelines.</p>
+                    <div class="tool-features">
+                        <span class="feature-tag">Age Calculator</span>
+                        <span class="feature-tag">Date Difference</span>
+                        <span class="feature-tag">Timeline Tool</span>
+                    </div>
+                </a>
             </div>
         </section>
 

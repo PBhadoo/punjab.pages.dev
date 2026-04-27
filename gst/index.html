@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST Number Validator | Punjab Investigation Tools</title>
+    <meta name="description" content="Validate GST number using checksum algorithm. Decode state code, PAN details, entity type from 15-digit GSTIN.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <!-- Canonical & SEO -->
+    <link rel="canonical" href="https://punjab.pages.dev/gst/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://punjab.pages.dev/gst/">
+    <meta property="og:title" content="GST Number Validator | Punjab Investigation Tools">
+    <meta property="og:description" content="Validate GST number using checksum algorithm. Decode state code, PAN details, entity type from 15-digit GSTIN.">
+    <meta property="og:image" content="https://punjab.pages.dev/og-image.svg">
+    <meta name="theme-color" content="#e94560">
+
+    <style>
+        /* GSTIN visual breakdown */
+        .gstin-breakdown {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin: 20px 0 10px;
+        }
+        .gstin-seg {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-radius: 10px;
+            padding: 12px 16px;
+            min-width: 60px;
+            border: 2px solid rgba(255,255,255,0.08);
+            background: rgba(0,0,0,0.25);
+        }
+        .gstin-seg .seg-label {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        .gstin-seg .seg-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .gstin-seg.seg-state  { border-color: rgba(233,69,96,0.55);  background: rgba(233,69,96,0.12); color: #fb7185; }
+        .gstin-seg.seg-pan    { border-color: rgba(0,217,255,0.55);  background: rgba(0,217,255,0.12); color: #67e8f9; }
+        .gstin-seg.seg-entity { border-color: rgba(245,158,11,0.55); background: rgba(245,158,11,0.12); color: #fcd34d; }
+        .gstin-seg.seg-z      { border-color: rgba(16,185,129,0.55); background: rgba(16,185,129,0.12); color: #6ee7b7; }
+        .gstin-seg.seg-check  { border-color: rgba(139,92,246,0.55); background: rgba(139,92,246,0.12); color: #c084fc; }
+        .gstin-seg.seg-check.invalid { border-color: rgba(239,68,68,0.55); background: rgba(239,68,68,0.12); color: #ef4444; }
+
+        /* Legend below breakdown */
+        .gstin-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 24px;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        .gstin-legend span { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .dot.state  { background: #fb7185; }
+        .dot.pan    { background: #67e8f9; }
+        .dot.entity { background: #fcd34d; }
+        .dot.z      { background: #6ee7b7; }
+        .dot.check  { background: #c084fc; }
+
+        /* Valid / Invalid banners */
+        .status-banner {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 22px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+        }
+        .status-banner.valid {
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.4);
+        }
+        .status-banner.invalid {
+            background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.4);
+        }
+        .status-banner .status-icon {
+            font-size: 2rem;
+        }
+        .status-banner.valid  .status-icon { color: #10b981; }
+        .status-banner.invalid .status-icon { color: #ef4444; }
+        .status-banner .status-text h4 { font-size: 1.1rem; margin-bottom: 3px; }
+        .status-banner.valid  .status-text h4 { color: #10b981; }
+        .status-banner.invalid .status-text h4 { color: #ef4444; }
+        .status-banner .status-text p { color: var(--text-secondary); font-size: 0.88rem; }
+
+        /* Decode table */
+        .decode-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+        .decode-table td {
+            padding: 11px 15px;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.9rem;
+            vertical-align: top;
+        }
+        .decode-table td:first-child {
+            color: var(--text-secondary);
+            width: 40%;
+            font-size: 0.84rem;
+        }
+        .decode-table td:last-child {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .decode-table tr:last-child td { border-bottom: none; }
+
+        .result-section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--accent-secondary);
+            margin: 22px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .tag-pill {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: rgba(0,217,255,0.15);
+            color: var(--accent-secondary);
+            border: 1px solid rgba(0,217,255,0.3);
+            margin-left: 6px;
+        }
+
+        .gst-portal-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: rgba(0,217,255,0.1);
+            border: 1px solid rgba(0,217,255,0.3);
+            border-radius: 8px;
+            color: var(--accent-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+        .gst-portal-link:hover {
+            background: rgba(0,217,255,0.2);
+        }
+
+        .pan-highlight {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.05rem;
+            background: rgba(0,217,255,0.1);
+            border: 1px solid rgba(0,217,255,0.25);
+            border-radius: 6px;
+            padding: 3px 10px;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .gstin-seg { padding: 9px 10px; min-width: 46px; }
+            .gstin-seg .seg-value { font-size: 0.9rem; letter-spacing: 1px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration:none;color:inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">GST Number Validator</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-file-invoice-dollar"></i> GST Number Validator</h1>
+                <p>Validate any 15-digit GSTIN using the official checksum algorithm. Decode state, PAN details, entity type, and registration number embedded in the GSTIN.</p>
+            </div>
+        </section>
+
+        <!-- Input Section -->
+        <section class="input-section">
+            <div class="input-group">
+                <h3><i class="fas fa-keyboard"></i> Enter GSTIN (15-digit GST Number)</h3>
+                <div class="input-row">
+                    <input type="text" id="gstInput" class="input-field"
+                        placeholder="e.g. 03AABCU9603R1ZX"
+                        maxlength="15"
+                        autocomplete="off"
+                        autocapitalize="characters"
+                        style="letter-spacing:3px;text-transform:uppercase;font-size:1.2rem;">
+                    <button class="verify-btn" onclick="validateGST()">
+                        <i class="fas fa-check-circle"></i> Validate
+                    </button>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:8px;">
+                    <i class="fas fa-info-circle"></i>
+                    GSTIN format: <code style="background:rgba(0,0,0,0.3);padding:1px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;">SS·PPPPPPPPPP·E·Z·C</code>
+                    — 2-digit state, 10-char PAN, entity number, 'Z', check digit
+                </p>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display:none;">
+            <div class="result-card" id="resultCard">
+
+                <!-- Status banner -->
+                <div class="status-banner" id="statusBanner">
+                    <div class="status-icon" id="statusIcon"><i class="fas fa-check-circle"></i></div>
+                    <div class="status-text">
+                        <h4 id="statusTitle">Valid GSTIN</h4>
+                        <p id="statusSubtitle">Checksum verified successfully</p>
+                    </div>
+                </div>
+
+                <!-- Visual breakdown -->
+                <div class="result-section-title"><i class="fas fa-puzzle-piece"></i> GSTIN Structure</div>
+                <div class="gstin-breakdown" id="gstinBreakdown"></div>
+                <div class="gstin-legend">
+                    <span><span class="dot state"></span>State Code (2)</span>
+                    <span><span class="dot pan"></span>PAN Number (10)</span>
+                    <span><span class="dot entity"></span>Entity No. (1)</span>
+                    <span><span class="dot z"></span>Default 'Z' (1)</span>
+                    <span><span class="dot check"></span>Check Digit (1)</span>
+                </div>
+
+                <!-- Decoded details -->
+                <div class="result-section-title" style="margin-top:26px;"><i class="fas fa-table"></i> Decoded Information</div>
+                <table class="decode-table" id="decodeTable"></table>
+
+                <div style="margin-top:20px;">
+                    <a href="https://www.gst.gov.in/" target="_blank" rel="noopener" class="gst-portal-link">
+                        <i class="fas fa-external-link-alt"></i> Verify on Official GST Portal (gst.gov.in)
+                    </a>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="copyGSTIN()">
+                    <i class="fas fa-copy"></i> Copy GSTIN
+                </button>
+                <button class="action-btn" onclick="resetForm()">
+                    <i class="fas fa-redo"></i> Check Another
+                </button>
+            </div>
+        </section>
+
+        <!-- Error section -->
+        <section id="errorSection" style="display:none;max-width:800px;margin:0 auto 40px;">
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.35);border-radius:16px;padding:28px;text-align:center;">
+                <div style="font-size:2.5rem;color:#ef4444;margin-bottom:12px;"><i class="fas fa-times-circle"></i></div>
+                <h3 style="color:#ef4444;margin-bottom:8px;">Format Error</h3>
+                <p id="errorMessage" style="color:var(--text-secondary);font-size:0.95rem;"></p>
+            </div>
+        </section>
+
+        <!-- Info Section -->
+        <section class="info-section" style="max-width:1100px;margin:0 auto;">
+            <h3 style="font-size:1.2rem;margin-bottom:20px;color:var(--text-primary);display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-info-circle" style="color:var(--accent-secondary);"></i> About GSTIN
+            </h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-hashtag"></i></div>
+                    <h4>GSTIN Structure</h4>
+                    <p>
+                        A GSTIN (Goods and Services Tax Identification Number) is 15 characters:
+                        <br>· Chars 1–2: State/UT code (01–38 + 97/99)
+                        <br>· Chars 3–12: PAN of the taxpayer
+                        <br>· Char 13: Entity number (how many registrations this PAN has in the state)
+                        <br>· Char 14: Always 'Z'
+                        <br>· Char 15: Checksum digit
+                    </p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-calculator"></i></div>
+                    <h4>Checksum Algorithm</h4>
+                    <p>
+                        The last character is a mod-36 check digit. Characters are from the set <code style="background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:3px;font-size:0.8rem;">0–9A–Z</code>.
+                        Each position is multiplied by alternating factors (1, 2, 1, 2 …), the product's digits summed, then the final remainder checked against the same character set.
+                    </p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-building"></i></div>
+                    <h4>Entity Types (from PAN)</h4>
+                    <p>
+                        The 4th character of the embedded PAN reveals the entity type:
+                        <strong>P</strong>=Individual, <strong>C</strong>=Company, <strong>H</strong>=HUF,
+                        <strong>F</strong>=Firm/LLP, <strong>A</strong>=AOP/BOI, <strong>T</strong>=Trust,
+                        <strong>B</strong>=BOI, <strong>G</strong>=Government, <strong>J</strong>=Artificial Juridical Person,
+                        <strong>L</strong>=Local Authority.
+                    </p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h4>Disclaimer</h4>
+                    <p>
+                        This tool only validates the <em>format and checksum</em> of a GSTIN. A valid checksum does not confirm that the GSTIN is actually registered or active. Always verify on the
+                        <a href="https://www.gst.gov.in/" target="_blank" rel="noopener" style="color:var(--accent-secondary)">official GST Portal</a>
+                        for authoritative verification.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer style="text-align:center;padding:30px 20px;border-top:1px solid var(--card-border);color:var(--text-secondary);font-size:0.9rem;margin-top:40px;">
+        <p>© 2024-2026 Punjab Investigation Tools. <a href="/disclaimer.html" style="color:var(--accent-secondary)">Disclaimer</a> · <a href="/privacy.html" style="color:var(--accent-secondary)">Privacy</a> · <a href="/terms.html" style="color:var(--accent-secondary)">Terms</a></p>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Copied!</span>
+    </div>
+
+    <script>
+    // ─── DATA ────────────────────────────────────────────────────────────────────
+
+    const GST_STATES = {
+        '01': 'Jammu and Kashmir',
+        '02': 'Himachal Pradesh',
+        '03': 'Punjab',
+        '04': 'Chandigarh',
+        '05': 'Uttarakhand',
+        '06': 'Haryana',
+        '07': 'Delhi',
+        '08': 'Rajasthan',
+        '09': 'Uttar Pradesh',
+        '10': 'Bihar',
+        '11': 'Sikkim',
+        '12': 'Arunachal Pradesh',
+        '13': 'Nagaland',
+        '14': 'Manipur',
+        '15': 'Mizoram',
+        '16': 'Tripura',
+        '17': 'Meghalaya',
+        '18': 'Assam',
+        '19': 'West Bengal',
+        '20': 'Jharkhand',
+        '21': 'Odisha',
+        '22': 'Chhattisgarh',
+        '23': 'Madhya Pradesh',
+        '24': 'Gujarat',
+        '26': 'Dadra and Nagar Haveli and Daman & Diu',
+        '27': 'Maharashtra',
+        '28': 'Andhra Pradesh (old/pre-bifurcation)',
+        '29': 'Karnataka',
+        '30': 'Goa',
+        '31': 'Lakshadweep',
+        '32': 'Kerala',
+        '33': 'Tamil Nadu',
+        '34': 'Puducherry',
+        '35': 'Andaman and Nicobar Islands',
+        '36': 'Telangana',
+        '37': 'Andhra Pradesh',
+        '38': 'Ladakh',
+        '97': 'Other Territory',
+        '99': 'Centre Jurisdiction',
+    };
+
+    // PAN entity type (4th character of PAN, which is chars 3–12 of GSTIN, so index 2+3=5 of GSTIN)
+    const PAN_ENTITY_TYPE = {
+        'P': 'Individual (Person)',
+        'C': 'Company',
+        'H': 'Hindu Undivided Family (HUF)',
+        'F': 'Firm / LLP',
+        'A': 'Association of Persons (AOP) / BOI',
+        'T': 'Trust / AOP (Trust)',
+        'B': 'Body of Individuals (BOI)',
+        'G': 'Government Entity',
+        'J': 'Artificial Juridical Person',
+        'L': 'Local Authority',
+    };
+
+    // GSTIN checksum character set
+    const CHARSET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    // ─── CHECKSUM ────────────────────────────────────────────────────────────────
+
+    /**
+     * Official GSTIN checksum algorithm (mod-36).
+     * Returns the expected last character.
+     */
+    function calcGSTChecksum(gstin14) {
+        // gstin14 = first 14 characters of a 15-char GSTIN
+        let sum = 0;
+        for (let i = 0; i < 14; i++) {
+            const val = CHARSET.indexOf(gstin14[i]);
+            if (val === -1) return null; // invalid character
+            const factor = (i % 2 === 0) ? 1 : 2;
+            const product = val * factor;
+            // sum quotient + remainder = (product / 36) + (product % 36)
+            sum += Math.floor(product / 36) + (product % 36);
+        }
+        const checkVal = (36 - (sum % 36)) % 36;
+        return CHARSET[checkVal];
+    }
+
+    // ─── VALIDATION & DECODING ───────────────────────────────────────────────────
+
+    // GSTIN regex: 2 digits + 10 alphanumeric (PAN) + 1 alphanumeric + Z + 1 alphanumeric
+    const RE_GSTIN = /^(\d{2})([A-Z]{5}\d{4}[A-Z])(\d|[A-Z])Z([0-9A-Z])$/;
+
+    function validateAndDecode(raw) {
+        const g = raw.toUpperCase().trim();
+
+        if (g.length !== 15) {
+            return { error: `GSTIN must be exactly 15 characters. You entered ${g.length} character${g.length !== 1 ? 's' : ''}.` };
+        }
+
+        if (!RE_GSTIN.test(g)) {
+            // Provide specific guidance
+            if (!/^\d{2}/.test(g)) return { error: 'First 2 characters must be digits (state code, e.g. 03 for Punjab).' };
+            if (g[14] !== undefined && g[13] !== 'Z') return { error: `Character 14 must be 'Z', found '${g[13]}'.` };
+            return { error: `Invalid GSTIN format. Expected: SS·AAAAAXXXX A·E·Z·C (15 chars, where S=digit, A=letter, X=alphanumeric, E=entity, C=check).` };
+        }
+
+        const stateCode = g.slice(0, 2);
+        const pan       = g.slice(2, 12);
+        const entityNum = g.slice(12, 13);
+        const zChar     = g[13]; // always Z
+        const checkChar = g[14];
+
+        const stateName   = GST_STATES[stateCode] || 'Unknown State/UT';
+        const panType4    = pan[3].toUpperCase();  // 4th char of PAN = entity type
+        const panInitial  = pan[4].toUpperCase();  // 5th char of PAN = first letter of name
+        const entityType  = PAN_ENTITY_TYPE[panType4] || 'Unknown type (' + panType4 + ')';
+
+        const expectedCheck = calcGSTChecksum(g.slice(0, 14));
+        const checksumValid = expectedCheck === checkChar;
+
+        return {
+            gstin: g,
+            stateCode, stateName,
+            pan,
+            panType4, entityType,
+            panInitial,
+            entityNum,
+            zChar,
+            checkChar,
+            expectedCheck,
+            checksumValid,
+            formatValid: true,
+        };
+    }
+
+    // ─── UI ──────────────────────────────────────────────────────────────────────
+
+    let _currentGSTIN = '';
+
+    function validateGST() {
+        const raw = document.getElementById('gstInput').value;
+
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorSection').style.display = 'none';
+
+        if (!raw.trim()) {
+            showError('Please enter a GSTIN to validate.');
+            return;
+        }
+
+        const result = validateAndDecode(raw);
+        if (result.error) {
+            showError(escHtml(result.error));
+            return;
+        }
+
+        _currentGSTIN = result.gstin;
+        renderResult(result);
+    }
+
+    function renderResult(r) {
+        const isValid = r.checksumValid;
+
+        // Status banner
+        const banner = document.getElementById('statusBanner');
+        banner.className = 'status-banner ' + (isValid ? 'valid' : 'invalid');
+        document.getElementById('statusIcon').innerHTML = isValid
+            ? '<i class="fas fa-check-circle"></i>'
+            : '<i class="fas fa-times-circle"></i>';
+        document.getElementById('statusTitle').textContent = isValid ? 'GSTIN is VALID' : 'GSTIN Checksum INVALID';
+        document.getElementById('statusSubtitle').textContent = isValid
+            ? 'Format correct and checksum verified using the official mod-36 algorithm.'
+            : `Checksum mismatch: expected '${r.expectedCheck}', found '${r.checkChar}'. The number may be incorrect or fabricated.`;
+
+        // Visual breakdown
+        const g = r.gstin;
+        const checkSeg = isValid ? 'gstin-seg seg-check' : 'gstin-seg seg-check invalid';
+        document.getElementById('gstinBreakdown').innerHTML = `
+            <div class="gstin-seg seg-state">
+                <span class="seg-label">State</span>
+                <span class="seg-value">${g.slice(0,2)}</span>
+            </div>
+            <div class="gstin-seg seg-pan">
+                <span class="seg-label">PAN (10 chars)</span>
+                <span class="seg-value" style="letter-spacing:1px;">${g.slice(2,12)}</span>
+            </div>
+            <div class="gstin-seg seg-entity">
+                <span class="seg-label">Entity</span>
+                <span class="seg-value">${g[12]}</span>
+            </div>
+            <div class="gstin-seg seg-z">
+                <span class="seg-label">Const</span>
+                <span class="seg-value">Z</span>
+            </div>
+            <div class="${checkSeg}">
+                <span class="seg-label">Check</span>
+                <span class="seg-value">${g[14]}</span>
+            </div>
+        `;
+
+        // Decode table rows
+        const rows = [
+            ['GSTIN', `<span style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;letter-spacing:2px;">${r.gstin}</span>`],
+            ['Checksum', isValid
+                ? `<span style="color:#10b981;font-weight:700;"><i class="fas fa-check-circle"></i> VALID</span> <span style="color:var(--text-secondary);font-size:0.82rem;">(expected '${r.expectedCheck}')</span>`
+                : `<span style="color:#ef4444;font-weight:700;"><i class="fas fa-times-circle"></i> INVALID</span> <span style="color:var(--text-secondary);font-size:0.82rem;">(expected '${r.expectedCheck}', got '${r.checkChar}')</span>`
+            ],
+            ['State / UT', `<strong style="color:var(--accent-secondary)">${r.stateName}</strong> <span style="color:var(--text-secondary);font-size:0.82rem;">(code ${r.stateCode})</span>`],
+            ['PAN Number', `<span class="pan-highlight">${r.pan}</span>`],
+            ['Entity Type', `${r.entityType} <span class="tag-pill">${r.panType4}</span>`],
+            ['First Name Initial', `<strong style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;">${r.panInitial}</strong> <span style="color:var(--text-secondary);font-size:0.82rem;">(5th char of PAN)</span>`],
+            ['Entity No. in State', `<strong style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;">${r.entityNum}</strong> <span style="color:var(--text-secondary);font-size:0.82rem;">(${r.entityNum === '1' ? 'first registration of this PAN in state' : 'registration #' + r.entityNum + ' of this PAN in state'})</span>`],
+            ['Constant Character', `<span style="font-family:'JetBrains Mono',monospace;">Z</span> <span style="color:var(--text-secondary);font-size:0.82rem;">(always Z in all GSTINs)</span>`],
+            ['Check Character', `<span style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;">${r.checkChar}</span>`],
+        ];
+        document.getElementById('decodeTable').innerHTML = rows.map(([l,v]) =>
+            `<tr><td>${l}</td><td>${v}</td></tr>`
+        ).join('');
+
+        document.getElementById('resultsSection').style.display = 'block';
+        document.getElementById('resultsSection').scrollIntoView({behavior:'smooth'});
+    }
+
+    function showError(html) {
+        document.getElementById('errorMessage').innerHTML = html;
+        document.getElementById('errorSection').style.display = 'block';
+        document.getElementById('errorSection').scrollIntoView({behavior:'smooth'});
+    }
+
+    function copyGSTIN() {
+        if (!_currentGSTIN) return;
+        navigator.clipboard.writeText(_currentGSTIN).then(() => showToast('Copied: ' + _currentGSTIN));
+    }
+
+    function resetForm() {
+        document.getElementById('gstInput').value = '';
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorSection').style.display = 'none';
+        _currentGSTIN = '';
+        document.getElementById('gstInput').focus();
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toastMessage').textContent = msg;
+        t.classList.add('active');
+        setTimeout(() => t.classList.remove('active'), 3000);
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Auto-uppercase
+    document.getElementById('gstInput').addEventListener('input', function() {
+        const pos = this.selectionStart;
+        this.value = this.value.toUpperCase();
+        this.setSelectionRange(pos, pos);
+    });
+
+    // Enter key
+    document.getElementById('gstInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') validateGST();
+    });
+
+    // Auto-decode from URL param
+    (function() {
+        const p = new URLSearchParams(window.location.search).get('gstin');
+        if (p) {
+            document.getElementById('gstInput').value = p.toUpperCase();
+            validateGST();
+        }
+    })();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align:center;padding:20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev/gst.svg?view=today-total&style=for-the-badge&label=GST+Validator&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+</body>
+</html>

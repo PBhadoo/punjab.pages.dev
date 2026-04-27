@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age &amp; Date Calculator | Punjab Investigation Tools</title>
+    <meta name="description" content="Calculate exact age from date of birth, days between dates, day of week for any date. Useful for investigation timelines.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://punjab.pages.dev/age-calculator/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://punjab.pages.dev/age-calculator/">
+    <meta property="og:title" content="Age &amp; Date Calculator | Punjab Investigation Tools">
+    <meta property="og:description" content="Calculate exact age from date of birth, days between dates, day of week for any date. Useful for investigation timelines.">
+    <meta property="og:image" content="https://punjab.pages.dev/og-image.svg">
+    <meta name="theme-color" content="#e94560">
+
+    <style>
+        /* ── Tab Navigation ── */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            padding: 12px 28px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            transition: all 0.25s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(233,69,96,0.25), rgba(0,217,255,0.2));
+            border-color: var(--accent-secondary);
+            color: var(--text-primary);
+            box-shadow: 0 4px 20px rgba(0,217,255,0.15);
+        }
+
+        /* ── Tab panels ── */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Date input fields ── */
+        .date-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(0,0,0,0.35);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            color-scheme: dark;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 20px rgba(0,217,255,0.2);
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .input-block {
+            margin-bottom: 20px;
+        }
+
+        .radio-row {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .radio-label input[type="radio"] {
+            accent-color: var(--accent-secondary);
+            width: 16px;
+            height: 16px;
+        }
+
+        .radio-label:has(input:checked) {
+            color: var(--text-primary);
+        }
+
+        /* ── Big number stat cards ── */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            padding: 24px 18px 20px;
+            border-radius: 16px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            border: 1px solid transparent;
+        }
+
+        .stat-card.years   { background: rgba(233,69,96,0.12); }
+        .stat-card.years::before  { border-color: rgba(233,69,96,0.35); }
+
+        .stat-card.months  { background: rgba(0,217,255,0.10); }
+        .stat-card.months::before { border-color: rgba(0,217,255,0.3); }
+
+        .stat-card.days    { background: rgba(139,92,246,0.12); }
+        .stat-card.days::before   { border-color: rgba(139,92,246,0.35); }
+
+        .stat-card.weeks   { background: rgba(245,158,11,0.12); }
+        .stat-card.weeks::before  { border-color: rgba(245,158,11,0.35); }
+
+        .stat-card.hours   { background: rgba(16,185,129,0.10); }
+        .stat-card.hours::before  { border-color: rgba(16,185,129,0.3); }
+
+        .stat-card.minutes { background: rgba(59,130,246,0.10); }
+        .stat-card.minutes::before{ border-color: rgba(59,130,246,0.3); }
+
+        .stat-number {
+            font-size: 2.6rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-card.years   .stat-number { color: #e94560; }
+        .stat-card.months  .stat-number { color: #00d9ff; }
+        .stat-card.days    .stat-number { color: #a78bfa; }
+        .stat-card.weeks   .stat-number { color: #f59e0b; }
+        .stat-card.hours   .stat-number { color: #10b981; }
+        .stat-card.minutes .stat-number { color: #60a5fa; }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* ── 2-col stat grid ── */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 0;
+        }
+
+        .detail-tile {
+            padding: 14px 16px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--card-border);
+            border-radius: 11px;
+        }
+
+        .detail-tile .dt-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .detail-tile .dt-value {
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .detail-tile .dt-value.accent { color: var(--accent-secondary); }
+        .detail-tile .dt-value.red    { color: var(--accent-color); }
+        .detail-tile .dt-value.green  { color: #10b981; }
+        .detail-tile .dt-value.yellow { color: #f59e0b; }
+
+        /* Birthday countdown */
+        .bday-card {
+            padding: 20px 24px;
+            background: linear-gradient(135deg, rgba(233,69,96,0.12), rgba(0,217,255,0.08));
+            border: 1px solid rgba(0,217,255,0.25);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 0;
+        }
+
+        .bday-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(233,69,96,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: var(--accent-color);
+            flex-shrink: 0;
+        }
+
+        /* Result sections */
+        .result-block {
+            margin-bottom: 22px;
+        }
+
+        .result-block h4 {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Working/weekend days */
+        .day-split-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .day-card {
+            padding: 20px;
+            border-radius: 13px;
+            text-align: center;
+        }
+
+        .day-card.working {
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.3);
+        }
+
+        .day-card.weekend {
+            background: rgba(233,69,96,0.1);
+            border: 1px solid rgba(233,69,96,0.3);
+        }
+
+        .day-card .dc-num {
+            font-size: 2.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .day-card.working .dc-num { color: #10b981; }
+        .day-card.weekend .dc-num { color: var(--accent-color); }
+
+        .day-card .dc-label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Button */
+        .calc-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--accent-color), #c73654);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            margin-top: 4px;
+        }
+
+        .calc-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(233,69,96,0.3);
+        }
+
+        .btn-row {
+            display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px;
+        }
+
+        .btn-secondary {
+            padding: 12px 22px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.12);
+            color: var(--text-primary);
+            border-color: var(--accent-secondary);
+        }
+
+        /* Zodiac badge */
+        .zodiac-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(139,92,246,0.15);
+            border: 1px solid rgba(139,92,246,0.4);
+            border-radius: 50px;
+            color: #a78bfa;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        /* Season badge */
+        .season-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        /* Results container */
+        .results-container {
+            max-width: 840px;
+            margin: 0 auto 40px;
+        }
+
+        .result-card-inner {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .stat-cards { grid-template-columns: repeat(2, 1fr); }
+            .stat-number { font-size: 2rem; }
+            .day-split-cards { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 420px) {
+            .stat-cards { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration:none;color:inherit">
+                <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Age &amp; Date Calculator</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn"><i class="fas fa-home"></i> All Tools</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Hero -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-calendar-days"></i> Age &amp; Date Calculator</h1>
+                <p>Compute exact ages, date differences, day-of-week and timeline details — essential for suspect profiling and incident analysis</p>
+            </div>
+        </section>
+
+        <!-- Tab navigation -->
+        <section style="max-width:840px; margin:0 auto; padding:0 20px;">
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('age')" id="tab-age">
+                    <i class="fas fa-user-clock"></i> Age Calculator
+                </button>
+                <button class="tab-btn" onclick="switchTab('diff')" id="tab-diff">
+                    <i class="fas fa-arrows-left-right"></i> Date Difference
+                </button>
+                <button class="tab-btn" onclick="switchTab('info')" id="tab-info">
+                    <i class="fas fa-circle-info"></i> Date Info
+                </button>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             TAB 1: Age Calculator
+        ══════════════════════════════════════════ -->
+        <div class="tab-panel active" id="panel-age">
+            <section class="input-section">
+                <div class="input-group">
+                    <h3><i class="fas fa-user-clock"></i> Age Calculator</h3>
+
+                    <div class="input-block">
+                        <label class="input-label" for="dob">Date of Birth</label>
+                        <input type="date" id="dob" class="date-input" onchange="autoCalcAge()">
+                    </div>
+
+                    <div class="input-block">
+                        <label class="input-label">Calculate Age As Of</label>
+                        <div class="radio-row">
+                            <label class="radio-label">
+                                <input type="radio" name="ageAsOf" value="today" checked onchange="toggleAgeAsOf()">
+                                Today
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="ageAsOf" value="custom" onchange="toggleAgeAsOf()">
+                                Custom Date
+                            </label>
+                        </div>
+                        <div id="customAsOfDiv" style="display:none;">
+                            <input type="date" id="ageAsOfDate" class="date-input" onchange="autoCalcAge()">
+                        </div>
+                    </div>
+
+                    <button class="calc-btn" onclick="calcAge()">
+                        <i class="fas fa-calculator"></i> Calculate Age
+                    </button>
+                </div>
+            </section>
+
+            <!-- Age Results -->
+            <div id="ageResults" class="results-container" style="display:none;">
+                <div class="result-card-inner">
+                    <!-- Primary stat cards -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-hourglass-half"></i> Exact Age</h4>
+                        <div class="stat-cards" id="ageStatCards">
+                            <div class="stat-card years">
+                                <div class="stat-number" id="ageYears">0</div>
+                                <div class="stat-label">Years</div>
+                            </div>
+                            <div class="stat-card months">
+                                <div class="stat-number" id="ageMonths">0</div>
+                                <div class="stat-label">Months</div>
+                            </div>
+                            <div class="stat-card days">
+                                <div class="stat-number" id="ageDaysRem">0</div>
+                                <div class="stat-label">Days</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional totals -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-infinity"></i> Total Counts</h4>
+                        <div class="stat-cards">
+                            <div class="stat-card weeks">
+                                <div class="stat-number" id="ageTotalWeeks">0</div>
+                                <div class="stat-label">Weeks</div>
+                            </div>
+                            <div class="stat-card hours">
+                                <div class="stat-number" id="ageTotalDays">0</div>
+                                <div class="stat-label">Total Days</div>
+                            </div>
+                            <div class="stat-card minutes">
+                                <div class="stat-number" id="ageTotalHours">0</div>
+                                <div class="stat-label">Total Hours</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detail tiles -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-list-check"></i> More Details</h4>
+                        <div class="detail-grid">
+                            <div class="detail-tile">
+                                <div class="dt-label">Day of Week Born</div>
+                                <div class="dt-value accent" id="ageDayBorn">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Zodiac Sign</div>
+                                <div class="dt-value" id="ageZodiac">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Age Group</div>
+                                <div class="dt-value" id="ageGroup">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">As Of Date</div>
+                                <div class="dt-value" id="ageAsOfDisplay">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Birthday countdown -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-cake-candles"></i> Next Birthday</h4>
+                        <div class="bday-card">
+                            <div class="bday-icon"><i class="fas fa-cake-candles"></i></div>
+                            <div>
+                                <div id="bdayCountdown" style="font-size:1.15rem; font-weight:700; color:var(--text-primary);">—</div>
+                                <div id="bdayDate" style="font-size:0.88rem; color:var(--text-secondary); margin-top:4px;">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-secondary" onclick="copyAgeResult()"><i class="fas fa-copy"></i> Copy Result</button>
+                    <button class="btn-secondary" onclick="resetAge()"><i class="fas fa-redo"></i> Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             TAB 2: Date Difference
+        ══════════════════════════════════════════ -->
+        <div class="tab-panel" id="panel-diff">
+            <section class="input-section">
+                <div class="input-group">
+                    <h3><i class="fas fa-arrows-left-right"></i> Date Difference Calculator</h3>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div class="input-block">
+                            <label class="input-label" for="diffStart">Start Date</label>
+                            <input type="date" id="diffStart" class="date-input" onchange="autoCalcDiff()">
+                        </div>
+                        <div class="input-block">
+                            <label class="input-label" for="diffEnd">End Date</label>
+                            <input type="date" id="diffEnd" class="date-input" onchange="autoCalcDiff()">
+                        </div>
+                    </div>
+
+                    <button class="calc-btn" onclick="calcDiff()">
+                        <i class="fas fa-calculator"></i> Calculate Difference
+                    </button>
+                </div>
+            </section>
+
+            <!-- Diff Results -->
+            <div id="diffResults" class="results-container" style="display:none;">
+                <div class="result-card-inner">
+                    <!-- Direction banner -->
+                    <div id="diffBanner" style="padding:12px 18px; border-radius:10px; margin-bottom:22px; font-size:0.92rem; font-weight:600;"></div>
+
+                    <!-- Main stat cards -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-calendar-check"></i> Total Spans</h4>
+                        <div class="stat-cards">
+                            <div class="stat-card years">
+                                <div class="stat-number" id="diffYears">0</div>
+                                <div class="stat-label">Years (approx)</div>
+                            </div>
+                            <div class="stat-card months">
+                                <div class="stat-number" id="diffMonths">0</div>
+                                <div class="stat-label">Months (approx)</div>
+                            </div>
+                            <div class="stat-card days">
+                                <div class="stat-number" id="diffDays">0</div>
+                                <div class="stat-label">Total Days</div>
+                            </div>
+                            <div class="stat-card weeks">
+                                <div class="stat-number" id="diffWeeks">0</div>
+                                <div class="stat-label">Weeks</div>
+                            </div>
+                            <div class="stat-card hours">
+                                <div class="stat-number" id="diffHours">0</div>
+                                <div class="stat-label">Hours (approx)</div>
+                            </div>
+                            <div class="stat-card minutes">
+                                <div class="stat-number" id="diffMins">0</div>
+                                <div class="stat-label">Minutes (approx)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Working vs weekend -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-briefcase"></i> Working vs Weekend Days</h4>
+                        <div class="day-split-cards">
+                            <div class="day-card working">
+                                <div class="dc-num" id="diffWorkDays">0</div>
+                                <div class="dc-label"><i class="fas fa-briefcase"></i> Working Days (Mon–Fri)</div>
+                            </div>
+                            <div class="day-card weekend">
+                                <div class="dc-num" id="diffWeekendDays">0</div>
+                                <div class="dc-label"><i class="fas fa-umbrella-beach"></i> Weekend Days</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detail tiles -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-list-check"></i> Period Details</h4>
+                        <div class="detail-grid">
+                            <div class="detail-tile">
+                                <div class="dt-label">Start Date</div>
+                                <div class="dt-value accent" id="diffStartDisplay">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">End Date</div>
+                                <div class="dt-value accent" id="diffEndDisplay">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Start Day of Week</div>
+                                <div class="dt-value" id="diffStartDay">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">End Day of Week</div>
+                                <div class="dt-value" id="diffEndDay">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-secondary" onclick="copyDiffResult()"><i class="fas fa-copy"></i> Copy Result</button>
+                    <button class="btn-secondary" onclick="resetDiff()"><i class="fas fa-redo"></i> Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             TAB 3: Date Info
+        ══════════════════════════════════════════ -->
+        <div class="tab-panel" id="panel-info">
+            <section class="input-section">
+                <div class="input-group">
+                    <h3><i class="fas fa-circle-info"></i> Date Information</h3>
+
+                    <div class="input-block">
+                        <label class="input-label" for="infoDate">Select Any Date</label>
+                        <input type="date" id="infoDate" class="date-input" onchange="autoCalcInfo()">
+                    </div>
+
+                    <button class="calc-btn" onclick="calcInfo()">
+                        <i class="fas fa-calculator"></i> Get Date Info
+                    </button>
+                </div>
+            </section>
+
+            <!-- Info Results -->
+            <div id="infoResults" class="results-container" style="display:none;">
+                <div class="result-card-inner">
+                    <!-- Main stat cards -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-calendar-day"></i> Day &amp; Calendar Position</h4>
+                        <div class="stat-cards">
+                            <div class="stat-card years">
+                                <div class="stat-number" id="infoDayOfWeekNum">0</div>
+                                <div class="stat-label" id="infoDayOfWeekName">Day of Week</div>
+                            </div>
+                            <div class="stat-card months">
+                                <div class="stat-number" id="infoWeekNum">0</div>
+                                <div class="stat-label">Week of Year</div>
+                            </div>
+                            <div class="stat-card days">
+                                <div class="stat-number" id="infoDayOfYear">0</div>
+                                <div class="stat-label">Day of Year</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Distance tiles -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-arrows-left-right"></i> Distance from Today</h4>
+                        <div class="detail-grid">
+                            <div class="detail-tile">
+                                <div class="dt-label">Days from Today</div>
+                                <div class="dt-value" id="infoDaysFromToday">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Weeks from Today</div>
+                                <div class="dt-value" id="infoWeeksFromToday">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Months from Today</div>
+                                <div class="dt-value" id="infoMonthsFromToday">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Years from Today</div>
+                                <div class="dt-value" id="infoYearsFromToday">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- More tiles -->
+                    <div class="result-block">
+                        <h4><i class="fas fa-list-check"></i> Additional Details</h4>
+                        <div class="detail-grid">
+                            <div class="detail-tile">
+                                <div class="dt-label">Is Leap Year?</div>
+                                <div class="dt-value" id="infoLeap">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Quarter</div>
+                                <div class="dt-value accent" id="infoQuarter">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Days Left in Year</div>
+                                <div class="dt-value" id="infoDaysLeft">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Days Left in Month</div>
+                                <div class="dt-value" id="infoDaysLeftMonth">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Season (Northern India)</div>
+                                <div class="dt-value" id="infoSeason">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Zodiac Sign</div>
+                                <div class="dt-value" id="infoZodiac">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">Unix Timestamp (midnight)</div>
+                                <div class="dt-value" style="font-family:'JetBrains Mono',monospace; font-size:0.9rem;" id="infoUnix">—</div>
+                            </div>
+                            <div class="detail-tile">
+                                <div class="dt-label">ISO 8601 Date</div>
+                                <div class="dt-value" style="font-family:'JetBrains Mono',monospace; font-size:0.9rem;" id="infoISO">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-secondary" onclick="copyInfoResult()"><i class="fas fa-copy"></i> Copy Result</button>
+                    <button class="btn-secondary" onclick="resetInfo()"><i class="fas fa-redo"></i> Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investigation use-cases info -->
+        <section class="input-section" style="max-width:840px; margin-bottom:40px;">
+            <h3 style="margin-bottom:18px; color:var(--text-primary); display:flex; align-items:center; gap:10px;">
+                <i class="fas fa-circle-info" style="color:var(--accent-secondary);"></i> Investigation Use Cases
+            </h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-user-shield"></i></div>
+                    <h4>Suspect Age Verification</h4>
+                    <p>Calculate exact age at time of incident from a suspect's date of birth to determine juvenile vs adult legal status.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-timeline"></i></div>
+                    <h4>Incident Timeline</h4>
+                    <p>Compute days elapsed between FIR filing date, arrest, and court appearances to track case progression.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-gavel"></i></div>
+                    <h4>Limitation Periods</h4>
+                    <p>Verify if a complaint or chargesheet falls within statutory limitation periods using exact date arithmetic.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer style="text-align:center;padding:30px 20px;border-top:1px solid var(--card-border);color:var(--text-secondary);font-size:0.9rem;margin-top:40px;">
+        <p>© 2024-2026 Punjab Investigation Tools. <a href="/disclaimer.html" style="color:var(--accent-secondary)">Disclaimer</a> · <a href="/privacy.html" style="color:var(--accent-secondary)">Privacy</a> · <a href="/terms.html" style="color:var(--accent-secondary)">Terms</a></p>
+    </footer>
+
+    <script>
+        const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        // ── Tab switching ──
+        function switchTab(name) {
+            ['age','diff','info'].forEach(t => {
+                document.getElementById('panel-' + t).classList.toggle('active', t === name);
+                document.getElementById('tab-' + t).classList.toggle('active', t === name);
+            });
+        }
+
+        // ── Zodiac ──
+        function getZodiac(month, day) {
+            const signs = [
+                [20, 'Capricorn ♑'],  [19, 'Aquarius ♒'],   [20, 'Pisces ♓'],
+                [20, 'Aries ♈'],      [21, 'Taurus ♉'],      [21, 'Gemini ♊'],
+                [22, 'Cancer ♋'],     [22, 'Leo ♌'],          [23, 'Virgo ♍'],
+                [23, 'Libra ♎'],      [22, 'Scorpio ♏'],      [22, 'Sagittarius ♐'],
+            ];
+            const [limit, sign] = signs[month - 1];
+            return day <= limit ? sign : signs[month % 12][1];
+        }
+
+        // ── Season (Northern India / Punjab) ──
+        function getSeason(month, day) {
+            if ((month === 12 && day >= 21) || month <= 2 || (month === 3 && day < 20))
+                return 'Winter (Sard / ਸਰਦੀ)';
+            if ((month === 3 && day >= 20) || month <= 5 || (month === 6 && day < 21))
+                return 'Spring / Summer (Garmi / ਗਰਮੀ)';
+            if ((month === 6 && day >= 21) || month <= 9 || (month === 9 && day < 22))
+                return 'Monsoon (Barsat / ਬਰਸਾਤ)';
+            return 'Autumn (Patjhar / ਪੱਤਝੜ)';
+        }
+
+        // ── Age Group ──
+        function getAgeGroup(years) {
+            if (years < 1)  return 'Infant (0–1 year)';
+            if (years < 3)  return 'Toddler (1–3 years)';
+            if (years < 13) return 'Child (3–12 years)';
+            if (years < 18) return 'Adolescent / Minor (13–17 years)';
+            if (years < 25) return 'Young Adult (18–24 years)';
+            if (years < 40) return 'Adult (25–39 years)';
+            if (years < 60) return 'Middle-Aged (40–59 years)';
+            return 'Senior / Elderly (60+ years)';
+        }
+
+        // ── Parse local date without timezone shift ──
+        function parseDate(str) {
+            const [y, m, d] = str.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function formatDate(d) {
+            return `${d.getDate().toString().padStart(2,'0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()} (${DAYS[d.getDay()]})`;
+        }
+
+        function todayDate() {
+            const t = new Date();
+            return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+        }
+
+        // ── Week number (ISO-like) ──
+        function getWeekNumber(d) {
+            const startOfYear = new Date(d.getFullYear(), 0, 1);
+            const dayOfYear = Math.floor((d - startOfYear) / 86400000) + 1;
+            return Math.ceil(dayOfYear / 7);
+        }
+
+        // ── Day of year ──
+        function getDayOfYear(d) {
+            const start = new Date(d.getFullYear(), 0, 0);
+            return Math.floor((d - start) / 86400000);
+        }
+
+        // ── TAB 1: Age Calculator ──
+        function toggleAgeAsOf() {
+            const custom = document.querySelector('input[name="ageAsOf"]:checked').value === 'custom';
+            document.getElementById('customAsOfDiv').style.display = custom ? 'block' : 'none';
+        }
+
+        function autoCalcAge() {
+            if (document.getElementById('dob').value) calcAge();
+        }
+
+        function calcAge() {
+            const dobStr = document.getElementById('dob').value;
+            if (!dobStr) { showToast('Please select date of birth'); return; }
+
+            const asOfMode = document.querySelector('input[name="ageAsOf"]:checked').value;
+            let asOf;
+            if (asOfMode === 'custom') {
+                const asOfStr = document.getElementById('ageAsOfDate').value;
+                if (!asOfStr) { showToast('Please select the "as of" date'); return; }
+                asOf = parseDate(asOfStr);
+            } else {
+                asOf = todayDate();
+            }
+
+            const dob = parseDate(dobStr);
+            if (dob > asOf) { showToast('Date of birth cannot be in the future'); return; }
+
+            // Calculate years, months, days
+            let years  = asOf.getFullYear() - dob.getFullYear();
+            let months = asOf.getMonth()    - dob.getMonth();
+            let days   = asOf.getDate()     - dob.getDate();
+
+            if (days < 0) {
+                months--;
+                const prevMonth = new Date(asOf.getFullYear(), asOf.getMonth(), 0);
+                days += prevMonth.getDate();
+            }
+            if (months < 0) { years--; months += 12; }
+
+            const totalMs   = asOf - dob;
+            const totalDays = Math.floor(totalMs / 86400000);
+            const totalWeeks = Math.floor(totalDays / 7);
+            const totalHours = totalDays * 24;
+
+            // Next birthday
+            let nextBday = new Date(asOf.getFullYear(), dob.getMonth(), dob.getDate());
+            if (nextBday <= asOf) nextBday.setFullYear(nextBday.getFullYear() + 1);
+            const daysUntilBday = Math.floor((nextBday - asOf) / 86400000);
+
+            // Populate
+            setText('ageYears',      years.toLocaleString());
+            setText('ageMonths',     months.toLocaleString());
+            setText('ageDaysRem',    days.toLocaleString());
+            setText('ageTotalWeeks', totalWeeks.toLocaleString());
+            setText('ageTotalDays',  totalDays.toLocaleString());
+            setText('ageTotalHours', totalHours.toLocaleString());
+            setText('ageDayBorn',    DAYS[dob.getDay()]);
+            setText('ageZodiac',     getZodiac(dob.getMonth() + 1, dob.getDate()));
+            setText('ageGroup',      getAgeGroup(years));
+            setText('ageAsOfDisplay',formatDate(asOf));
+            setText('bdayCountdown', daysUntilBday === 0 ? 'TODAY is their birthday!' :
+                                      `${daysUntilBday} day${daysUntilBday!==1?'s':''} away`);
+            setText('bdayDate',      `Next birthday: ${formatDate(nextBday)}`);
+
+            document.getElementById('ageResults').style.display = 'block';
+            document.getElementById('ageResults').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyAgeResult() {
+            const dob = document.getElementById('dob').value;
+            const text = [
+                'AGE CALCULATOR REPORT',
+                '='.repeat(40),
+                '',
+                `Date of Birth : ${getText('ageDayBorn')}, ${dob}`,
+                `As of Date    : ${getText('ageAsOfDisplay')}`,
+                '',
+                `Age (Y/M/D)   : ${getText('ageYears')} years, ${getText('ageMonths')} months, ${getText('ageDaysRem')} days`,
+                `Total Days    : ${getText('ageTotalDays')}`,
+                `Total Weeks   : ${getText('ageTotalWeeks')}`,
+                `Total Hours   : ${getText('ageTotalHours')}`,
+                '',
+                `Zodiac Sign   : ${getText('ageZodiac')}`,
+                `Age Group     : ${getText('ageGroup')}`,
+                `Next Birthday : ${getText('bdayCountdown')}`,
+                '',
+                `Calculated at : ${new Date().toLocaleString()}`,
+                `Source: Punjab Investigation Tools — https://punjab.pages.dev/age-calculator/`
+            ].join('\n');
+            copyText(text);
+        }
+
+        function resetAge() {
+            document.getElementById('dob').value = '';
+            document.getElementById('ageAsOfDate').value = '';
+            document.getElementById('ageResults').style.display = 'none';
+        }
+
+        // ── TAB 2: Date Difference ──
+        function autoCalcDiff() {
+            if (document.getElementById('diffStart').value && document.getElementById('diffEnd').value) calcDiff();
+        }
+
+        function calcDiff() {
+            const s = document.getElementById('diffStart').value;
+            const e = document.getElementById('diffEnd').value;
+            if (!s || !e) { showToast('Please select both dates'); return; }
+
+            const start = parseDate(s);
+            const end   = parseDate(e);
+            const sign  = end >= start ? 1 : -1;
+            const earlier = sign >= 0 ? start : end;
+            const later   = sign >= 0 ? end   : start;
+
+            const totalDays  = Math.floor((later - earlier) / 86400000);
+            const totalWeeks = Math.floor(totalDays / 7);
+            const totalHours = totalDays * 24;
+            const totalMins  = totalHours * 60;
+            const approxMonths = (totalDays / 30.44).toFixed(1);
+            const approxYears  = (totalDays / 365.25).toFixed(2);
+
+            // Working / weekend days
+            let workDays = 0, weekendDays = 0;
+            const cur = new Date(earlier);
+            while (cur <= later) {
+                const dow = cur.getDay();
+                if (dow === 0 || dow === 6) weekendDays++; else workDays++;
+                cur.setDate(cur.getDate() + 1);
+            }
+            // Don't double-count last day if same date
+            if (totalDays === 0) { workDays = 0; weekendDays = 0; }
+
+            // Banner
+            const banner = document.getElementById('diffBanner');
+            if (sign >= 0) {
+                banner.style.cssText = 'padding:12px 18px;border-radius:10px;margin-bottom:22px;font-size:0.92rem;font-weight:600;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#10b981;';
+                banner.innerHTML = `<i class="fas fa-forward"></i> ${formatDate(start)} &rarr; ${formatDate(end)}`;
+            } else {
+                banner.style.cssText = 'padding:12px 18px;border-radius:10px;margin-bottom:22px;font-size:0.92rem;font-weight:600;background:rgba(233,69,96,0.12);border:1px solid rgba(233,69,96,0.3);color:#e94560;';
+                banner.innerHTML = `<i class="fas fa-backward"></i> ${formatDate(end)} &larr; ${formatDate(start)} (reversed order)`;
+            }
+
+            setText('diffYears',       approxYears);
+            setText('diffMonths',      approxMonths);
+            setText('diffDays',        totalDays.toLocaleString());
+            setText('diffWeeks',       totalWeeks.toLocaleString());
+            setText('diffHours',       totalHours.toLocaleString());
+            setText('diffMins',        totalMins.toLocaleString());
+            setText('diffWorkDays',    workDays.toLocaleString());
+            setText('diffWeekendDays', weekendDays.toLocaleString());
+            setText('diffStartDisplay',formatDate(earlier));
+            setText('diffEndDisplay',  formatDate(later));
+            setText('diffStartDay',    DAYS[earlier.getDay()]);
+            setText('diffEndDay',      DAYS[later.getDay()]);
+
+            document.getElementById('diffResults').style.display = 'block';
+            document.getElementById('diffResults').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyDiffResult() {
+            const text = [
+                'DATE DIFFERENCE REPORT',
+                '='.repeat(40),
+                '',
+                `Start Date     : ${getText('diffStartDisplay')}`,
+                `End Date       : ${getText('diffEndDisplay')}`,
+                '',
+                `Total Days     : ${getText('diffDays')}`,
+                `Total Weeks    : ${getText('diffWeeks')}`,
+                `Approx Months  : ${getText('diffMonths')}`,
+                `Approx Years   : ${getText('diffYears')}`,
+                `Approx Hours   : ${getText('diffHours')}`,
+                `Approx Minutes : ${getText('diffMins')}`,
+                '',
+                `Working Days   : ${getText('diffWorkDays')}`,
+                `Weekend Days   : ${getText('diffWeekendDays')}`,
+                '',
+                `Calculated at  : ${new Date().toLocaleString()}`,
+                `Source: Punjab Investigation Tools — https://punjab.pages.dev/age-calculator/`
+            ].join('\n');
+            copyText(text);
+        }
+
+        function resetDiff() {
+            document.getElementById('diffStart').value = '';
+            document.getElementById('diffEnd').value = '';
+            document.getElementById('diffResults').style.display = 'none';
+        }
+
+        // ── TAB 3: Date Info ──
+        function autoCalcInfo() {
+            if (document.getElementById('infoDate').value) calcInfo();
+        }
+
+        function calcInfo() {
+            const str = document.getElementById('infoDate').value;
+            if (!str) { showToast('Please select a date'); return; }
+
+            const d    = parseDate(str);
+            const today = todayDate();
+            const diffMs = d - today;
+            const diffDays = Math.round(diffMs / 86400000);
+
+            const dayOfYear  = getDayOfYear(d);
+            const weekNum    = getWeekNumber(d);
+            const year       = d.getFullYear();
+            const month      = d.getMonth() + 1;
+            const day        = d.getDate();
+            const isLeap     = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+            const yearDays   = isLeap ? 366 : 365;
+            const daysLeftYear  = yearDays - dayOfYear;
+            const lastDay = new Date(year, month, 0).getDate();
+            const daysLeftMonth = lastDay - day;
+            const quarter = Math.ceil(month / 3);
+            const unix    = Math.floor(d.getTime() / 1000);
+
+            const distText = (n) => {
+                const abs = Math.abs(n);
+                const unit = abs === 1 ? 'day' : 'days';
+                if (n === 0) return 'Today';
+                return n > 0 ? `+${abs} ${unit} in the future` : `-${abs} ${unit} in the past`;
+            };
+
+            setText('infoDayOfWeekNum',  (d.getDay() + 1).toString());
+            setText('infoDayOfWeekName', DAYS[d.getDay()]);
+            setText('infoWeekNum',       weekNum.toString());
+            setText('infoDayOfYear',     dayOfYear.toString());
+
+            const absDay   = Math.abs(diffDays);
+            const absWeek  = (Math.abs(diffDays) / 7).toFixed(1);
+            const absMon   = (Math.abs(diffDays) / 30.44).toFixed(1);
+            const absYr    = (Math.abs(diffDays) / 365.25).toFixed(2);
+            const prefix   = diffDays > 0 ? '+' : diffDays < 0 ? '-' : '';
+            const suf      = diffDays === 0 ? 'Today' : diffDays > 0 ? 'in the future' : 'in the past';
+
+            const setDist = (id, val) => {
+                const el = document.getElementById(id);
+                el.textContent = diffDays === 0 ? 'Today' : `${prefix}${val} ${suf}`;
+                el.className = 'dt-value ' + (diffDays > 0 ? 'accent' : diffDays < 0 ? 'red' : 'green');
+            };
+
+            setDist('infoDaysFromToday',  absDay);
+            setDist('infoWeeksFromToday', absWeek);
+            setDist('infoMonthsFromToday',absMon);
+            setDist('infoYearsFromToday', absYr);
+
+            setText('infoLeap',          isLeap ? 'Yes — ' + year + ' is a leap year' : 'No');
+            setText('infoQuarter',        `Q${quarter} (${['Jan–Mar','Apr–Jun','Jul–Sep','Oct–Dec'][quarter-1]})`);
+            setText('infoDaysLeft',       daysLeftYear + ' days');
+            setText('infoDaysLeftMonth',  daysLeftMonth + ' days');
+            setText('infoSeason',         getSeason(month, day));
+            setText('infoZodiac',         getZodiac(month, day));
+            setText('infoUnix',           unix.toString());
+            setText('infoISO',            str);
+
+            document.getElementById('infoResults').style.display = 'block';
+            document.getElementById('infoResults').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyInfoResult() {
+            const d = parseDate(document.getElementById('infoDate').value);
+            const text = [
+                'DATE INFO REPORT',
+                '='.repeat(40),
+                '',
+                `Date          : ${formatDate(d)}`,
+                `ISO 8601      : ${getText('infoISO')}`,
+                `Day of Year   : ${getText('infoDayOfYear')}`,
+                `Week of Year  : ${getText('infoWeekNum')}`,
+                `Quarter       : ${getText('infoQuarter')}`,
+                `Leap Year     : ${getText('infoLeap')}`,
+                '',
+                `From Today    : ${getText('infoDaysFromToday')}`,
+                `Season        : ${getText('infoSeason')}`,
+                `Zodiac        : ${getText('infoZodiac')}`,
+                `Unix Timestamp: ${getText('infoUnix')}`,
+                '',
+                `Calculated at : ${new Date().toLocaleString()}`,
+                `Source: Punjab Investigation Tools — https://punjab.pages.dev/age-calculator/`
+            ].join('\n');
+            copyText(text);
+        }
+
+        function resetInfo() {
+            document.getElementById('infoDate').value = '';
+            document.getElementById('infoResults').style.display = 'none';
+        }
+
+        // ── Helpers ──
+        function setText(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        }
+
+        function getText(id) {
+            const el = document.getElementById(id);
+            return el ? el.textContent : '';
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => showToast('Copied to clipboard!'))
+                .catch(() => showToast('Copy failed'));
+        }
+
+        function showToast(msg) {
+            let t = document.getElementById('_toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = '_toast';
+                t.style.cssText = 'position:fixed;bottom:30px;right:30px;background:rgba(0,217,255,0.15);border:1px solid rgba(0,217,255,0.4);color:#fff;padding:12px 22px;border-radius:10px;font-size:0.9rem;z-index:9999;transition:opacity 0.3s;';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2800);
+        }
+
+        // Pre-fill today's date in info tab
+        (function() {
+            const t = todayDate();
+            const iso = t.getFullYear() + '-' +
+                        String(t.getMonth()+1).padStart(2,'0') + '-' +
+                        String(t.getDate()).padStart(2,'0');
+            document.getElementById('infoDate').value = iso;
+            document.getElementById('diffEnd').value  = iso;
+        })();
+    </script>
+    <div style="text-align:center;padding:20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev/age-calculator.svg?view=today-total&style=for-the-badge&label=Age+Calculator&color=080e08&labelColor=9c3232" alt="Hit Counter">
+    </div>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAN Card Validator | Punjab Investigation Tools</title>
+    <meta name="description" content="Validate PAN card number format and decode entity type, taxpayer category from the PAN structure.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://punjab.pages.dev/pan/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://punjab.pages.dev/pan/">
+    <meta property="og:title" content="PAN Card Validator | Punjab Investigation Tools">
+    <meta property="og:description" content="Validate PAN card number format and decode entity type, taxpayer category from the PAN structure.">
+    <meta property="og:image" content="https://punjab.pages.dev/og-image.svg">
+    <meta name="theme-color" content="#e94560">
+
+    <style>
+        /* ── PAN-specific styles ── */
+        .pan-input-wrapper {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .pan-input {
+            flex: 1;
+            padding: 16px 22px;
+            background: rgba(0,0,0,0.35);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .pan-input:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 22px rgba(0, 217, 255, 0.22);
+        }
+
+        .pan-input::placeholder {
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+        }
+
+        /* Status badge */
+        .status-badge-large {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 28px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 22px;
+        }
+
+        .status-valid {
+            background: rgba(16, 185, 129, 0.18);
+            border: 2px solid #10b981;
+            color: #10b981;
+        }
+
+        .status-invalid {
+            background: rgba(239, 68, 68, 0.18);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+        }
+
+        /* PAN visual breakdown */
+        .pan-breakdown {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            margin: 28px 0 18px;
+            flex-wrap: wrap;
+        }
+
+        .pan-char-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pan-char {
+            width: 48px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .pan-char.c-area   { background: rgba(0, 217, 255, 0.15); border-color: rgba(0, 217, 255, 0.4); color: #00d9ff; }
+        .pan-char.c-entity { background: rgba(233, 69, 96, 0.2);  border-color: rgba(233, 69, 96, 0.5);  color: #e94560; }
+        .pan-char.c-name   { background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #f59e0b; }
+        .pan-char.c-seq    { background: rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.5); color: #a78bfa; }
+        .pan-char.c-check  { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #10b981; }
+        .pan-char.c-empty  { background: rgba(255,255,255,0.04);  border-color: var(--card-border); color: var(--text-secondary); }
+
+        .pan-char-label {
+            font-size: 0.62rem;
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 52px;
+            line-height: 1.2;
+        }
+
+        /* Decode grid */
+        .decode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .decode-item {
+            padding: 18px 20px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+        }
+
+        .decode-item .di-label {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .decode-item .di-value {
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .decode-item .di-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88rem;
+            color: var(--accent-secondary);
+            margin-top: 3px;
+        }
+
+        /* Legend */
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        /* Action buttons row */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            padding: 12px 22px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.12);
+            color: var(--text-primary);
+            border-color: var(--accent-secondary);
+        }
+
+        /* Structure info table */
+        .struct-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .struct-table th,
+        .struct-table td {
+            padding: 11px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.9rem;
+        }
+
+        .struct-table th {
+            background: rgba(0,0,0,0.3);
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+
+        .struct-table td:first-child {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .struct-table tr:last-child td { border-bottom: none; }
+
+        /* Entity map */
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .entity-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .entity-code {
+            width: 32px;
+            height: 32px;
+            background: rgba(233,69,96,0.2);
+            border: 1px solid rgba(233,69,96,0.4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--accent-color);
+            flex-shrink: 0;
+        }
+
+        .entity-name {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 640px) {
+            .pan-input { font-size: 1.1rem; letter-spacing: 2px; }
+            .pan-char  { width: 34px; height: 42px; font-size: 1rem; }
+            .pan-input-wrapper { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration:none;color:inherit">
+                <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">PAN Card Validator</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn"><i class="fas fa-home"></i> All Tools</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Hero -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-id-card-clip"></i> PAN Card Validator</h1>
+                <p>Validate PAN format and decode entity type, taxpayer category, and structural details from the PAN number</p>
+            </div>
+        </section>
+
+        <!-- Input -->
+        <section class="input-section">
+            <div class="input-group">
+                <h3><i class="fas fa-keyboard"></i> Enter PAN Number</h3>
+                <div class="pan-input-wrapper">
+                    <input
+                        type="text"
+                        id="panInput"
+                        class="pan-input"
+                        placeholder="AAAAA9999A"
+                        maxlength="10"
+                        autocomplete="off"
+                        spellcheck="false"
+                        oninput="onPanInput(this)"
+                        onkeydown="if(event.key==='Enter') validatePAN()"
+                    >
+                    <button class="verify-btn" onclick="validatePAN()">
+                        <i class="fas fa-search"></i> Validate
+                    </button>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:8px;">
+                    Format: 5 uppercase letters + 4 digits + 1 uppercase letter &nbsp;·&nbsp; e.g. <code style="font-family:'JetBrains Mono',monospace;color:var(--accent-secondary)">ABCDE1234F</code>
+                </p>
+            </div>
+        </section>
+
+        <!-- Results (hidden initially) -->
+        <section id="resultsSection" style="display:none; max-width:900px; margin:0 auto 40px;">
+
+            <!-- Status -->
+            <div style="text-align:center; margin-bottom:10px;">
+                <span id="statusBadge" class="status-badge-large"></span>
+            </div>
+
+            <!-- Visual breakdown -->
+            <div class="result-card" style="margin-bottom:22px;">
+                <h3 style="color:var(--accent-secondary); margin-bottom:6px; display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-chart-bar"></i> PAN Structure Breakdown
+                </h3>
+                <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:16px;">Each character group carries specific information about the taxpayer</p>
+                <div class="pan-breakdown" id="panBreakdown"></div>
+
+                <!-- Legend -->
+                <div style="display:flex; flex-wrap:wrap; gap:14px 24px; margin-top:16px; padding-top:16px; border-top:1px solid var(--card-border);">
+                    <div class="legend-row"><div class="legend-dot" style="background:#00d9ff;"></div><span style="font-size:0.83rem;color:var(--text-secondary);">Chars 1–3: Area code</span></div>
+                    <div class="legend-row"><div class="legend-dot" style="background:#e94560;"></div><span style="font-size:0.83rem;color:var(--text-secondary);">Char 4: Entity type</span></div>
+                    <div class="legend-row"><div class="legend-dot" style="background:#f59e0b;"></div><span style="font-size:0.83rem;color:var(--text-secondary);">Char 5: Surname initial</span></div>
+                    <div class="legend-row"><div class="legend-dot" style="background:#a78bfa;"></div><span style="font-size:0.83rem;color:var(--text-secondary);">Chars 6–9: Sequence</span></div>
+                    <div class="legend-row"><div class="legend-dot" style="background:#10b981;"></div><span style="font-size:0.83rem;color:var(--text-secondary);">Char 10: Check digit</span></div>
+                </div>
+            </div>
+
+            <!-- Decoded info -->
+            <div class="result-card" id="decodedCard">
+                <h3 style="color:var(--accent-secondary); margin-bottom:4px; display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-unlock-keyhole"></i> Decoded Information
+                </h3>
+                <div class="decode-grid" id="decodeGrid"></div>
+            </div>
+
+            <!-- Official notice -->
+            <div class="warning-box" style="margin-top:20px;">
+                <h4><i class="fas fa-triangle-exclamation"></i> Important Notice</h4>
+                <p>PAN validation here is <strong>format-only</strong>. A structurally valid PAN may or may not be genuinely issued. For official verification of PAN existence and taxpayer details, visit the Income Tax portal.</p>
+                <a href="https://www.incometax.gov.in/" target="_blank" rel="noopener" class="external-link" style="margin-top:12px;">
+                    <i class="fas fa-external-link-alt"></i> Income Tax e-Filing Portal
+                </a>
+                <a href="https://www.pan.utiitsl.com/PAN/mainPN.html" target="_blank" rel="noopener" class="external-link" style="margin-top:8px; margin-left:0;">
+                    <i class="fas fa-external-link-alt"></i> UTIITSL PAN Verification
+                </a>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-secondary" onclick="copyResult()"><i class="fas fa-copy"></i> Copy Result</button>
+                <button class="btn-secondary" onclick="resetTool()"><i class="fas fa-redo"></i> Validate Another</button>
+            </div>
+        </section>
+
+        <!-- PAN Structure Education Section -->
+        <section class="input-section" style="max-width:900px; margin-bottom:40px;">
+            <div class="input-group">
+                <h3><i class="fas fa-book-open"></i> Understanding PAN Structure</h3>
+
+                <table class="struct-table">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Characters</th>
+                            <th>Meaning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1–3</td><td>AAA–ZZZ (letters)</td><td>Alphabetic series — represents the issuing officer's area code (assigned by Income Tax dept)</td></tr>
+                        <tr><td>4</td><td>A–Z (letter)</td><td>Entity type — identifies the taxpayer category (P=Person, C=Company, H=HUF, F=Firm, etc.)</td></tr>
+                        <tr><td>5</td><td>A–Z (letter)</td><td>For individuals: first letter of surname. For non-individuals: first letter of entity name</td></tr>
+                        <tr><td>6–9</td><td>0000–9999 (digits)</td><td>Sequential number issued by Income Tax dept</td></tr>
+                        <tr><td>10</td><td>A–Z (letter)</td><td>Alphabetic check digit</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin-top:28px; color:var(--text-primary); font-size:1rem;">Entity Type Codes (4th Character)</h3>
+                <div class="entity-grid">
+                    <div class="entity-item"><div class="entity-code">P</div><div class="entity-name">Individual Person</div></div>
+                    <div class="entity-item"><div class="entity-code">C</div><div class="entity-name">Company / Corporation</div></div>
+                    <div class="entity-item"><div class="entity-code">H</div><div class="entity-name">Hindu Undivided Family (HUF)</div></div>
+                    <div class="entity-item"><div class="entity-code">F</div><div class="entity-name">Firm / LLP / Partnership</div></div>
+                    <div class="entity-item"><div class="entity-code">A</div><div class="entity-name">Association of Persons (AOP)</div></div>
+                    <div class="entity-item"><div class="entity-code">T</div><div class="entity-name">Trust / Charitable Trust</div></div>
+                    <div class="entity-item"><div class="entity-code">B</div><div class="entity-name">Body of Individuals (BOI)</div></div>
+                    <div class="entity-item"><div class="entity-code">G</div><div class="entity-name">Government Entity</div></div>
+                    <div class="entity-item"><div class="entity-code">J</div><div class="entity-name">Artificial Juridical Person</div></div>
+                    <div class="entity-item"><div class="entity-code">L</div><div class="entity-name">Local Authority</div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Info cards -->
+        <section class="input-section" style="max-width:900px; margin-bottom:40px;">
+            <h3 style="margin-bottom:18px; color:var(--text-primary); display:flex; align-items:center; gap:10px;">
+                <i class="fas fa-circle-info" style="color:var(--accent-secondary);"></i> Investigation Uses
+            </h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-user-secret"></i></div>
+                    <h4>Identity Verification</h4>
+                    <p>Instantly confirm if a suspect-provided PAN has a valid structural format before routing to official verification channels.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-building"></i></div>
+                    <h4>Entity Classification</h4>
+                    <p>Decode whether the PAN belongs to an individual, company, trust, or government entity from the 4th character alone.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-money-bill-transfer"></i></div>
+                    <h4>Financial Investigations</h4>
+                    <p>Cross-reference PAN details with financial transaction records to identify benami or shell entity patterns.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer style="text-align:center;padding:30px 20px;border-top:1px solid var(--card-border);color:var(--text-secondary);font-size:0.9rem;margin-top:40px;">
+        <p>© 2024-2026 Punjab Investigation Tools. <a href="/disclaimer.html" style="color:var(--accent-secondary)">Disclaimer</a> · <a href="/privacy.html" style="color:var(--accent-secondary)">Privacy</a> · <a href="/terms.html" style="color:var(--accent-secondary)">Terms</a></p>
+    </footer>
+
+    <script>
+        const ENTITY_MAP = {
+            P: 'Individual Person',
+            C: 'Company / Corporation',
+            H: 'Hindu Undivided Family (HUF)',
+            F: 'Firm / LLP / Partnership',
+            A: 'Association of Persons (AOP)',
+            T: 'Trust / Charitable Trust',
+            B: 'Body of Individuals (BOI)',
+            G: 'Government Entity',
+            J: 'Artificial Juridical Person',
+            L: 'Local Authority'
+        };
+
+        const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+        function onPanInput(el) {
+            el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+        }
+
+        function validatePAN() {
+            const raw = document.getElementById('panInput').value.trim().toUpperCase();
+            const section = document.getElementById('resultsSection');
+            section.style.display = 'block';
+
+            const isValid = PAN_REGEX.test(raw);
+
+            // Status badge
+            const badge = document.getElementById('statusBadge');
+            if (isValid) {
+                badge.className = 'status-badge-large status-valid';
+                badge.innerHTML = '<i class="fas fa-circle-check"></i> VALID FORMAT';
+            } else {
+                badge.className = 'status-badge-large status-invalid';
+                badge.innerHTML = '<i class="fas fa-circle-xmark"></i> INVALID FORMAT';
+            }
+
+            // Build breakdown
+            renderBreakdown(raw, isValid);
+
+            // Build decode grid
+            renderDecode(raw, isValid);
+
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderBreakdown(pan, isValid) {
+            const container = document.getElementById('panBreakdown');
+            // Pad to 10 for empty slots
+            const padded = pan.padEnd(10, '');
+            const labels = ['Area', 'Area', 'Area', 'Entity', 'Surname', 'Seq', 'Seq', 'Seq', 'Seq', 'Check'];
+            const classes = ['c-area','c-area','c-area','c-entity','c-name','c-seq','c-seq','c-seq','c-seq','c-check'];
+
+            container.innerHTML = padded.split('').map((ch, i) => {
+                const cls = ch ? classes[i] : 'c-empty';
+                return `<div class="pan-char-block">
+                    <div class="pan-char ${cls}">${ch || '?'}</div>
+                    <div class="pan-char-label">${labels[i]}<br><span style="color:#555">${i+1}</span></div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderDecode(pan, isValid) {
+            const grid = document.getElementById('decodeGrid');
+            if (!isValid || pan.length < 10) {
+                grid.innerHTML = `<div style="grid-column:1/-1; color:var(--text-secondary); text-align:center; padding:20px;">
+                    <i class="fas fa-triangle-exclamation" style="color:#ef4444; margin-right:8px;"></i>
+                    Cannot decode — PAN format is invalid. Expected: 5 letters + 4 digits + 1 letter (e.g. <code style="font-family:'JetBrains Mono',monospace;color:var(--accent-secondary)">ABCDE1234F</code>)
+                </div>`;
+                return;
+            }
+
+            const areaCode  = pan.slice(0, 3);
+            const entityCh  = pan[3];
+            const surnameInit = pan[4];
+            const seqNum    = pan.slice(5, 9);
+            const checkCh   = pan[9];
+            const entityName = ENTITY_MAP[entityCh] || `Unknown (${entityCh})`;
+            const isIndividual = entityCh === 'P';
+
+            grid.innerHTML = `
+                <div class="decode-item">
+                    <div class="di-label"><i class="fas fa-map-pin" style="color:#00d9ff; margin-right:5px;"></i> Area Code (Chars 1–3)</div>
+                    <div class="di-value">${areaCode}</div>
+                    <div class="di-code">Issuing officer's jurisdictional area</div>
+                </div>
+                <div class="decode-item">
+                    <div class="di-label"><i class="fas fa-tag" style="color:#e94560; margin-right:5px;"></i> Entity Type (Char 4)</div>
+                    <div class="di-value" style="color:#e94560;">${entityName}</div>
+                    <div class="di-code">Code: ${entityCh}</div>
+                </div>
+                <div class="decode-item">
+                    <div class="di-label"><i class="fas fa-user" style="color:#f59e0b; margin-right:5px;"></i> ${isIndividual ? 'Surname Initial' : 'Entity Name Initial'} (Char 5)</div>
+                    <div class="di-value" style="color:#f59e0b;">${surnameInit}</div>
+                    <div class="di-code">${isIndividual ? 'First letter of taxpayer surname' : 'First letter of entity / company name'}</div>
+                </div>
+                <div class="decode-item">
+                    <div class="di-label"><i class="fas fa-list-ol" style="color:#a78bfa; margin-right:5px;"></i> Sequence Number (Chars 6–9)</div>
+                    <div class="di-value" style="color:#a78bfa;">${seqNum}</div>
+                    <div class="di-code">Sequential allotment number by IT Dept</div>
+                </div>
+                <div class="decode-item">
+                    <div class="di-label"><i class="fas fa-check-double" style="color:#10b981; margin-right:5px;"></i> Check Digit (Char 10)</div>
+                    <div class="di-value" style="color:#10b981;">${checkCh}</div>
+                    <div class="di-code">Alphabetic verification character</div>
+                </div>
+                <div class="decode-item">
+                    <div class="di-label"><i class="fas fa-id-card" style="color:var(--text-secondary); margin-right:5px;"></i> Full PAN</div>
+                    <div class="di-value" style="font-family:'JetBrains Mono',monospace; letter-spacing:3px; font-size:1.25rem;">${pan}</div>
+                    <div class="di-code">Format validated ✓</div>
+                </div>
+            `;
+        }
+
+        function copyResult() {
+            const pan = document.getElementById('panInput').value.trim().toUpperCase();
+            const isValid = PAN_REGEX.test(pan);
+            let text = `PAN VALIDATION REPORT\n${'='.repeat(40)}\n\n`;
+            text += `PAN Number  : ${pan}\n`;
+            text += `Format Valid: ${isValid ? 'YES' : 'NO'}\n\n`;
+            if (isValid && pan.length === 10) {
+                const entityCh = pan[3];
+                text += `Area Code   : ${pan.slice(0,3)}\n`;
+                text += `Entity Type : ${pan[3]} — ${ENTITY_MAP[entityCh] || 'Unknown'}\n`;
+                text += `Name Initial: ${pan[4]}\n`;
+                text += `Sequence No : ${pan.slice(5,9)}\n`;
+                text += `Check Digit : ${pan[9]}\n\n`;
+            }
+            text += `Validated at: ${new Date().toLocaleString()}\n`;
+            text += `Source: Punjab Investigation Tools — https://punjab.pages.dev/pan/\n`;
+            text += `\nNOTE: Format validation only. For official PAN verification visit https://www.incometax.gov.in/`;
+            navigator.clipboard.writeText(text).then(() => showToast('Result copied!')).catch(() => showToast('Copy failed'));
+        }
+
+        function resetTool() {
+            document.getElementById('panInput').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('panInput').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showToast(msg) {
+            let t = document.getElementById('_toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = '_toast';
+                t.style.cssText = 'position:fixed;bottom:30px;right:30px;background:rgba(0,217,255,0.15);border:1px solid rgba(0,217,255,0.4);color:#fff;padding:12px 22px;border-radius:10px;font-size:0.9rem;z-index:9999;transition:opacity 0.3s;';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2800);
+        }
+    </script>
+    <div style="text-align:center;padding:20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev/pan.svg?view=today-total&style=for-the-badge&label=PAN+Validator&color=080e08&labelColor=9c3232" alt="Hit Counter">
+    </div>
+</body>
+</html>

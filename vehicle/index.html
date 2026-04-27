@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Number Decoder | Punjab Investigation Tools</title>
+    <meta name="description" content="Decode Indian vehicle registration numbers — find state, RTO code, series. Supports old format and new BH series numbers.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/tool-common.css">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <!-- Canonical & SEO -->
+    <link rel="canonical" href="https://punjab.pages.dev/vehicle/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://punjab.pages.dev/vehicle/">
+    <meta property="og:title" content="Vehicle Number Decoder | Punjab Investigation Tools">
+    <meta property="og:description" content="Decode Indian vehicle registration numbers — find state, RTO code, series. Supports old format and new BH series numbers.">
+    <meta property="og:image" content="https://punjab.pages.dev/og-image.svg">
+    <meta name="theme-color" content="#e94560">
+
+    <style>
+        .breakdown-block {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0 10px;
+        }
+        .breakdown-segment {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0,0,0,0.25);
+            border-radius: 10px;
+            padding: 14px 20px;
+            min-width: 80px;
+            border: 2px solid rgba(255,255,255,0.08);
+        }
+        .breakdown-segment .seg-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .breakdown-segment .seg-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .breakdown-segment.state  { border-color: rgba(233,69,96,0.5);  background: rgba(233,69,96,0.12); }
+        .breakdown-segment.rto    { border-color: rgba(0,217,255,0.5);  background: rgba(0,217,255,0.12); }
+        .breakdown-segment.series { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.12); }
+        .breakdown-segment.number { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.12); }
+        .breakdown-segment.bh-yr  { border-color: rgba(139,92,246,0.5); background: rgba(139,92,246,0.12); }
+        .breakdown-segment.bh-cat { border-color: rgba(236,72,153,0.5); background: rgba(236,72,153,0.12); }
+
+        .copy-vehicle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            padding: 9px 20px;
+            background: rgba(0,217,255,0.12);
+            border: 1px solid rgba(0,217,255,0.35);
+            border-radius: 8px;
+            color: var(--accent-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .copy-vehicle-btn:hover {
+            background: rgba(0,217,255,0.22);
+        }
+
+        .status-badge-valid {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background: rgba(16,185,129,0.15);
+            color: #10b981;
+            border: 1px solid rgba(16,185,129,0.35);
+        }
+        .status-badge-invalid {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background: rgba(239,68,68,0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.35);
+        }
+        .decode-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+        .decode-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.9rem;
+        }
+        .decode-table td:first-child {
+            color: var(--text-secondary);
+            width: 42%;
+            font-size: 0.85rem;
+        }
+        .decode-table td:last-child {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .decode-table tr:last-child td {
+            border-bottom: none;
+        }
+        .bh-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(236,72,153,0.3));
+            border: 1px solid rgba(139,92,246,0.5);
+            color: #c084fc;
+            font-size: 0.75rem;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .result-section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--accent-secondary);
+            margin: 20px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        @media (max-width: 600px) {
+            .breakdown-segment .seg-value { font-size: 1.1rem; }
+            .breakdown-segment { padding: 10px 12px; min-width: 58px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration:none;color:inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Vehicle Number Decoder</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-car"></i> Vehicle Number Decoder</h1>
+                <p>Decode any Indian vehicle registration number — identify state, RTO office, series, and registration details. Supports standard and BH-series numbers.</p>
+            </div>
+        </section>
+
+        <!-- Input Section -->
+        <section class="input-section">
+            <div class="input-group">
+                <h3><i class="fas fa-keyboard"></i> Enter Vehicle Registration Number</h3>
+                <div class="input-row">
+                    <input type="text" id="vehicleInput" class="input-field"
+                        placeholder="e.g. PB10AA1234 or 22BH1234AA"
+                        maxlength="20"
+                        autocomplete="off"
+                        autocapitalize="characters"
+                        style="letter-spacing:3px;text-transform:uppercase;">
+                    <button class="verify-btn" onclick="decodeVehicle()">
+                        <i class="fas fa-search"></i> Decode
+                    </button>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:8px;">
+                    <i class="fas fa-info-circle"></i>
+                    Accepts formats: <code style="background:rgba(0,0,0,0.3);padding:1px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;">PB10AA1234</code>,
+                    <code style="background:rgba(0,0,0,0.3);padding:1px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;">PB-10-AA-1234</code>,
+                    <code style="background:rgba(0,0,0,0.3);padding:1px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;">22BH1234AA</code>
+                </p>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display:none;">
+            <div class="result-card" id="resultCard">
+                <div class="result-header">
+                    <div class="result-icon valid" id="resultIcon">
+                        <i class="fas fa-car-side"></i>
+                    </div>
+                    <div class="result-title">
+                        <h3 id="resultTitle" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            Vehicle Decoded
+                        </h3>
+                        <p id="resultSubtitle" style="color:var(--text-secondary);font-size:0.9rem;margin-top:4px;"></p>
+                    </div>
+                </div>
+
+                <!-- Visual breakdown -->
+                <div class="result-section-title"><i class="fas fa-puzzle-piece"></i> Registration Structure</div>
+                <div class="breakdown-block" id="breakdownBlock"></div>
+                <div style="text-align:center;">
+                    <button class="copy-vehicle-btn" id="copyBtn" onclick="copyNormalized()">
+                        <i class="fas fa-copy"></i> Copy Normalized Format
+                    </button>
+                </div>
+
+                <!-- Decoded details -->
+                <div class="result-section-title" style="margin-top:24px;"><i class="fas fa-table"></i> Decoded Information</div>
+                <table class="decode-table" id="decodeTable"></table>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="resetForm()">
+                    <i class="fas fa-redo"></i> Decode Another
+                </button>
+            </div>
+        </section>
+
+        <!-- Invalid / error result -->
+        <section id="errorSection" style="display:none;max-width:800px;margin:0 auto 40px;">
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.35);border-radius:16px;padding:28px;text-align:center;">
+                <div style="font-size:2.5rem;color:#ef4444;margin-bottom:12px;"><i class="fas fa-times-circle"></i></div>
+                <h3 style="color:#ef4444;margin-bottom:8px;">Invalid Format</h3>
+                <p id="errorMessage" style="color:var(--text-secondary);font-size:0.95rem;"></p>
+            </div>
+        </section>
+
+        <!-- Info Section -->
+        <section class="info-section" style="max-width:1100px;margin:0 auto;">
+            <h3 style="font-size:1.2rem;margin-bottom:20px;color:var(--text-primary);display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-info-circle" style="color:var(--accent-secondary);"></i> About Indian Vehicle Registration Numbers
+            </h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-map-marked-alt"></i></div>
+                    <h4>Standard Registration</h4>
+                    <p>
+                        Indian vehicle numbers follow the format <strong>SS·DD·LL·NNNN</strong>:
+                        <br>· <strong>SS</strong> — 2-letter State/UT code (e.g. PB, DL, MH)
+                        <br>· <strong>DD</strong> — 2-digit RTO district code
+                        <br>· <strong>LL</strong> — 1–2 letter series code
+                        <br>· <strong>NNNN</strong> — 4-digit registration number
+                    </p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-star"></i></div>
+                    <h4>BH Series (Bharat Series)</h4>
+                    <p>
+                        Introduced in 2021 for central government and private employees who frequently transfer between states.
+                        Format: <strong>YY·BH·NNNN·LL</strong> where YY = year of first registration, NN = 4-digit number, LL = letter series.
+                        No need to re-register on interstate transfer.
+                    </p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-city"></i></div>
+                    <h4>Old Delhi Numbering</h4>
+                    <p>
+                        Delhi used to have separate codes under MCD (Municipal Corporation of Delhi). Old Delhi number plates may show DL followed by codes 01–12. The newer unified Delhi MCD has consolidated many of these. DL01 was Delhi Central/North, DL02 Delhi West, etc.
+                    </p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h4>High-Security Number Plates</h4>
+                    <p>
+                        Since 2019, all new vehicles must have HSRP (High Security Registration Plates) with a laser-etched PIN, hot-stamped IND hologram, and a chromium-based sticker on the windshield. These are unique to each vehicle and tamper-evident.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer style="text-align:center;padding:30px 20px;border-top:1px solid var(--card-border);color:var(--text-secondary);font-size:0.9rem;margin-top:40px;">
+        <p>© 2024-2026 Punjab Investigation Tools. <a href="/disclaimer.html" style="color:var(--accent-secondary)">Disclaimer</a> · <a href="/privacy.html" style="color:var(--accent-secondary)">Privacy</a> · <a href="/terms.html" style="color:var(--accent-secondary)">Terms</a></p>
+    </footer>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Copied!</span>
+    </div>
+
+    <script>
+    // ─── DATA ────────────────────────────────────────────────────────────────────
+
+    const STATES = {
+        AP: 'Andhra Pradesh',
+        AR: 'Arunachal Pradesh',
+        AS: 'Assam',
+        BR: 'Bihar',
+        CG: 'Chhattisgarh',
+        GA: 'Goa',
+        GJ: 'Gujarat',
+        HR: 'Haryana',
+        HP: 'Himachal Pradesh',
+        JH: 'Jharkhand',
+        KA: 'Karnataka',
+        KL: 'Kerala',
+        MP: 'Madhya Pradesh',
+        MH: 'Maharashtra',
+        MN: 'Manipur',
+        ML: 'Meghalaya',
+        MZ: 'Mizoram',
+        NL: 'Nagaland',
+        OD: 'Odisha',
+        OR: 'Odisha (old code)',
+        PB: 'Punjab',
+        RJ: 'Rajasthan',
+        SK: 'Sikkim',
+        TN: 'Tamil Nadu',
+        TS: 'Telangana',
+        TR: 'Tripura',
+        UP: 'Uttar Pradesh',
+        UT: 'Uttarakhand',
+        WB: 'West Bengal',
+        // Union Territories
+        AN: 'Andaman & Nicobar Islands',
+        CH: 'Chandigarh',
+        DN: 'Dadra & Nagar Haveli and Daman & Diu',
+        DD: 'Daman & Diu (old)',
+        DL: 'Delhi',
+        JK: 'Jammu & Kashmir',
+        LA: 'Ladakh',
+        LD: 'Lakshadweep',
+        PY: 'Puducherry',
+    };
+
+    // RTO database: stateCode + districtNumber → RTO name
+    const RTO_DB = {
+        // Punjab
+        'PB01': 'Patiala',        'PB02': 'Gurdaspur',     'PB03': 'Amritsar',
+        'PB04': 'Jalandhar',      'PB05': 'Kapurthala',    'PB06': 'Hoshiarpur',
+        'PB07': 'Ferozepur',      'PB08': 'Faridkot',      'PB09': 'Bathinda',
+        'PB10': 'Ludhiana',       'PB11': 'Mohali (SAS Nagar)', 'PB12': 'Rupnagar',
+        'PB13': 'Nawanshahr',     'PB14': 'Fatehgarh Sahib', 'PB15': 'Moga',
+        'PB16': 'Muktsar',        'PB17': 'Mansa',          'PB18': 'Barnala',
+        'PB19': 'Sangrur',        'PB20': 'Tarn Taran',     'PB65': 'Ludhiana (2nd)',
+
+        // Delhi
+        'DL01': 'Delhi North (Kashmere Gate)',
+        'DL02': 'Delhi West (Raja Garden)',
+        'DL03': 'Delhi Central (Seelampur)',
+        'DL04': 'Delhi South (Saket)',
+        'DL05': 'Delhi East (Burari)',
+        'DL06': 'Delhi North-East (Vivek Vihar)',
+        'DL07': 'Delhi South-West (Dwarka)',
+        'DL08': 'Delhi North-West (Ashok Vihar)',
+        'DL09': 'Delhi South-East (Sukhdev Vihar)',
+        'DL10': 'Delhi Shahdara (North)',
+        'DL11': 'Delhi Shahdara (South)',
+        'DL12': 'Delhi New Delhi (Connaught Place)',
+
+        // Maharashtra
+        'MH01': 'Mumbai (Tardeo)',       'MH02': 'Thane',
+        'MH03': 'Kalyan',                'MH04': 'Raigad',
+        'MH05': 'Alibaug',              'MH06': 'Pen',
+        'MH12': 'Pune',                  'MH14': 'Pimpri-Chinchwad',
+        'MH20': 'Aurangabad',           'MH43': 'Nagpur',
+
+        // Karnataka
+        'KA01': 'Bangalore (Central)',   'KA02': 'Bangalore (East)',
+        'KA03': 'Bangalore (South)',     'KA04': 'Bangalore (West)',
+        'KA05': 'Kolar',                 'KA09': 'Tumkur',
+        'KA20': 'Mysuru',               'KA41': 'Hubballi',
+
+        // Tamil Nadu
+        'TN01': 'Chennai (Central)',     'TN02': 'Chennai (South)',
+        'TN03': 'Chennai (East)',        'TN04': 'Chennai (West)',
+        'TN05': 'Chennai (North)',       'TN09': 'Coimbatore',
+        'TN18': 'Madurai',              'TN22': 'Salem',
+
+        // Haryana
+        'HR01': 'Ambala',               'HR02': 'Kurukshetra',
+        'HR03': 'Karnal',               'HR06': 'Gurugram (Gurgaon)',
+        'HR08': 'Faridabad',            'HR10': 'Hisar',
+        'HR26': 'Gurugram (New)',
+
+        // Rajasthan
+        'RJ01': 'Ajmer',               'RJ02': 'Alwar',
+        'RJ14': 'Jaipur',              'RJ20': 'Jodhpur',
+        'RJ27': 'Udaipur',
+
+        // Uttar Pradesh
+        'UP15': 'Lucknow',             'UP16': 'Lucknow (2nd)',
+        'UP32': 'Agra',                'UP65': 'Kanpur',
+        'UP78': 'Varanasi',            'UP80': 'Prayagraj (Allahabad)',
+        'UP14': 'Meerut',              'UP31': 'Mathura',
+
+        // Gujarat
+        'GJ01': 'Ahmedabad',           'GJ02': 'Mehsana',
+        'GJ03': 'Gandhinagar',         'GJ05': 'Vadodara',
+        'GJ18': 'Surat',
+
+        // Himachal Pradesh
+        'HP01': 'Shimla',              'HP03': 'Mandi',
+        'HP07': 'Dharamsala (Kangra)', 'HP68': 'Shimla (2nd)',
+
+        // Chandigarh
+        'CH01': 'Chandigarh',
+
+        // Jammu & Kashmir
+        'JK01': 'Jammu',               'JK02': 'Srinagar',
+
+        // West Bengal
+        'WB01': 'Kolkata (North)',      'WB02': 'Kolkata (South)',
+        'WB06': 'Howrah',              'WB23': 'Siliguri',
+
+        // Andhra Pradesh
+        'AP09': 'Hyderabad (old)',      'AP28': 'Visakhapatnam',
+        'AP29': 'Vijayawada',
+
+        // Telangana
+        'TS09': 'Hyderabad',           'TS25': 'Hyderabad (Banjara Hills)',
+        'TS07': 'Rangareddi',
+
+        // Kerala
+        'KL01': 'Thiruvananthapuram',  'KL07': 'Ernakulam',
+        'KL08': 'Thrissur',            'KL11': 'Kozhikode (Calicut)',
+
+        // Goa
+        'GA01': 'Panaji',              'GA02': 'Margao (South Goa)',
+
+        // Madhya Pradesh
+        'MP04': 'Bhopal',              'MP09': 'Indore',
+        'MP19': 'Jabalpur',            'MP32': 'Gwalior',
+
+        // Bihar
+        'BR01': 'Patna',               'BR11': 'Muzaffarpur',
+        'BR32': 'Gaya',
+
+        // Jharkhand
+        'JH01': 'Ranchi',              'JH05': 'Jamshedpur',
+        'JH10': 'Dhanbad',
+
+        // Odisha
+        'OD02': 'Bhubaneswar',         'OD05': 'Cuttack',
+
+        // Assam
+        'AS01': 'Guwahati',            'AS11': 'Dibrugarh',
+
+        // Uttarakhand
+        'UT01': 'Dehradun',            'UT06': 'Haridwar',
+
+        // Chhattisgarh
+        'CG04': 'Raipur',              'CG07': 'Bhilai',
+    };
+
+    const BH_VEHICLE_CATEGORIES = {
+        '1':  'Private / Non-transport (Petrol/CNG up to 1000cc)',
+        '2':  'Private / Non-transport (Petrol/CNG 1000–2000cc)',
+        '3':  'Private / Non-transport (Petrol/CNG above 2000cc)',
+        '4':  'Private / Non-transport (Diesel up to 1000cc)',
+        '5':  'Private / Non-transport (Diesel 1000–2000cc)',
+        '6':  'Private / Non-transport (Diesel above 2000cc)',
+        '7':  'Private / Non-transport (Electric)',
+        '8':  'Private / Non-transport (Other fuel)',
+        '15': 'Defence Vehicle',
+        '16': 'Consular / Diplomat',
+        '20': 'Commercial / Transport Vehicle',
+    };
+
+    // ─── PARSING ─────────────────────────────────────────────────────────────────
+
+    function normalize(raw) {
+        return raw.toUpperCase().replace(/[\s\-\.]/g, '');
+    }
+
+    // BH: YYBHNNNNLL  e.g. 22BH1234AA
+    const RE_BH = /^(\d{2})BH(\d{4})([A-Z]{1,2})$/;
+    // Standard: SSDDLLNNNN  (LL = 1–2 letters, NNNN = 1–4 digits)
+    const RE_STANDARD = /^([A-Z]{2})(\d{2})([A-Z]{1,3})(\d{1,4})$/;
+
+    function decodeStandard(str) {
+        const m = str.match(RE_STANDARD);
+        if (!m) return null;
+        const [, state, rtoNum, series, regNum] = m;
+        if (!STATES[state]) return null;
+        const rtoKey = state + rtoNum;
+        return {
+            type: 'standard',
+            raw: str,
+            normalized: `${state}-${rtoNum}-${series}-${regNum.padStart(4,'0')}`,
+            stateCode: state,
+            stateName: STATES[state],
+            rtoCode: rtoKey,
+            rtoName: RTO_DB[rtoKey] || 'RTO ' + rtoNum + ' (' + STATES[state] + ')',
+            series: series,
+            regNumber: regNum.padStart(4,'0'),
+        };
+    }
+
+    function decodeBH(str) {
+        const m = str.match(RE_BH);
+        if (!m) return null;
+        const [, year, regNum, series] = m;
+        const yearNum = parseInt(year, 10);
+        // BH year is the year of first registration (e.g. 22 = 2022)
+        const fullYear = yearNum + 2000;
+        // Category from series digits — not always decodable but series letters give partial info
+        return {
+            type: 'bh',
+            raw: str,
+            normalized: `${year}BH${regNum}${series}`,
+            bhYear: year,
+            bhFullYear: fullYear,
+            regNumber: regNum,
+            series: series,
+        };
+    }
+
+    // ─── UI ──────────────────────────────────────────────────────────────────────
+
+    let _normalizedCopy = '';
+
+    function decodeVehicle() {
+        const raw = document.getElementById('vehicleInput').value.trim();
+        const str = normalize(raw);
+
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorSection').style.display = 'none';
+
+        if (!str) {
+            showError('Please enter a vehicle registration number.');
+            return;
+        }
+        if (str.length < 6 || str.length > 15) {
+            showError('The number appears too short or too long. Please enter a valid Indian vehicle registration number.');
+            return;
+        }
+
+        // Try BH first
+        const bh = decodeBH(str);
+        if (bh) {
+            renderBH(bh);
+            return;
+        }
+
+        // Try standard
+        const std = decodeStandard(str);
+        if (std) {
+            renderStandard(std);
+            return;
+        }
+
+        showError(`Could not parse "<strong>${escHtml(str)}</strong>" as a valid Indian vehicle registration number.<br><span style="font-size:0.85rem;">Expected formats: <code>PB10AA1234</code> (standard) or <code>22BH1234AA</code> (BH series).</span>`);
+    }
+
+    function renderStandard(d) {
+        document.getElementById('resultTitle').innerHTML =
+            escHtml(d.normalized) +
+            ' <span class="status-badge-valid"><i class="fas fa-check-circle"></i> Valid Format</span>';
+        document.getElementById('resultSubtitle').textContent = d.stateName + ' — ' + d.rtoName;
+        _normalizedCopy = d.normalized;
+
+        // Breakdown blocks
+        document.getElementById('breakdownBlock').innerHTML = `
+            <div class="breakdown-segment state">
+                <span class="seg-label">State Code</span>
+                <span class="seg-value">${d.stateCode}</span>
+            </div>
+            <div class="breakdown-segment rto">
+                <span class="seg-label">RTO Code</span>
+                <span class="seg-value">${d.rtoCode.slice(2).padStart(2,'0')}</span>
+            </div>
+            <div class="breakdown-segment series">
+                <span class="seg-label">Series</span>
+                <span class="seg-value">${d.series}</span>
+            </div>
+            <div class="breakdown-segment number">
+                <span class="seg-label">Reg. No.</span>
+                <span class="seg-value">${d.regNumber}</span>
+            </div>
+        `;
+
+        // Table
+        const rows = [
+            ['State / UT', `<strong style="color:var(--accent-secondary)">${d.stateName}</strong> <span style="color:var(--text-secondary);font-size:0.82rem;">(${d.stateCode})</span>`],
+            ['RTO Code', `<span style="font-family:'JetBrains Mono',monospace;">${d.rtoCode}</span>`],
+            ['RTO Office', d.rtoName],
+            ['Series Letters', `<span style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;">${d.series}</span>`],
+            ['Registration Number', `<span style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;">${d.regNumber}</span>`],
+            ['Normalized Format', `<span style="font-family:'JetBrains Mono',monospace;">${d.normalized}</span>`],
+        ];
+        document.getElementById('decodeTable').innerHTML = rows.map(([l,v]) =>
+            `<tr><td>${l}</td><td>${v}</td></tr>`
+        ).join('');
+
+        document.getElementById('resultsSection').style.display = 'block';
+        document.getElementById('resultsSection').scrollIntoView({behavior:'smooth'});
+    }
+
+    function renderBH(d) {
+        document.getElementById('resultTitle').innerHTML =
+            escHtml(d.normalized) +
+            ' <span class="bh-badge"><i class="fas fa-star"></i> BH Series</span>' +
+            ' <span class="status-badge-valid"><i class="fas fa-check-circle"></i> Valid Format</span>';
+        document.getElementById('resultSubtitle').textContent =
+            'Bharat Series — First registered in ' + d.bhFullYear + ', valid across all states/UTs';
+        _normalizedCopy = d.normalized;
+
+        // Breakdown blocks
+        document.getElementById('breakdownBlock').innerHTML = `
+            <div class="breakdown-segment bh-yr">
+                <span class="seg-label">Year</span>
+                <span class="seg-value">${d.bhYear}</span>
+            </div>
+            <div class="breakdown-segment rto" style="border-color:rgba(139,92,246,0.5);background:rgba(139,92,246,0.12);">
+                <span class="seg-label">Series</span>
+                <span class="seg-value">BH</span>
+            </div>
+            <div class="breakdown-segment number">
+                <span class="seg-label">Reg. No.</span>
+                <span class="seg-value">${d.regNumber}</span>
+            </div>
+            <div class="breakdown-segment bh-cat">
+                <span class="seg-label">Code</span>
+                <span class="seg-value">${d.series}</span>
+            </div>
+        `;
+
+        const rows = [
+            ['Series Type', '<strong style="color:#c084fc">Bharat Series (BH)</strong>'],
+            ['Year of Registration', `<strong>${d.bhFullYear}</strong> <span style="color:var(--text-secondary);font-size:0.82rem;">(${d.bhYear})</span>`],
+            ['Registration Number', `<span style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;">${d.regNumber}</span>`],
+            ['Letter Code', `<span style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;">${d.series}</span>`],
+            ['State Jurisdiction', 'Pan-India — No state-specific RTO'],
+            ['Normalised Format', `<span style="font-family:'JetBrains Mono',monospace;">${d.normalized}</span>`],
+        ];
+        document.getElementById('decodeTable').innerHTML = rows.map(([l,v]) =>
+            `<tr><td>${l}</td><td>${v}</td></tr>`
+        ).join('');
+
+        document.getElementById('resultsSection').style.display = 'block';
+        document.getElementById('resultsSection').scrollIntoView({behavior:'smooth'});
+    }
+
+    function showError(msg) {
+        document.getElementById('errorMessage').innerHTML = msg;
+        document.getElementById('errorSection').style.display = 'block';
+        document.getElementById('errorSection').scrollIntoView({behavior:'smooth'});
+    }
+
+    function copyNormalized() {
+        if (!_normalizedCopy) return;
+        navigator.clipboard.writeText(_normalizedCopy).then(() => showToast('Copied: ' + _normalizedCopy));
+    }
+
+    function resetForm() {
+        document.getElementById('vehicleInput').value = '';
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorSection').style.display = 'none';
+        _normalizedCopy = '';
+        document.getElementById('vehicleInput').focus();
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toastMessage').textContent = msg;
+        t.classList.add('active');
+        setTimeout(() => t.classList.remove('active'), 3000);
+    }
+
+    function escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Auto-uppercase input
+    document.getElementById('vehicleInput').addEventListener('input', function() {
+        const pos = this.selectionStart;
+        this.value = this.value.toUpperCase();
+        this.setSelectionRange(pos, pos);
+    });
+
+    // Enter key
+    document.getElementById('vehicleInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') decodeVehicle();
+    });
+
+    // Auto-decode from URL param
+    (function() {
+        const p = new URLSearchParams(window.location.search).get('v');
+        if (p) {
+            document.getElementById('vehicleInput').value = p.toUpperCase();
+            decodeVehicle();
+        }
+    })();
+    </script>
+
+    <!-- Hit Counter -->
+    <div style="text-align:center;padding:20px 0;">
+        <img src="https://hits.sh/punjab.pages.dev/vehicle.svg?view=today-total&style=for-the-badge&label=Vehicle+Decoder&extraCount=0&color=080e08&labelColor=9c3232" alt="Hit Counter" />
+    </div>
+</body>
+</html>
