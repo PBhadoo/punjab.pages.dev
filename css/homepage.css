@@ -344,7 +344,7 @@
     margin-right: auto;
 }
 
-.cta-section h3 {
+.cta-section h2, .cta-section h3 {
     font-size: 1.8rem;
     font-weight: 700;
     margin-bottom: 15px;
