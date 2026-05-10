@@ -696,8 +696,8 @@
                         <h4><i class="fas fa-calendar-day"></i> Day &amp; Calendar Position</h4>
                         <div class="stat-cards">
                             <div class="stat-card years">
-                                <div class="stat-number" id="infoDayOfWeekNum">0</div>
-                                <div class="stat-label" id="infoDayOfWeekName">Day of Week</div>
+                                <div class="stat-number" id="infoDayOfWeekNum" style="font-size:1.6rem;">—</div>
+                                <div class="stat-label">Day of Week</div>
                             </div>
                             <div class="stat-card months">
                                 <div class="stat-number" id="infoWeekNum">0</div>
@@ -1107,8 +1107,7 @@
                 return n > 0 ? `+${abs} ${unit} in the future` : `-${abs} ${unit} in the past`;
             };
 
-            setText('infoDayOfWeekNum',  (d.getDay() + 1).toString());
-            setText('infoDayOfWeekName', DAYS[d.getDay()]);
+            setText('infoDayOfWeekNum',  DAYS[d.getDay()]);
             setText('infoWeekNum',       weekNum.toString());
             setText('infoDayOfYear',     dayOfYear.toString());
 

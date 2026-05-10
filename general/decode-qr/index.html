@@ -204,7 +204,7 @@
             <div class="decoded-text" id="decodedText"></div>
             
             <div class="action-buttons">
-                <button class="action-btn secondary" onclick="copyToClipboard()">
+                <button class="action-btn secondary" onclick="copyToClipboard(this)">
                     <i class="fas fa-copy"></i> Copy Text
                 </button>
                 <button class="action-btn" onclick="resetDecoder()">
@@ -331,9 +331,8 @@
             }
         }
 
-        function copyToClipboard() {
+        function copyToClipboard(btn) {
             navigator.clipboard.writeText(decodedData).then(() => {
-                const btn = event.target.closest('button');
                 const originalHTML = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
                 setTimeout(() => {

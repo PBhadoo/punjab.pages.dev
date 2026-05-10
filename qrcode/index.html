@@ -16,12 +16,18 @@
     
     <!-- Application CSS -->
     <link rel="stylesheet" href="../css/styles.css">
-    
+    <link rel="stylesheet" href="../css/tool-common.css">
+
     <!-- QR Code Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     
     <style>
+        /* Define tool-specific CSS variable aliases */
+        :root {
+            --accent-primary: var(--accent-color); /* #e94560 */
+        }
+
         /* Tab Navigation */
         .tabs-container {
             display: flex;
@@ -459,16 +465,16 @@
         <section class="content-section">
             <!-- Tabs -->
             <div class="tabs-container">
-                <button class="tab-btn active" onclick="switchTab('generate')">
+                <button class="tab-btn active" onclick="switchTab('generate', event)">
                     <i class="fas fa-plus-circle"></i> Generate QR
                 </button>
-                <button class="tab-btn" onclick="switchTab('scan')">
+                <button class="tab-btn" onclick="switchTab('scan', event)">
                     <i class="fas fa-camera"></i> Scan QR
                 </button>
-                <button class="tab-btn" onclick="switchTab('upload')">
+                <button class="tab-btn" onclick="switchTab('upload', event)">
                     <i class="fas fa-upload"></i> Read from Image
                 </button>
-                <button class="tab-btn" onclick="switchTab('upi')">
+                <button class="tab-btn" onclick="switchTab('upi', event)">
                     <i class="fas fa-indian-rupee-sign"></i> UPI Payment
                 </button>
             </div>
@@ -480,35 +486,35 @@
                     <p>Select the type of QR code you want to create</p>
                     
                     <div class="qr-type-grid">
-                        <div class="qr-type-btn active" onclick="selectQRType('text')">
+                        <div class="qr-type-btn active" onclick="selectQRType('text', event)">
                             <i class="fas fa-font"></i>
                             <span>Text</span>
                         </div>
-                        <div class="qr-type-btn" onclick="selectQRType('url')">
+                        <div class="qr-type-btn" onclick="selectQRType('url', event)">
                             <i class="fas fa-link"></i>
                             <span>URL</span>
                         </div>
-                        <div class="qr-type-btn" onclick="selectQRType('email')">
+                        <div class="qr-type-btn" onclick="selectQRType('email', event)">
                             <i class="fas fa-envelope"></i>
                             <span>Email</span>
                         </div>
-                        <div class="qr-type-btn" onclick="selectQRType('phone')">
+                        <div class="qr-type-btn" onclick="selectQRType('phone', event)">
                             <i class="fas fa-phone"></i>
                             <span>Phone</span>
                         </div>
-                        <div class="qr-type-btn" onclick="selectQRType('sms')">
+                        <div class="qr-type-btn" onclick="selectQRType('sms', event)">
                             <i class="fas fa-comment-sms"></i>
                             <span>SMS</span>
                         </div>
-                        <div class="qr-type-btn" onclick="selectQRType('wifi')">
+                        <div class="qr-type-btn" onclick="selectQRType('wifi', event)">
                             <i class="fas fa-wifi"></i>
                             <span>WiFi</span>
                         </div>
-                        <div class="qr-type-btn" onclick="selectQRType('vcard')">
+                        <div class="qr-type-btn" onclick="selectQRType('vcard', event)">
                             <i class="fas fa-address-card"></i>
                             <span>vCard</span>
                         </div>
-                        <div class="qr-type-btn" onclick="selectQRType('location')">
+                        <div class="qr-type-btn" onclick="selectQRType('location', event)">
                             <i class="fas fa-location-dot"></i>
                             <span>Location</span>
                         </div>
@@ -680,15 +686,23 @@
         </section>
     </main>
 
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <p>Punjab Investigation Tools - QR Code Tools</p>
-            <p style="font-size: 0.85rem; opacity: 0.7;">All processing done locally in your browser</p>
+            <p><i class="fas fa-shield-check"></i> All processing happens locally in your browser. No data is uploaded to any server.</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
         </div>
     </footer>
 
     <script>
+        // Initialize year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
         // Current state
         let currentQRType = 'text';
         let currentQRData = '';
@@ -701,13 +715,23 @@
         let uploadedData = '';
 
         // Tab switching
-        function switchTab(tab) {
+        function switchTab(tab, evt) {
+            var ev = evt || event;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.closest('.tab-btn').classList.add('active');
+
+            if (ev && ev.target) {
+                ev.target.closest('.tab-btn').classList.add('active');
+            } else {
+                // Fallback: find the tab button by text/data match
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tab + "'")) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
             document.getElementById(tab + 'Tab').classList.add('active');
-            
+
             // Stop scanner when switching away
             if (tab !== 'scan' && scannerStream) {
                 stopScanner();
@@ -715,11 +739,20 @@
         }
 
         // QR Type Selection
-        function selectQRType(type) {
+        function selectQRType(type, evt) {
+            var ev = evt || event;
             currentQRType = type;
             document.querySelectorAll('.qr-type-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.closest('.qr-type-btn').classList.add('active');
-            
+            if (ev && ev.target) {
+                ev.target.closest('.qr-type-btn').classList.add('active');
+            } else {
+                document.querySelectorAll('.qr-type-btn').forEach(btn => {
+                    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + type + "'")) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
             updateFormFields(type);
         }
 
@@ -853,11 +886,26 @@
             container.innerHTML = html;
         }
 
+        function showToast(message, isError) {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+            document.getElementById('toastMessage').textContent = message;
+            if (isError) {
+                icon.className = 'fas fa-exclamation-circle';
+                toast.style.borderColor = '#ef4444';
+            } else {
+                icon.className = 'fas fa-check-circle';
+                toast.style.borderColor = '';
+            }
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
         // Generate QR Code
         function generateQR() {
             const data = getQRData();
             if (!data) {
-                alert('Please fill in the required fields');
+                showToast('Please fill in the required fields', true);
                 return;
             }
 
@@ -932,54 +980,69 @@
         function getCurrentLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
-                    document.getElementById('qrLat').value = position.coords.latitude.toFixed(6);
-                    document.getElementById('qrLng').value = position.coords.longitude.toFixed(6);
+                    const latEl = document.getElementById('qrLat');
+                    const lngEl = document.getElementById('qrLng');
+                    if (latEl) latEl.value = position.coords.latitude.toFixed(6);
+                    if (lngEl) lngEl.value = position.coords.longitude.toFixed(6);
+                    showToast('Location obtained successfully');
                 }, function(error) {
-                    alert('Unable to get location: ' + error.message);
+                    showToast('Unable to get location: ' + error.message, true);
                 });
             } else {
-                alert('Geolocation is not supported by this browser');
+                showToast('Geolocation is not supported by this browser', true);
             }
         }
 
         // Download QR Code
         function downloadQR() {
             const canvas = document.querySelector('#qrOutput canvas');
-            if (!canvas) {
-                alert('Please generate a QR code first');
+            const img = document.querySelector('#qrOutput img');
+            if (!canvas && !img) {
+                showToast('Please generate a QR code first', true);
                 return;
             }
             const link = document.createElement('a');
             link.download = 'qrcode.png';
-            link.href = canvas.toDataURL('image/png');
+            if (canvas) {
+                link.href = canvas.toDataURL('image/png');
+            } else {
+                link.href = img.src;
+            }
             link.click();
         }
 
         function copyQRData() {
             navigator.clipboard.writeText(currentQRData).then(() => {
-                alert('QR data copied to clipboard!');
+                showToast('QR data copied to clipboard!');
+            }).catch(() => {
+                showToast('Failed to copy to clipboard', true);
             });
         }
 
         // Scanner Functions
         async function startScanner() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showToast('Camera API not supported in this browser', true);
+                return;
+            }
             try {
                 scannerStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment' }
                 });
-                
+
                 const video = document.getElementById('scannerVideo');
                 video.srcObject = scannerStream;
-                video.play();
-                
+                await video.play();
+
                 document.getElementById('startScanBtn').style.display = 'none';
                 document.getElementById('stopScanBtn').style.display = 'inline-flex';
                 document.getElementById('scannerOverlay').style.display = 'block';
-                
+
                 // Start scanning
                 scannerInterval = setInterval(scanFrame, 200);
             } catch (err) {
-                alert('Unable to access camera: ' + err.message);
+                scannerStream = null;
+                showToast('Unable to access camera: ' + err.message, true);
             }
         }
 
@@ -1046,7 +1109,9 @@
 
         function copyScanResult() {
             navigator.clipboard.writeText(scannedData).then(() => {
-                alert('Copied to clipboard!');
+                showToast('Copied to clipboard!');
+            }).catch(() => {
+                showToast('Failed to copy to clipboard', true);
             });
         }
 
@@ -1083,7 +1148,7 @@
                         uploadedData = code.data;
                         displayUploadResult(code.data);
                     } else {
-                        alert('No QR code found in the image');
+                        showToast('No QR code found in the image', true);
                         document.getElementById('uploadResult').style.display = 'none';
                     }
                 };
@@ -1107,7 +1172,9 @@
 
         function copyUploadResult() {
             navigator.clipboard.writeText(uploadedData).then(() => {
-                alert('Copied to clipboard!');
+                showToast('Copied to clipboard!');
+            }).catch(() => {
+                showToast('Failed to copy to clipboard', true);
             });
         }
 
@@ -1142,9 +1209,9 @@
             const name = document.getElementById('upiName').value.trim();
             const amount = document.getElementById('upiAmount').value;
             const note = document.getElementById('upiNote').value.trim();
-            
+
             if (!upiId || !name) {
-                alert('Please enter UPI ID and Payee Name');
+                showToast('Please enter UPI ID and Payee Name', true);
                 return;
             }
             
@@ -1183,19 +1250,26 @@
 
         function downloadUPIQR() {
             const canvas = document.querySelector('#upiQrOutput canvas');
-            if (!canvas) {
-                alert('Please generate a UPI QR code first');
+            const img = document.querySelector('#upiQrOutput img');
+            if (!canvas && !img) {
+                showToast('Please generate a UPI QR code first', true);
                 return;
             }
             const link = document.createElement('a');
             link.download = 'upi-qr.png';
-            link.href = canvas.toDataURL('image/png');
+            if (canvas) {
+                link.href = canvas.toDataURL('image/png');
+            } else {
+                link.href = img.src;
+            }
             link.click();
         }
 
         function copyUPIString() {
             navigator.clipboard.writeText(currentUPIString).then(() => {
-                alert('UPI string copied to clipboard!');
+                showToast('UPI string copied to clipboard!');
+            }).catch(() => {
+                showToast('Failed to copy to clipboard', true);
             });
         }
     </script>

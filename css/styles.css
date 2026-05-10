@@ -4,9 +4,12 @@
 :root {
     --primary-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     --accent-color: #e94560;
+    --accent-primary: #6366f1;
     --accent-secondary: #00d9ff;
     --text-primary: #ffffff;
     --text-secondary: #a0aec0;
+    --text-muted: #718096;
+    --bg-primary: #1a1a2e;
     --card-bg: rgba(255, 255, 255, 0.05);
     --card-border: rgba(255, 255, 255, 0.1);
     --success-color: #10b981;
@@ -159,6 +162,12 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     padding: 40px 20px;
+}
+
+/* Content Section (tool page wrapper) */
+.content-section {
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 /* Hero Section */

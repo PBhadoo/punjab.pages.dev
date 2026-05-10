@@ -1,3 +1,8 @@
+            /* Define --border-color alias so loading spinner and progress bar render correctly */
+            :root {
+                --border-color: rgba(255, 255, 255, 0.1);
+            }
+
             .channel-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);

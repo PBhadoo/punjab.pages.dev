@@ -326,21 +326,21 @@
             <h3><i class="fas fa-sliders"></i> Compression Settings</h3>
             
             <div class="compression-options">
-                <div class="compression-preset active" onclick="selectPreset('low', 90)">
+                <div class="compression-preset active" onclick="selectPreset(this, 'low', 90)">
                     <div class="preset-icon" style="color: #10b981;">
                         <i class="fas fa-leaf"></i>
                     </div>
                     <div class="preset-name">Low Compression</div>
                     <div class="preset-description">Best quality, larger size</div>
                 </div>
-                <div class="compression-preset" onclick="selectPreset('medium', 70)">
+                <div class="compression-preset" onclick="selectPreset(this, 'medium', 70)">
                     <div class="preset-icon" style="color: #f59e0b;">
                         <i class="fas fa-balance-scale"></i>
                     </div>
                     <div class="preset-name">Medium Compression</div>
                     <div class="preset-description">Balanced quality & size</div>
                 </div>
-                <div class="compression-preset" onclick="selectPreset('high', 50)">
+                <div class="compression-preset" onclick="selectPreset(this, 'high', 50)">
                     <div class="preset-icon" style="color: var(--accent-color);">
                         <i class="fas fa-rocket"></i>
                     </div>
@@ -502,10 +502,10 @@
             document.getElementById('compressionSettings').style.display = 'block';
         }
 
-        function selectPreset(preset, quality) {
+        function selectPreset(el, preset, quality) {
             document.querySelectorAll('.compression-preset').forEach(p => p.classList.remove('active'));
-            event.target.closest('.compression-preset').classList.add('active');
-            
+            el.classList.add('active');
+
             qualitySlider.value = quality;
             qualityValue.textContent = quality + '%';
         }

@@ -390,17 +390,17 @@
                 <h3><i class="fas fa-sliders"></i> Split Options</h3>
                 
                 <div class="split-mode">
-                    <button class="mode-btn active" onclick="switchMode('all')">
+                    <button class="mode-btn active" onclick="switchMode(this, 'all')">
                         <div class="mode-icon"><i class="fas fa-layer-group"></i></div>
                         <span>All Pages</span>
                         <small style="font-size: 11px; opacity: 0.7;">One file per page</small>
                     </button>
-                    <button class="mode-btn" onclick="switchMode('custom')">
+                    <button class="mode-btn" onclick="switchMode(this, 'custom')">
                         <div class="mode-icon"><i class="fas fa-scissors"></i></div>
                         <span>Custom Range</span>
                         <small style="font-size: 11px; opacity: 0.7;">Specify pages</small>
                     </button>
-                    <button class="mode-btn" onclick="switchMode('select')">
+                    <button class="mode-btn" onclick="switchMode(this, 'select')">
                         <div class="mode-icon"><i class="fas fa-check-square"></i></div>
                         <span>Select Pages</span>
                         <small style="font-size: 11px; opacity: 0.7;">Pick individual pages</small>
@@ -584,14 +584,14 @@
             checkbox.parentElement.classList.toggle('selected', checkbox.checked);
         }
 
-        function switchMode(mode) {
+        function switchMode(el, mode) {
             splitMode = mode;
-            
+
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.closest('.mode-btn').classList.add('active');
-            
+            el.classList.add('active');
+
             document.querySelectorAll('.split-options').forEach(opt => opt.classList.remove('active'));
-            
+
             if (mode === 'custom') {
                 document.getElementById('customOptions').classList.add('active');
             } else if (mode === 'select') {

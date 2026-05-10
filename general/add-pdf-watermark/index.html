@@ -759,11 +759,11 @@
             <h3 style="margin-bottom: 20px;"><i class="fas fa-sliders"></i> Watermark Settings</h3>
             
             <div class="watermark-mode">
-                <button class="mode-btn active" onclick="switchMode('text')">
+                <button class="mode-btn active" onclick="switchMode(this, 'text')">
                     <div class="mode-icon"><i class="fas fa-font"></i></div>
                     <span>Text Watermark</span>
                 </button>
-                <button class="mode-btn" onclick="switchMode('image')">
+                <button class="mode-btn" onclick="switchMode(this, 'image')">
                     <div class="mode-icon"><i class="fas fa-image"></i></div>
                     <span>Image Watermark</span>
                 </button>
@@ -795,39 +795,39 @@
             <div class="control-group active">
                 <label>Position</label>
                 <div class="position-grid">
-                    <button class="position-btn" onclick="selectPosition('top-left')">
+                    <button class="position-btn" onclick="selectPosition(this, 'top-left')">
                         <div class="position-icon"><i class="fas fa-arrow-up-left"></i></div>
                         <div class="position-label">Top Left</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('top-center')">
+                    <button class="position-btn" onclick="selectPosition(this, 'top-center')">
                         <div class="position-icon"><i class="fas fa-arrow-up"></i></div>
                         <div class="position-label">Top Center</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('top-right')">
+                    <button class="position-btn" onclick="selectPosition(this, 'top-right')">
                         <div class="position-icon"><i class="fas fa-arrow-up-right"></i></div>
                         <div class="position-label">Top Right</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('middle-left')">
+                    <button class="position-btn" onclick="selectPosition(this, 'middle-left')">
                         <div class="position-icon"><i class="fas fa-arrow-left"></i></div>
                         <div class="position-label">Middle Left</div>
                     </button>
-                    <button class="position-btn active" onclick="selectPosition('center')">
+                    <button class="position-btn active" onclick="selectPosition(this, 'center')">
                         <div class="position-icon"><i class="fas fa-circle-dot"></i></div>
                         <div class="position-label">Center</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('middle-right')">
+                    <button class="position-btn" onclick="selectPosition(this, 'middle-right')">
                         <div class="position-icon"><i class="fas fa-arrow-right"></i></div>
                         <div class="position-label">Middle Right</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('bottom-left')">
+                    <button class="position-btn" onclick="selectPosition(this, 'bottom-left')">
                         <div class="position-icon"><i class="fas fa-arrow-down-left"></i></div>
                         <div class="position-label">Bottom Left</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('bottom-center')">
+                    <button class="position-btn" onclick="selectPosition(this, 'bottom-center')">
                         <div class="position-icon"><i class="fas fa-arrow-down"></i></div>
                         <div class="position-label">Bottom Center</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('bottom-right')">
+                    <button class="position-btn" onclick="selectPosition(this, 'bottom-right')">
                         <div class="position-icon"><i class="fas fa-arrow-down-right"></i></div>
                         <div class="position-label">Bottom Right</div>
                     </button>
@@ -1264,12 +1264,26 @@
             }
         }
 
-        function switchMode(mode) {
-            watermarkMode = mode;
-            document.querySelectorAll('.watermark-mode .mode-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.closest('.mode-btn').classList.add('active');
-            
-            if (mode === 'text') {
+        function switchMode(elOrMode, mode) {
+            // Support both switchMode(el, mode) from onclick and switchMode(mode) programmatically
+            let el, actualMode;
+            if (typeof elOrMode === 'string') {
+                actualMode = elOrMode;
+                // Highlight the matching mode button
+                document.querySelectorAll('.watermark-mode .mode-btn').forEach(btn => {
+                    const onclickAttr = btn.getAttribute('onclick') || '';
+                    btn.classList.toggle('active', onclickAttr.includes("'" + actualMode + "'"));
+                });
+            } else {
+                el = elOrMode;
+                actualMode = mode;
+                document.querySelectorAll('.watermark-mode .mode-btn').forEach(btn => btn.classList.remove('active'));
+                el.classList.add('active');
+            }
+
+            watermarkMode = actualMode;
+
+            if (actualMode === 'text') {
                 document.getElementById('textControls').classList.add('active');
                 document.getElementById('textSizeControl').classList.add('active');
                 document.getElementById('imageControls').classList.remove('active');
@@ -1278,15 +1292,15 @@
                 document.getElementById('textSizeControl').classList.remove('active');
                 document.getElementById('imageControls').classList.add('active');
             }
-            
+
             saveSettings();
             updatePreview();
         }
 
-        function selectPosition(position) {
+        function selectPosition(el, position) {
             selectedPosition = position;
             document.querySelectorAll('.position-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.closest('.position-btn').classList.add('active');
+            el.classList.add('active');
             saveSettings();
             updatePreview();
         }

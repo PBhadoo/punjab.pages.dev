@@ -592,8 +592,8 @@
         function showToast(message) {
             const toast = document.getElementById('toast');
             document.getElementById('toastMessage').textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 3000);
         }
 
         // Allow Enter key to lookup

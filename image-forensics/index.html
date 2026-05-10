@@ -15,6 +15,8 @@
     
     <!-- EXIF.js for metadata extraction -->
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <!-- hash-wasm for image hash calculation -->
+    <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4"></script>
     <!-- PDF Generation Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -52,7 +54,7 @@
 
     <header class="header">
         <div class="header-container">
-            <a href="javascript:location.reload()" class="logo" style="text-decoration: none; color: inherit;">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
                 <div class="logo-icon">
                     <i class="fas fa-shield-halved"></i>
                 </div>
@@ -443,7 +445,6 @@
         <span id="toastMessage">Action completed</span>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4"></script>
     <script src="image-forensics.js"></script>
     <!-- Hit Counter -->
     <div style="text-align: center; padding: 20px 0;">

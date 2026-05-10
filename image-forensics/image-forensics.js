@@ -1,4 +1,5 @@
-document.getElementById('currentYear').textContent = new Date().getFullYear();
+const _yearEl = document.getElementById('currentYear');
+if (_yearEl) _yearEl.textContent = new Date().getFullYear();
 
         let currentImage = null;
         let imageFile = null;
@@ -410,9 +411,15 @@ document.getElementById('currentYear').textContent = new Date().getFullYear();
             ctx.putImageData(new ImageData(output, width, height), 0, 0);
         }
 
+        function updateELA() {
+            document.getElementById('qualityValue').textContent = document.getElementById('elaQuality').value;
+            document.getElementById('enhanceValue').textContent = document.getElementById('elaEnhance').value;
+            if (currentImage) performELAAsync();
+        }
+
         function updateNoise() {
             document.getElementById('noiseAmpValue').textContent = document.getElementById('noiseAmp').value;
-            performNoiseAnalysis();
+            if (currentImage) performNoiseAnalysis();
         }
 
         function performJPEGGhost() {
@@ -1416,8 +1423,11 @@ document.getElementById('currentYear').textContent = new Date().getFullYear();
         }
 
         function copyHash(hash) {
-            navigator.clipboard.writeText(hash);
-            showToast('Hash copied to clipboard');
+            navigator.clipboard.writeText(hash).then(() => {
+                showToast('Hash copied to clipboard');
+            }).catch(() => {
+                showToast('Copy failed – please copy manually');
+            });
         }
 
         function resetAnalysis() {
@@ -1674,6 +1684,6 @@ document.getElementById('currentYear').textContent = new Date().getFullYear();
         function showToast(message) {
             const toast = document.getElementById('toast');
             document.getElementById('toastMessage').textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 3000);
         }

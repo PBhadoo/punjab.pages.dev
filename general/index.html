@@ -25,11 +25,11 @@
             gap: 25px;
             padding: 40px 0;
         }
-        
+
         .category-section {
             margin-bottom: 50px;
         }
-        
+
         .category-title {
             font-size: 28px;
             font-weight: 700;
@@ -38,16 +38,16 @@
             align-items: center;
             gap: 15px;
         }
-        
+
         .category-title i {
             color: var(--accent-color);
         }
-        
+
         .tool-card.coming-soon {
             opacity: 0.6;
             position: relative;
         }
-        
+
         .tool-card.coming-soon::after {
             content: 'Coming Soon';
             position: absolute;
@@ -60,26 +60,119 @@
             font-size: 12px;
             font-weight: 600;
         }
+
+        .tool-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .tool-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 15px;
+            flex: 1;
+        }
+
+        .tool-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: auto;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--accent-secondary);
+            font-weight: 500;
+        }
+
+        .tag.available {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.25);
+            color: #10b981;
+        }
+
+        /* Override tool-card for this page to use flex layout */
+        .tools-grid .tool-card {
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+        }
+
+        .tool-card .tool-icon {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.15), rgba(0, 217, 255, 0.15));
+            color: var(--accent-secondary);
+        }
+
+        /* tools-container width constraint */
+        .tools-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Footer override: 3 columns instead of 4 */
+        .homepage-footer .footer-grid {
+            grid-template-columns: 2fr 1fr 1fr;
+        }
         
         .info-section {
             max-width: 1200px;
             margin: 0 auto;
             text-align: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            padding: 40px 0;
         }
-        
+
         .info-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
             text-align: center;
+            transition: all 0.3s ease;
         }
-        
+
+        .info-card:hover {
+            border-color: var(--accent-secondary);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-icon {
+            font-size: 2.5rem;
+            color: var(--accent-secondary);
+            margin-bottom: 18px;
+        }
+
         .info-content {
             text-align: center;
         }
-        
+
         .info-content h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text-primary);
             text-align: center;
         }
-        
+
         .info-content p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
             text-align: center;
         }
     </style>
@@ -406,7 +499,7 @@
                 </h2>
                 <div class="tools-grid">
                     <!-- Generate QR Code -->
-                    <a href="/qrcode/" class="tool-card">
+                    <a href="/general/generate-qr/" class="tool-card">
                         <div class="tool-icon">
                             <i class="fas fa-qrcode"></i>
                         </div>
@@ -419,7 +512,7 @@
                     </a>
 
                     <!-- Decode QR Code -->
-                    <a href="/qrcode/" class="tool-card">
+                    <a href="/general/decode-qr/" class="tool-card">
                         <div class="tool-icon">
                             <i class="fas fa-barcode"></i>
                         </div>
@@ -589,11 +682,6 @@
             <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools. Open source tool for electronic evidence authentication.</p>
         </div>
     </footer>
-
-    <script>
-        // Set current year
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-    </script>
 
     <!-- Hit Counter -->
     <div style="text-align: center; padding: 20px 0;">

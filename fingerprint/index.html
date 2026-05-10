@@ -755,7 +755,7 @@
                 quality,
                 ridgeCount,
                 ridgeCharacteristics,
-                orientationField: summarizeOrientationField(orientationField, size),
+                orientationField: summarizeOrientationField(orientationField, segmentMask, size),
                 imageSize: { width: img.width, height: img.height },
                 analysisSize: size,
                 timestamp: new Date().toISOString()
@@ -3221,11 +3221,12 @@
                 </div>
             `;
             
-            // Ridge Statistics
+            // Ridge Statistics (initial - will be overridden if ridgeCharacteristics present)
+            const _rc = r.ridgeCount.primaryCount || r.ridgeCount.estimated || 0;
             document.getElementById('ridgeStats').innerHTML = `
                 <div class="minutiae-grid">
                     <div class="minutiae-stat">
-                        <div class="count">${r.ridgeCount.estimated}</div>
+                        <div class="count">${_rc}</div>
                         <div class="label">Ridge Count</div>
                     </div>
                     <div class="minutiae-stat">
@@ -3233,7 +3234,7 @@
                         <div class="label">Ridge Density</div>
                     </div>
                     <div class="minutiae-stat">
-                        <div class="count">~${Math.round(r.ridgeCount.estimated * 0.4)}</div>
+                        <div class="count">~${Math.round(_rc * 0.4)}</div>
                         <div class="label">Ridges/cm²</div>
                     </div>
                 </div>
@@ -3607,7 +3608,9 @@
             score += countSim;
             
             // Ridge count similarity (20% weight)
-            const ridgeDiff = Math.abs(fp1.ridgeCount.estimated - fp2.ridgeCount.estimated);
+            const rc1 = fp1.ridgeCount.primaryCount || fp1.ridgeCount.estimated || 0;
+            const rc2 = fp2.ridgeCount.primaryCount || fp2.ridgeCount.estimated || 0;
+            const ridgeDiff = Math.abs(rc1 - rc2);
             const ridgeSim = Math.max(0, 20 - ridgeDiff * 2);
             score += ridgeSim;
             
@@ -3673,14 +3676,14 @@
                         <h5 style="color: #3b82f6; margin-bottom: 10px;"><i class="fas fa-fingerprint"></i> Print 1 (Known)</h5>
                         <p><strong>Pattern:</strong> ${comparison1.pattern.type} (${comparison1.pattern.subtype})</p>
                         <p><strong>Minutiae:</strong> ${comparison1.minutiae.total} total</p>
-                        <p><strong>Ridge Count:</strong> ${comparison1.ridgeCount.estimated}</p>
+                        <p><strong>Ridge Count:</strong> ${comparison1.ridgeCount.primaryCount || comparison1.ridgeCount.estimated}</p>
                         <p><strong>Quality:</strong> ${comparison1.quality.grade} (${comparison1.quality.overall}%)</p>
                     </div>
                     <div style="padding: 15px; background: rgba(245, 158, 11, 0.1); border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.2);">
                         <h5 style="color: #f59e0b; margin-bottom: 10px;"><i class="fas fa-fingerprint"></i> Print 2 (Questioned)</h5>
                         <p><strong>Pattern:</strong> ${comparison2.pattern.type} (${comparison2.pattern.subtype})</p>
                         <p><strong>Minutiae:</strong> ${comparison2.minutiae.total} total</p>
-                        <p><strong>Ridge Count:</strong> ${comparison2.ridgeCount.estimated}</p>
+                        <p><strong>Ridge Count:</strong> ${comparison2.ridgeCount.primaryCount || comparison2.ridgeCount.estimated}</p>
                         <p><strong>Quality:</strong> ${comparison2.quality.grade} (${comparison2.quality.overall}%)</p>
                     </div>
                 </div>
@@ -3700,7 +3703,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Ridge Count Difference</div>
-                        <div class="detail-value">${Math.abs(comparison1.ridgeCount.estimated - comparison2.ridgeCount.estimated)} ridges</div>
+                        <div class="detail-value">${Math.abs((comparison1.ridgeCount.primaryCount || comparison1.ridgeCount.estimated || 0) - (comparison2.ridgeCount.primaryCount || comparison2.ridgeCount.estimated || 0))} ridges</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Analysis Method</div>
@@ -3746,15 +3749,24 @@
             
             text += `RIDGE ANALYSIS\n`;
             text += `--------------\n`;
-            text += `Ridge Count: ${r.ridgeCount.estimated}\n`;
+            text += `Ridge Count: ${r.ridgeCount.primaryCount || r.ridgeCount.estimated}\n`;
             text += `Ridge Density: ${r.ridgeCount.density}%\n\n`;
             
             text += `QUALITY ASSESSMENT\n`;
             text += `------------------\n`;
             text += `Overall Quality: ${r.quality.overall}% (${r.quality.grade})\n`;
-            text += `Contrast: ${r.quality.contrast}%\n`;
-            text += `Clarity: ${r.quality.clarity}%\n`;
-            text += `Ridge Continuity: ${r.quality.continuity}%\n\n`;
+            if (r.quality.metrics) {
+                text += `Contrast: ${r.quality.metrics.contrast}%\n`;
+                text += `Ridge Clarity: ${r.quality.metrics.clarity}%\n`;
+                text += `Ridge Continuity: ${r.quality.metrics.ridgeContinuity}%\n`;
+                text += `Orientation Consistency: ${r.quality.metrics.orientationConsistency}%\n`;
+                text += `NFIQ Score: ${r.quality.nfiqScore}/5\n`;
+            } else {
+                text += `Contrast: ${r.quality.contrast || 'N/A'}%\n`;
+                text += `Clarity: ${r.quality.clarity || 'N/A'}%\n`;
+                text += `Ridge Continuity: ${r.quality.continuity || 'N/A'}%\n`;
+            }
+            text += `\n`;
             
             text += `==========================================\n`;
             text += `DISCLAIMER: This is a screening tool only.\n`;
@@ -3762,8 +3774,11 @@
             text += `Generated by Punjab Investigation Tools\n`;
             text += `https://punjab.pages.dev/fingerprint\n`;
             
-            navigator.clipboard.writeText(text);
-            showToast('Analysis report copied to clipboard');
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Analysis report copied to clipboard');
+            }).catch(() => {
+                showToast('Failed to copy - try again');
+            });
         }
 
         async function downloadAnalysisPDF() {
@@ -3836,7 +3851,7 @@
             
             doc.setFontSize(11);
             doc.setFont(undefined, 'normal');
-            doc.text(`Ridge Count: ${r.ridgeCount.estimated}`, 25, y); y += 7;
+            doc.text(`Ridge Count: ${r.ridgeCount.primaryCount || r.ridgeCount.estimated}`, 25, y); y += 7;
             doc.text(`Ridge Density: ${r.ridgeCount.density}%`, 25, y); y += 12;
             
             // Quality
@@ -3848,7 +3863,13 @@
             doc.setFontSize(11);
             doc.setFont(undefined, 'normal');
             doc.text(`Overall: ${r.quality.overall}% (${r.quality.grade})`, 25, y); y += 7;
-            doc.text(`Contrast: ${r.quality.contrast}% | Clarity: ${r.quality.clarity}% | Continuity: ${r.quality.continuity}%`, 25, y); y += 15;
+            if (r.quality.metrics) {
+                doc.text(`Contrast: ${r.quality.metrics.contrast}% | Clarity: ${r.quality.metrics.clarity}% | Continuity: ${r.quality.metrics.ridgeContinuity}%`, 25, y); y += 7;
+                doc.text(`NFIQ Score: ${r.quality.nfiqScore}/5 | Orientation: ${r.quality.metrics.orientationConsistency}%`, 25, y); y += 8;
+            } else {
+                doc.text(`Contrast: ${r.quality.contrast || 'N/A'}% | Clarity: ${r.quality.clarity || 'N/A'}% | Continuity: ${r.quality.continuity || 'N/A'}%`, 25, y); y += 8;
+            }
+            y += 7;
             
             // Disclaimer
             doc.setFillColor(255, 243, 205);
@@ -3874,13 +3895,13 @@
             text += `Print 1 Analysis:\n`;
             text += `  Pattern: ${comparison1.pattern.type} (${comparison1.pattern.subtype})\n`;
             text += `  Minutiae: ${comparison1.minutiae.total}\n`;
-            text += `  Ridge Count: ${comparison1.ridgeCount.estimated}\n`;
+            text += `  Ridge Count: ${comparison1.ridgeCount.primaryCount || comparison1.ridgeCount.estimated}\n`;
             text += `  Quality: ${comparison1.quality.grade}\n\n`;
-            
+
             text += `Print 2 Analysis:\n`;
             text += `  Pattern: ${comparison2.pattern.type} (${comparison2.pattern.subtype})\n`;
             text += `  Minutiae: ${comparison2.minutiae.total}\n`;
-            text += `  Ridge Count: ${comparison2.ridgeCount.estimated}\n`;
+            text += `  Ridge Count: ${comparison2.ridgeCount.primaryCount || comparison2.ridgeCount.estimated}\n`;
             text += `  Quality: ${comparison2.quality.grade}\n\n`;
             
             text += `Analysis Timestamp: ${new Date().toLocaleString()}\n\n`;
@@ -3888,8 +3909,11 @@
             text += `Results should be verified by qualified forensic experts.\n`;
             text += `\nGenerated by Punjab Investigation Tools`;
             
-            navigator.clipboard.writeText(text);
-            showToast('Comparison report copied to clipboard');
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Comparison report copied to clipboard');
+            }).catch(() => {
+                showToast('Failed to copy - try again');
+            });
         }
 
         // ==================== RESET FUNCTIONS ====================

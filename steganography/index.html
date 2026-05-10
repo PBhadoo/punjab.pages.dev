@@ -396,6 +396,20 @@
             margin-top: 20px;
         }
         
+        /* Mobile Responsiveness */
+        @media (max-width: 600px) {
+            .lsb-visualization {
+                grid-template-columns: 1fr;
+            }
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+            .tab-btn {
+                flex: 1 1 100%;
+                justify-content: center;
+            }
+        }
+
         /* Loading/Processing States */
         .action-btn-primary.loading,
         .action-btn.loading {
@@ -511,13 +525,13 @@
         <section class="content-section">
             <!-- Tabs -->
             <div class="tabs-container">
-                <button class="tab-btn active" onclick="switchTab('detect')">
+                <button class="tab-btn active" onclick="switchTab('detect', event)">
                     <i class="fas fa-search"></i> Detect Hidden Data
                 </button>
-                <button class="tab-btn" onclick="switchTab('decode')">
+                <button class="tab-btn" onclick="switchTab('decode', event)">
                     <i class="fas fa-lock-open"></i> Extract Message
                 </button>
-                <button class="tab-btn" onclick="switchTab('encode')">
+                <button class="tab-btn" onclick="switchTab('encode', event)">
                     <i class="fas fa-lock"></i> Hide Message
                 </button>
             </div>
@@ -738,11 +752,21 @@
         let analysisResults = null;
 
         // Tab switching
-        function switchTab(tab) {
+        function switchTab(tab, evt) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.closest('.tab-btn').classList.add('active');
+
+            const clickedBtn = (evt && evt.target) ? evt.target.closest('.tab-btn') : null;
+            if (clickedBtn) {
+                clickedBtn.classList.add('active');
+            } else {
+                // fallback: find the button that has the matching tab text
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tab + "'")) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
             document.getElementById(tab + 'Tab').classList.add('active');
         }
 

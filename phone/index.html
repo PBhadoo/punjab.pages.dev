@@ -662,18 +662,18 @@
             const resultSubtitle = document.getElementById('resultSubtitle');
 
             let countryInfo = parsed.countryCode ? countryCodes[parsed.countryCode] : null;
-            let operatorInfo = null;
+            let operatorData = null;
 
             // If Indian number, try to find operator from database
             if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
-                operatorInfo = lookupIndianOperator(parsed.nationalNumber);
+                operatorData = lookupIndianOperator(parsed.nationalNumber);
             }
 
             if (countryInfo) {
                 resultIcon.className = 'result-icon valid';
                 resultIcon.innerHTML = '<span style="font-size: 32px;">' + countryInfo.flag + '</span>';
                 resultTitle.textContent = countryInfo.country;
-                resultSubtitle.textContent = operatorInfo ? `${operatorInfo.operator} - ${operatorInfo.circle}` : 'Country identified';
+                resultSubtitle.textContent = operatorData ? `${operatorData.operator} - ${operatorData.circle}` : 'Country identified';
             } else {
                 resultIcon.className = 'result-icon warning';
                 resultIcon.innerHTML = '<i class="fas fa-question"></i>';
@@ -708,14 +708,14 @@
                 `;
             }
 
-            if (operatorInfo) {
-                const opClass = getOperatorClass(operatorInfo.operator);
+            if (operatorData) {
+                const opClass = getOperatorClass(operatorData.operator);
                 detailsHTML += `
                     <div class="detail-item">
                         <div class="detail-label">Original Operator</div>
                         <div class="detail-value">
                             <span class="operator-logo ${opClass}">
-                                <i class="fas fa-broadcast-tower"></i> ${operatorInfo.operator}
+                                <i class="fas fa-broadcast-tower"></i> ${operatorData.operator}
                             </span>
                         </div>
                     </div>
@@ -725,11 +725,11 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Telecom Circle</div>
-                        <div class="detail-value">${operatorInfo.circle || 'Unknown'}</div>
+                        <div class="detail-value">${operatorData.circle || 'Unknown'}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Number Prefix</div>
-                        <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${operatorInfo.prefix}</div>
+                        <div class="detail-value" style="font-family: 'JetBrains Mono', monospace;">${operatorData.prefix}</div>
                     </div>
                 `;
             } else if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
@@ -780,7 +780,7 @@
 
             // Operator breakdown visualization
             let breakdownHTML = '';
-            if (operatorInfo) {
+            if (operatorData) {
                 const parts = parsed.nationalNumber.match(/.{1,2}/g) || [];
                 breakdownHTML = `
                     <h4 style="margin-bottom: 15px; color: var(--text-primary);"><i class="fas fa-puzzle-piece"></i> Number Structure</h4>
@@ -1608,8 +1608,8 @@
         function showToast(message) {
             const toast = document.getElementById('toast');
             document.getElementById('toastMessage').textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 3000);
         }
 
         document.getElementById('phoneInput').addEventListener('keypress', function(e) {

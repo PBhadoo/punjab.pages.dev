@@ -249,7 +249,7 @@
             gap: 15px;
             margin: 30px 0;
         }
-        
+
         .bulk-actions button {
             flex: 1;
             padding: 15px;
@@ -259,6 +259,27 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b9d);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--card-border) !important;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
         }
     </style>
 </head>

@@ -695,27 +695,27 @@
             <div class="control-group">
                 <label>Position</label>
                 <div class="position-grid">
-                    <button class="position-btn" onclick="selectPosition('top-left')">
+                    <button class="position-btn" onclick="selectPosition(this, 'top-left')">
                         <div class="position-icon"><i class="fas fa-arrow-up-left"></i></div>
                         <div class="position-label">Top Left</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('top-center')">
+                    <button class="position-btn" onclick="selectPosition(this, 'top-center')">
                         <div class="position-icon"><i class="fas fa-arrow-up"></i></div>
                         <div class="position-label">Top Center</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('top-right')">
+                    <button class="position-btn" onclick="selectPosition(this, 'top-right')">
                         <div class="position-icon"><i class="fas fa-arrow-up-right"></i></div>
                         <div class="position-label">Top Right</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('bottom-left')">
+                    <button class="position-btn" onclick="selectPosition(this, 'bottom-left')">
                         <div class="position-icon"><i class="fas fa-arrow-down-left"></i></div>
                         <div class="position-label">Bottom Left</div>
                     </button>
-                    <button class="position-btn active" onclick="selectPosition('bottom-center')">
+                    <button class="position-btn active" onclick="selectPosition(this, 'bottom-center')">
                         <div class="position-icon"><i class="fas fa-arrow-down"></i></div>
                         <div class="position-label">Bottom Center</div>
                     </button>
-                    <button class="position-btn" onclick="selectPosition('bottom-right')">
+                    <button class="position-btn" onclick="selectPosition(this, 'bottom-right')">
                         <div class="position-icon"><i class="fas fa-arrow-down-right"></i></div>
                         <div class="position-label">Bottom Right</div>
                     </button>
@@ -1016,10 +1016,10 @@
             });
         }
         
-        function selectPosition(position) {
+        function selectPosition(el, position) {
             selectedPosition = position;
             document.querySelectorAll('.position-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.closest('.position-btn').classList.add('active');
+            el.classList.add('active');
             saveSettings();
             updatePreview();
         }

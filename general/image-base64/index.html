@@ -340,7 +340,7 @@
                     </div>
                     <textarea class="base64-text" id="base64Text" readonly></textarea>
                     <div class="output-actions">
-                        <button class="btn-copy" onclick="copyBase64()">
+                        <button class="btn-copy" onclick="copyBase64(this)">
                             <i class="fas fa-copy"></i> Copy to Clipboard
                         </button>
                         <button class="btn-download" onclick="downloadBase64()">
@@ -510,12 +510,11 @@
             outputDiv.style.display = 'block';
         }
 
-        function copyBase64() {
+        function copyBase64(btn) {
             const textArea = document.getElementById('base64Text');
             textArea.select();
             document.execCommand('copy');
-            
-            const btn = event.target.closest('button');
+
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
             btn.classList.add('copied');

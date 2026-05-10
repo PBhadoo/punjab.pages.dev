@@ -397,15 +397,15 @@
                 <div class="control-group">
                     <label>Position</label>
                     <div class="position-grid">
-                        <button class="position-btn" onclick="setPosition('top-left')">Top Left</button>
-                        <button class="position-btn" onclick="setPosition('top-center')">Top Center</button>
-                        <button class="position-btn" onclick="setPosition('top-right')">Top Right</button>
-                        <button class="position-btn" onclick="setPosition('middle-left')">Middle Left</button>
-                        <button class="position-btn active" onclick="setPosition('center')">Center</button>
-                        <button class="position-btn" onclick="setPosition('middle-right')">Middle Right</button>
-                        <button class="position-btn" onclick="setPosition('bottom-left')">Bottom Left</button>
-                        <button class="position-btn" onclick="setPosition('bottom-center')">Bottom Center</button>
-                        <button class="position-btn" onclick="setPosition('bottom-right')">Bottom Right</button>
+                        <button class="position-btn" onclick="setPosition(this, 'top-left')">Top Left</button>
+                        <button class="position-btn" onclick="setPosition(this, 'top-center')">Top Center</button>
+                        <button class="position-btn" onclick="setPosition(this, 'top-right')">Top Right</button>
+                        <button class="position-btn" onclick="setPosition(this, 'middle-left')">Middle Left</button>
+                        <button class="position-btn active" onclick="setPosition(this, 'center')">Center</button>
+                        <button class="position-btn" onclick="setPosition(this, 'middle-right')">Middle Right</button>
+                        <button class="position-btn" onclick="setPosition(this, 'bottom-left')">Bottom Left</button>
+                        <button class="position-btn" onclick="setPosition(this, 'bottom-center')">Bottom Center</button>
+                        <button class="position-btn" onclick="setPosition(this, 'bottom-right')">Bottom Right</button>
                     </div>
                 </div>
 
@@ -562,10 +562,10 @@
             }
         }
 
-        function setPosition(position) {
+        function setPosition(el, position) {
             watermarkPosition = position;
             document.querySelectorAll('.position-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            el.classList.add('active');
         }
 
         function updateRangeValue(id, value) {

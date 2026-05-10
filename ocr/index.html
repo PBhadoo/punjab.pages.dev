@@ -689,18 +689,43 @@
                 // Create worker
                 worker = await Tesseract.createWorker(langString, 1, {
                     logger: m => {
+                        const progressPercent = document.getElementById('progressPercent');
+                        const progressFill = document.getElementById('progressFill');
+                        const progressStatus = document.getElementById('progressStatus');
+                        if (!progressPercent || !progressFill || !progressStatus) return;
+
                         if (m.status === 'recognizing text') {
-                            const percent = Math.round(m.progress * 100);
-                            document.getElementById('progressPercent').textContent = percent + '%';
-                            document.getElementById('progressFill').style.width = percent + '%';
-                            document.getElementById('progressStatus').textContent = 'Recognizing text...';
+                            const percent = Math.round(50 + m.progress * 50);
+                            progressPercent.textContent = percent + '%';
+                            progressFill.style.width = percent + '%';
+                            progressStatus.textContent = 'Recognizing text...';
                         } else if (m.status === 'loading language traineddata') {
-                            document.getElementById('progressStatus').textContent = `Loading ${m.status}...`;
-                            const percent = Math.round(m.progress * 50);
-                            document.getElementById('progressPercent').textContent = percent + '%';
-                            document.getElementById('progressFill').style.width = percent + '%';
+                            const percent = Math.round(m.progress * 40);
+                            progressPercent.textContent = percent + '%';
+                            progressFill.style.width = percent + '%';
+                            progressStatus.textContent = 'Loading language data...';
+                        } else if (m.status === 'loading tesseract core') {
+                            progressStatus.textContent = 'Loading OCR engine...';
+                            progressPercent.textContent = '5%';
+                            progressFill.style.width = '5%';
+                        } else if (m.status === 'initializing tesseract') {
+                            progressStatus.textContent = 'Initializing OCR engine...';
+                            progressPercent.textContent = '10%';
+                            progressFill.style.width = '10%';
+                        } else if (m.status === 'initialized tesseract') {
+                            progressStatus.textContent = 'OCR engine ready...';
+                            progressPercent.textContent = '15%';
+                            progressFill.style.width = '15%';
+                        } else if (m.status === 'initializing api') {
+                            progressStatus.textContent = 'Initializing API...';
+                            progressPercent.textContent = '45%';
+                            progressFill.style.width = '45%';
+                        } else if (m.status === 'initialized api') {
+                            progressStatus.textContent = 'Ready to recognize...';
+                            progressPercent.textContent = '50%';
+                            progressFill.style.width = '50%';
                         } else {
-                            document.getElementById('progressStatus').textContent = m.status;
+                            progressStatus.textContent = m.status || 'Processing...';
                         }
                     }
                 });
@@ -708,8 +733,8 @@
                 // Recognize text
                 const { data } = await worker.recognize(uploadedImage);
                 
-                extractedText = data.text;
-                
+                extractedText = data.text.trim();
+
                 // Display results
                 displayResults(data);
                 
