@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found | Punjab Investigation Tools</title>
+    <meta name="description" content="The page you are looking for could not be found on Punjab Investigation Tools.">
+    <meta name="robots" content="noindex">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/tool-common.css">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#e94560">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">Punjab Investigation Tools</span>
+                    <span class="logo-subtitle">Page Not Found</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="back-home-btn">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="content-section">
+            <div class="content-card nf-card">
+                <div class="nf-code">404</div>
+                <h1><i class="fas fa-magnifying-glass"></i> Page Not Found</h1>
+                <p class="nf-text">The page you requested doesn't exist or may have been moved. Check the URL, or head back to the homepage to find the tool you need.</p>
+                <p class="nf-path">Requested: <code id="requestedPath"></code></p>
+
+                <div class="nf-actions">
+                    <a href="/" class="nf-btn primary"><i class="fas fa-home"></i> Go to Homepage</a>
+                    <button type="button" class="nf-btn" onclick="history.length > 1 ? history.back() : location.assign('/')"><i class="fas fa-arrow-left"></i> Go Back</button>
+                </div>
+
+                <h2>Popular Tools</h2>
+                <div class="nf-links">
+                    <a href="/hash/"><i class="fas fa-fingerprint"></i> Hash Generator</a>
+                    <a href="/imei/"><i class="fas fa-mobile-screen"></i> IMEI Verifier</a>
+                    <a href="/cdr/"><i class="fas fa-phone-volume"></i> CDR Analysis</a>
+                    <a href="/ipdr/"><i class="fas fa-network-wired"></i> IPDR Analysis</a>
+                    <a href="/image-forensics/"><i class="fas fa-image"></i> Image Forensics</a>
+                    <a href="/ocr/"><i class="fas fa-file-lines"></i> OCR</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-shield-check"></i> Punjab Investigation Tools - Digital Forensics Platform</p>
+            <p>© 2024-<span id="currentYear"></span> Punjab Investigation Tools</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        document.getElementById('requestedPath').textContent = location.pathname;
+    </script>
+
+    <style>
+        .content-section {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .nf-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 48px 32px;
+            text-align: center;
+        }
+        .nf-code {
+            font-size: clamp(4rem, 15vw, 7rem);
+            font-weight: 700;
+            line-height: 1;
+            color: #e94560;
+            margin-bottom: 12px;
+        }
+        .nf-card h1 {
+            color: var(--text-primary);
+            font-size: 1.6rem;
+            margin-bottom: 12px;
+        }
+        .nf-card h2 {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            margin: 36px 0 16px;
+        }
+        .nf-text {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            max-width: 520px;
+            margin: 0 auto 12px;
+        }
+        .nf-path {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+        .nf-path code {
+            color: var(--text-primary);
+        }
+        .nf-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 28px;
+        }
+        .nf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 22px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: transparent;
+            color: var(--text-primary);
+            font: inherit;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .nf-btn.primary {
+            background: #e94560;
+            border-color: #e94560;
+            color: #fff;
+        }
+        .nf-btn:hover {
+            opacity: 0.85;
+        }
+        .nf-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        .nf-links a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            text-decoration: none;
+            text-align: left;
+        }
+        .nf-links a:hover {
+            border-color: #e94560;
+        }
+        .nf-links i {
+            color: var(--accent-blue);
+            width: 18px;
+            text-align: center;
+        }
+    </style>
+</body>
+</html>
