@@ -698,7 +698,7 @@
                         <label for="secretMessage"><i class="fas fa-pen"></i> Secret Message</label>
                         <textarea id="secretMessage" placeholder="Enter the message you want to hide..." oninput="updateCapacity()"></textarea>
                         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">
-                            <span id="charUsed">0</span> / <span id="maxChars">0</span> characters
+                            <span id="charUsed">0</span> / <span id="maxChars">0</span> bytes (UTF-8)
                         </p>
                     </div>
                     
@@ -818,6 +818,11 @@
                     document.getElementById('detectBtn').disabled = false;
                     document.getElementById('detectResults').classList.remove('visible');
                 };
+                detectImage.onerror = function() {
+                    detectImage = null;
+                    document.getElementById('detectBtn').disabled = true;
+                    document.getElementById('detectUploadText').textContent = 'Could not read this file as an image. Please choose a valid PNG/BMP/JPG.';
+                };
                 detectImage.src = e.target.result;
             };
             reader.readAsDataURL(file);
@@ -840,6 +845,11 @@
                     document.getElementById('decodeBtn').disabled = false;
                     document.getElementById('decodeResults').classList.remove('visible');
                 };
+                decodeImage.onerror = function() {
+                    decodeImage = null;
+                    document.getElementById('decodeBtn').disabled = true;
+                    document.getElementById('decodeUploadText').textContent = 'Could not read this file as an image. Please choose a valid PNG/BMP/JPG.';
+                };
                 decodeImage.src = e.target.result;
             };
             reader.readAsDataURL(file);
@@ -861,6 +871,11 @@
                     document.getElementById('encodeUploadZone').classList.add('has-image');
                     document.getElementById('encodeResults').classList.remove('visible');
                     updateCapacity();
+                };
+                encodeImage.onerror = function() {
+                    encodeImage = null;
+                    document.getElementById('encodeBtn').disabled = true;
+                    document.getElementById('encodeUploadText').textContent = 'Could not read this file as an image. Please choose a valid PNG/BMP/JPG.';
                 };
                 encodeImage.src = e.target.result;
             };
@@ -1106,32 +1121,31 @@
                     binaryStr += (data[i + 2] & 1).toString();
                 }
                 
-                // Convert binary to text
-                let message = '';
+                // Convert bits to bytes (stop at 3 consecutive null bytes), then decode as UTF-8
+                const bytes = [];
                 let nullCount = 0;
-                
-                for (let i = 0; i < binaryStr.length; i += 8) {
-                    const byte = binaryStr.substr(i, 8);
-                    if (byte.length < 8) break;
-                    
-                    const charCode = parseInt(byte, 2);
-                    
-                    // Check for end marker (null bytes)
-                    if (charCode === 0) {
+                for (let i = 0; i + 8 <= binaryStr.length; i += 8) {
+                    const byteVal = parseInt(binaryStr.substr(i, 8), 2);
+                    if (byteVal === 0) {
                         nullCount++;
                         if (nullCount >= 3) break;
                         continue;
                     }
-                    
                     nullCount = 0;
-                    
-                    // Only accept printable ASCII and common characters
-                    if ((charCode >= 32 && charCode <= 126) || charCode === 10 || charCode === 13) {
-                        message += String.fromCharCode(charCode);
+                    bytes.push(byteVal);
+                    if (bytes.length > 100000) break;
+                }
+
+                let message = '';
+                if (bytes.length > 0) {
+                    const text = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+                    // Reject random noise: too many replacement/control characters means no real message
+                    let bad = 0;
+                    for (const ch of text) {
+                        const code = ch.codePointAt(0);
+                        if (ch === '\uFFFD' || (code < 32 && code !== 10 && code !== 13 && code !== 9)) bad++;
                     }
-                    
-                    // Limit message length
-                    if (message.length > 10000) break;
+                    if (bad / Math.max(1, Array.from(text).length) <= 0.1) message = text;
                 }
                 
                 document.getElementById('decodedMessage').value = message || 'No hidden message found or message is encrypted';
@@ -1156,9 +1170,9 @@
             const message = document.getElementById('secretMessage').value;
             
             document.getElementById('maxChars').textContent = maxChars.toLocaleString();
-            document.getElementById('charUsed').textContent = message.length.toLocaleString();
+            document.getElementById('charUsed').textContent = new TextEncoder().encode(message).length.toLocaleString();
             
-            document.getElementById('encodeBtn').disabled = message.length === 0 || message.length > maxChars;
+            document.getElementById('encodeBtn').disabled = message.length === 0 || new TextEncoder().encode(message).length > maxChars;
         }
 
         // Encode message into image
@@ -1185,8 +1199,9 @@
                 
                 // Convert message to binary with end marker
                 let binaryMsg = '';
-                for (let i = 0; i < message.length; i++) {
-                    binaryMsg += message.charCodeAt(i).toString(2).padStart(8, '0');
+                const msgBytes = new TextEncoder().encode(message);
+                for (let i = 0; i < msgBytes.length; i++) {
+                    binaryMsg += msgBytes[i].toString(2).padStart(8, '0');
                 }
                 // Add null terminator
                 binaryMsg += '00000000'.repeat(3);

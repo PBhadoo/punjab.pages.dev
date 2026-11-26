@@ -17,5 +17,7 @@
   "15": "bsnlapi/[number].js",
   "16": "reliancejioapi/[number].js",
   "17": "transliterate.js",
-  "18": "translations.js"
+  "18": "translations.js",
+  "19": "link-theme.py",
+  "20": "CLAUDE.md"
 }
