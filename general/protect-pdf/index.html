@@ -15,11 +15,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- pdf-lib -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@cantoo/pdf-lib@2.11.1/dist/pdf-lib.min.js"></script>
     
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .pdf-info {
@@ -569,32 +570,21 @@
                 
                 document.getElementById('progressFill').style.width = '60%';
                 
-                // Note: pdf-lib v1.17.1 has limited encryption support
-                // This is a simplified version - full encryption requires additional libraries
-                
-                // For demonstration, we'll save the PDF with metadata indicating it should be encrypted
-                // In production, you'd use a full PDF encryption library
-                
-                pdfDoc.setTitle(`Protected: ${fileName}`);
-                pdfDoc.setProducer('Punjab Investigation Tools - Protected PDF');
-                
+                // Real AES-256 encryption (via @cantoo/pdf-lib, a pdf-lib fork with encryption support)
+                const doc = await PDFLib.PDFDocument.load(pdfBytes);
+                doc.encrypt({
+                    userPassword: userPassword,
+                    ownerPassword: ownerPassword,
+                    permissions: permissions
+                });
                 document.getElementById('progressFill').style.width = '80%';
-                
-                const pdfBytesOut = await pdfDoc.save();
-                
+                const pdfBytesOut = await doc.save();
                 document.getElementById('progressFill').style.width = '100%';
-                
-                // In a real implementation, you would encrypt the PDF bytes here
-                // using a proper encryption library like pdf-lib-encryption or node-qpdf
-                
                 const blob = new Blob([pdfBytesOut], { type: 'application/pdf' });
                 const url = URL.createObjectURL(blob);
                 
                 document.getElementById('progressSection').classList.remove('active');
                 document.getElementById('resultsSection').classList.add('active');
-                
-                // Show warning that full encryption requires server-side processing
-                alert('Note: Full PDF encryption with password protection requires server-side processing. This tool provides basic security features. For production use, consider using professional PDF encryption tools.');
                 
                 const downloadBtn = document.getElementById('downloadBtn');
                 downloadBtn.onclick = () => {

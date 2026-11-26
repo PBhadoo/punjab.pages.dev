@@ -17,6 +17,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .images-grid {
@@ -409,6 +410,7 @@
                         images.push(imageData);
                         updateDisplay();
                     };
+                    img.onerror = () => alert('Could not read image: ' + file.name);
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
@@ -505,10 +507,16 @@
             const imageData = images.find(img => img.id == id);
             if (!imageData) return;
 
-            imageData.cropX = parseInt(x) || 0;
-            imageData.cropY = parseInt(y) || 0;
-            imageData.cropWidth = parseInt(width) || imageData.originalWidth;
-            imageData.cropHeight = parseInt(height) || imageData.originalHeight;
+            // null means "leave this field as it is" (only one input changes at a time)
+            const pick = (v, cur, fallback) => {
+                if (v === null || v === undefined) return cur;
+                const n = parseInt(v);
+                return isNaN(n) ? fallback : n;
+            };
+            imageData.cropWidth = Math.max(1, Math.min(pick(width, imageData.cropWidth, imageData.originalWidth), imageData.originalWidth));
+            imageData.cropHeight = Math.max(1, Math.min(pick(height, imageData.cropHeight, imageData.originalHeight), imageData.originalHeight));
+            imageData.cropX = pick(x, imageData.cropX, 0);
+            imageData.cropY = pick(y, imageData.cropY, 0);
             
             // Validate boundaries
             imageData.cropX = Math.max(0, Math.min(imageData.cropX, imageData.originalWidth - imageData.cropWidth));

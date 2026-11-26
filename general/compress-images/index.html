@@ -17,6 +17,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .images-grid {
@@ -434,6 +435,7 @@
                         compressImage(imageData);
                         updateDisplay();
                     };
+                    img.onerror = () => alert('Could not read image: ' + file.name);
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);

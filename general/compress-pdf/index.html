@@ -16,10 +16,13 @@
     
     <!-- pdf-lib -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .compression-settings {
@@ -447,6 +450,7 @@
     <script>
         const { PDFDocument } = PDFLib;
         let originalPDF = null;
+        let originalBuffer = null;
         let originalSize = 0;
         let pdfFileName = '';
         let compressedPDFBytes = null;
@@ -521,29 +525,36 @@
 
             try {
                 const quality = parseInt(qualitySlider.value) / 100;
-                
-                updateProgress(40, 'Creating compressed PDF...');
-                
-                // Create a new PDF with compression
-                const compressedPDF = await PDFDocument.create();
-                
-                updateProgress(60, 'Copying pages...');
-                
-                // Copy all pages from original
-                const pageIndices = originalPDF.getPageIndices();
-                const copiedPages = await compressedPDF.copyPages(originalPDF, pageIndices);
-                
-                copiedPages.forEach(page => compressedPDF.addPage(page));
-                
-                updateProgress(80, 'Applying compression...');
-                
-                // Save with compression options
-                compressedPDFBytes = await compressedPDF.save({
-                    useObjectStreams: true,
-                    addDefaultPage: false,
-                    objectsPerTick: Math.floor(50 * quality)
-                });
-                
+                // Structure-only optimisation (lossless): keeps text selectable
+                const optimised = await PDFDocument.create();
+                const copied = await optimised.copyPages(originalPDF, originalPDF.getPageIndices());
+                copied.forEach(page => optimised.addPage(page));
+                let best = await optimised.save({ useObjectStreams: true });
+                // Lossy: re-render each page as a JPEG at a scale/quality set by the slider
+                const pdfjsDoc = await pdfjsLib.getDocument({ data: originalBuffer.slice(0) }).promise;
+                const raster = await PDFDocument.create();
+                const scale = 0.8 + quality * 1.2; // 0.8x .. 2x of 72dpi
+                for (let i = 1; i <= pdfjsDoc.numPages; i++) {
+                    updateProgress(30 + (i / pdfjsDoc.numPages) * 60, `Compressing page ${i} of ${pdfjsDoc.numPages}...`);
+                    const page = await pdfjsDoc.getPage(i);
+                    const base = page.getViewport({ scale: 1 });
+                    const canvas = document.createElement('canvas');
+                    const vp = page.getViewport({ scale });
+                    canvas.width = Math.ceil(vp.width);
+                    canvas.height = Math.ceil(vp.height);
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+                    const jpg = await fetch(canvas.toDataURL('image/jpeg', Math.max(0.2, quality * 0.9))).then(r => r.arrayBuffer());
+                    const img = await raster.embedJpg(jpg);
+                    raster.addPage([base.width, base.height]).drawImage(img, { x: 0, y: 0, width: base.width, height: base.height });
+                }
+                const rasterBytes = await raster.save({ useObjectStreams: true });
+                // Use the image-based result only when it is actually smaller
+                if (rasterBytes.length < best.length) best = rasterBytes;
+                // Never return something larger than the original
+                compressedPDFBytes = best.length < originalSize ? best : new Uint8Array(originalBuffer);
                 updateProgress(100, 'Compression complete!');
                 
                 setTimeout(() => {
@@ -564,7 +575,7 @@
 
         function showResults() {
             const compressedSize = compressedPDFBytes.length;
-            const savings = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+            const savings = Math.max(0, (originalSize - compressedSize) / originalSize * 100).toFixed(1);
             
             document.getElementById('originalSize').textContent = formatFileSize(originalSize);
             document.getElementById('compressedSize').textContent = formatFileSize(compressedSize);
@@ -585,7 +596,7 @@
             
             const link = document.createElement('a');
             link.href = url;
-            link.download = pdfFileName.replace('.pdf', '_compressed.pdf');
+            link.download = pdfFileName.replace(/\.pdf$/i, '') + '_compressed.pdf';
             link.click();
             
             URL.revokeObjectURL(url);
@@ -593,6 +604,7 @@
 
         function reset() {
             originalPDF = null;
+            originalBuffer = null;
             compressedPDFBytes = null;
             originalSize = 0;
             pdfFileName = '';
