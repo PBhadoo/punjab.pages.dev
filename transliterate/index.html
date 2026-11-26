@@ -730,7 +730,7 @@
             }
             navigator.clipboard.writeText(text).then(() => {
                 showToast('Copied to clipboard!');
-            });
+            }).catch(() => showToast('Copy failed'));
         }
 
         function clearText() {

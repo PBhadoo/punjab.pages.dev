@@ -240,9 +240,9 @@
                 </div>
                 
                 <div style="max-width: 600px; margin: 0 auto;">
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <input type="url" id="urlInput" placeholder="Enter file URL (e.g., https://example.com/file.pdf)" 
-                               style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+                               style="flex: 1 1 200px; min-width: 0; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
                         <button onclick="analyzeURL()" style="padding: 12px 24px; background: var(--accent-color); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
                             <i class="fas fa-link"></i> Analyze URL
                         </button>
