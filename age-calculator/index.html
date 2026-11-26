@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    <link rel="stylesheet" href="../css/theme.css">
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://punjab.pages.dev/age-calculator/">
@@ -909,7 +910,7 @@
             }
 
             const dob = parseDate(dobStr);
-            if (dob > asOf) { showToast('Date of birth cannot be in the future'); return; }
+            if (dob > asOf) { document.getElementById('ageResults').style.display = 'none'; showToast('Date of birth cannot be in the future'); return; }
 
             // Calculate years, months, days
             let years  = asOf.getFullYear() - dob.getFullYear();
@@ -922,6 +923,13 @@
                 days += prevMonth.getDate();
             }
             if (months < 0) { years--; months += 12; }
+            // Re-derive remaining days from a month-end-clamped anchor (avoids negative days, e.g. 31 Jan -> 1 Mar)
+            {
+                const tm = years * 12 + months;
+                const lastDay = new Date(dob.getFullYear(), dob.getMonth() + tm + 1, 0).getDate();
+                const anchor = new Date(dob.getFullYear(), dob.getMonth() + tm, Math.min(dob.getDate(), lastDay));
+                days = Math.round((asOf - anchor) / 86400000);
+            }
 
             const totalMs   = asOf - dob;
             const totalDays = Math.floor(totalMs / 86400000);

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    <link rel="stylesheet" href="../css/theme.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -482,6 +483,7 @@
             if (!file) return;
             currentFile = file;
             extractedMetadata = {};
+            document.getElementById('forensicNote').style.display = 'none';
 
             // Basic file info
             extractedMetadata.basic = {
@@ -665,6 +667,10 @@
                         resolve();
                     });
                 };
+                img.onerror = () => {
+                    showForensicNote('This file could not be decoded as an image (corrupt or unsupported). Only basic file information and hashes are shown.');
+                    resolve();
+                };
                 img.src = URL.createObjectURL(file);
             });
         }
@@ -739,7 +745,7 @@
                     } else {
                         locationHtml += `<div class="metadata-item">
                             <span class="metadata-label">${key}</span>
-                            <span class="metadata-value">${value}</span>
+                            <span class="metadata-value">${escHtml(value)}</span>
                         </div>`;
                     }
                 }
@@ -758,12 +764,16 @@
             document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
         }
 
+        function escHtml(v) {
+            return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
         function renderMetadataGrid(data) {
             let html = '';
             for (const [key, value] of Object.entries(data)) {
                 html += `<div class="metadata-item">
-                    <span class="metadata-label">${key}</span>
-                    <span class="metadata-value">${value || 'Not available'}</span>
+                    <span class="metadata-label">${escHtml(key)}</span>
+                    <span class="metadata-value">${escHtml(value || 'Not available')}</span>
                 </div>`;
             }
             return html;

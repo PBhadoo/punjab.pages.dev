@@ -137,3 +137,7 @@ uploadArea.addEventListener('drop', (e) => {
 - [ ] Check large file handling (>100MB files in hash tool)
 - [ ] Validate hit counter appears on ALL pages
 - [ ] PDF export works (jsPDF + html2canvas compatibility)
+
+## Design system & graph
+- Styling: edit `css/theme.css` (loaded last on every page); run `python3 scripts/link-theme.py` after adding a page.
+- Code graph: `graphify-out/` is committed; use `graphify query "<question>"` before grepping and `graphify update .` after changes.

@@ -65,6 +65,11 @@ A professional-grade digital forensics and utility platform designed for law enf
 
 ---
 
+## 🧭 Design System & Code Graph (for contributors and AI assistants)
+
+- **Design system:** all look-and-feel lives in `css/theme.css`, which is linked **last** on every page. It remaps the legacy CSS variables (`--accent-color`, `--card-bg`, …) so inline page styles follow the theme. Change colours/spacing there, not per page. New page? Run `python3 scripts/link-theme.py` to link it (idempotent).
+- **Code graph (Graphify):** `graphify-out/` holds a committed knowledge graph (`graph.json`, `GRAPH_REPORT.md`, `graph.html`). Install with `pip install graphifyy`, then `graphify query "<question>"`, `graphify explain "<concept>"`, and `graphify update .` after code changes (AST-only, no API cost). It indexes standalone JS files; JS inline in HTML pages is not parsed, so grep those pages directly. See `CLAUDE.md`.
+
 ## 🔒 Privacy & Security
 
 - **100% Client-Side Processing** — All data processing happens locally in your browser

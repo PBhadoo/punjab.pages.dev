@@ -17,6 +17,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .images-grid {
@@ -447,10 +448,100 @@
                         images.push(imageData);
                         updateDisplay();
                     };
+                    img.onerror = () => alert('Could not read image: ' + file.name);
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             });
+        }
+
+        // canvas.toDataURL cannot produce BMP/GIF (it silently returns PNG), so encode them by hand
+        function bytesToDataUrl(bytes, mime) {
+            let bin = '';
+            for (let i = 0; i < bytes.length; i += 0x8000) {
+                bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+            }
+            return `data:${mime};base64,` + btoa(bin);
+        }
+
+        function canvasToBmp(canvas) {
+            const w = canvas.width, h = canvas.height;
+            const src = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+            const rowSize = Math.ceil(w * 3 / 4) * 4;
+            const size = 54 + rowSize * h;
+            const out = new Uint8Array(size);
+            const dv = new DataView(out.buffer);
+            out[0] = 0x42; out[1] = 0x4D;
+            dv.setUint32(2, size, true);
+            dv.setUint32(10, 54, true);
+            dv.setUint32(14, 40, true);
+            dv.setInt32(18, w, true);
+            dv.setInt32(22, h, true);
+            dv.setUint16(26, 1, true);
+            dv.setUint16(28, 24, true);
+            dv.setUint32(34, rowSize * h, true);
+            for (let y = 0; y < h; y++) {
+                let o = 54 + (h - 1 - y) * rowSize;
+                for (let x = 0; x < w; x++) {
+                    const i = (y * w + x) * 4;
+                    out[o++] = src[i + 2]; out[o++] = src[i + 1]; out[o++] = src[i];
+                }
+            }
+            return bytesToDataUrl(out, 'image/bmp');
+        }
+
+        function canvasToGif(canvas) {
+            const w = canvas.width, h = canvas.height;
+            const src = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+            // Fixed 6x7x6 colour cube (252 colours) + 1 transparent entry
+            const pal = new Uint8Array(256 * 3);
+            for (let r = 0; r < 6; r++) for (let g = 0; g < 7; g++) for (let b = 0; b < 6; b++) {
+                const k = (r * 42 + g * 6 + b) * 3;
+                pal[k] = Math.round(r * 255 / 5); pal[k + 1] = Math.round(g * 255 / 6); pal[k + 2] = Math.round(b * 255 / 5);
+            }
+            const TRANS = 252;
+            const idx = new Uint8Array(w * h);
+            for (let i = 0; i < w * h; i++) {
+                if (src[i * 4 + 3] < 128) { idx[i] = TRANS; continue; }
+                idx[i] = Math.round(src[i * 4] * 5 / 255) * 42 + Math.round(src[i * 4 + 1] * 6 / 255) * 6 + Math.round(src[i * 4 + 2] * 5 / 255);
+            }
+            const out = [];
+            const w16 = v => out.push(v & 255, (v >> 8) & 255);
+            out.push(71, 73, 70, 56, 57, 97);
+            w16(w); w16(h);
+            out.push(0xF7, 0, 0);
+            for (let i = 0; i < 768; i++) out.push(pal[i]);
+            out.push(0x21, 0xF9, 4, 1, 0, 0, TRANS, 0);
+            out.push(0x2C); w16(0); w16(0); w16(w); w16(h); out.push(0);
+            out.push(8); // LZW minimum code size
+            const clear = 256, eoi = 257;
+            let bits = 0, nbits = 0, block = [];
+            const flush = () => { out.push(block.length); for (const v of block) out.push(v); block = []; };
+            const emit = (code, size) => {
+                bits |= code << nbits; nbits += size;
+                while (nbits >= 8) {
+                    block.push(bits & 255); bits >>= 8; nbits -= 8;
+                    if (block.length === 255) flush();
+                }
+            };
+            let dict = new Map(), next = 258, size = 9;
+            emit(clear, size);
+            let cur = idx[0];
+            for (let i = 1; i < idx.length; i++) {
+                const key = cur * 256 + idx[i];
+                if (dict.has(key)) { cur = dict.get(key); continue; }
+                emit(cur, size);
+                dict.set(key, next++);
+                if (next > (1 << size) && size < 12) size++;
+                if (next >= 4096) { emit(clear, size); dict = new Map(); next = 258; size = 9; }
+                cur = idx[i];
+            }
+            emit(cur, size);
+            emit(eoi, size);
+            if (nbits > 0) block.push(bits & 255);
+            if (block.length) flush();
+            out.push(0, 0x3B);
+            return bytesToDataUrl(new Uint8Array(out), 'image/gif');
         }
 
         function convertImage(imageData) {
@@ -463,12 +554,21 @@
                 canvas.height = imageData.height;
                 
                 const ctx = canvas.getContext('2d');
+                // JPEG/BMP have no (usable) alpha: paint a white background first
+                if (['jpeg', 'bmp'].includes(imageData.targetFormat)) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
                 ctx.drawImage(img, 0, 0);
                 
                 const quality = imageData.quality / 100;
-                const mimeType = `image/${imageData.targetFormat}`;
-                
-                imageData.convertedData = canvas.toDataURL(mimeType, quality);
+                if (imageData.targetFormat === 'bmp') {
+                    imageData.convertedData = canvasToBmp(canvas);
+                } else if (imageData.targetFormat === 'gif') {
+                    imageData.convertedData = canvasToGif(canvas);
+                } else {
+                    imageData.convertedData = canvas.toDataURL(`image/${imageData.targetFormat}`, quality);
+                }
                 updateDisplay();
             };
             img.src = imageData.originalData;

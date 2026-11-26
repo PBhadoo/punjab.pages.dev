@@ -17,6 +17,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    <link rel="stylesheet" href="../css/theme.css">
     
     <style>
         .signature-container {
@@ -604,9 +605,15 @@
         updateDateTime();
         setInterval(updateDateTime, 1000);
 
+        // localStorage can throw (private mode / blocked storage); fall back to memory
+        const _memStore = {};
+        function storeGet(k) { try { return localStorage.getItem(k); } catch (e) { return _memStore[k] || null; } }
+        function storeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { _memStore[k] = v; } }
+        function storeDel(k) { try { localStorage.removeItem(k); } catch (e) {} delete _memStore[k]; }
+
         // Check for saved PIN on load
         function checkPinStatus() {
-            const savedPin = localStorage.getItem('signaturePin');
+            const savedPin = storeGet('signaturePin');
             const statusEl = document.getElementById('pinStatus');
             const pinInput = document.getElementById('pinInput');
             const pinInputSection = document.getElementById('pinInputSection');
@@ -639,7 +646,7 @@
                 return;
             }
             
-            localStorage.setItem('signaturePin', pin);
+            storeSet('signaturePin', pin);
             checkPinStatus();
             alert('PIN saved successfully!');
         }
@@ -647,7 +654,7 @@
         // Clear PIN
         function clearPin() {
             if (confirm('Are you sure you want to clear your saved PIN?')) {
-                localStorage.removeItem('signaturePin');
+                storeDel('signaturePin');
                 document.getElementById('pinInput').value = '';
                 checkPinStatus();
                 document.getElementById('generateResult').classList.remove('show');
@@ -670,7 +677,7 @@
 
         // Generate code
         async function generateCode() {
-            const pin = localStorage.getItem('signaturePin');
+            const pin = storeGet('signaturePin');
             
             if (!pin) {
                 alert('Please save a PIN first');
@@ -710,7 +717,7 @@
 
         // Verify code
         async function verifyCode() {
-            const pin = localStorage.getItem('signaturePin');
+            const pin = storeGet('signaturePin');
             
             if (!pin) {
                 alert('Please save a PIN first');

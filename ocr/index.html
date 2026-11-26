@@ -16,6 +16,7 @@
     
     <!-- Application CSS -->
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/theme.css">
     
     <!-- Tesseract.js -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -597,7 +598,14 @@
         
         // Language tag selection
         document.querySelectorAll('.language-tag').forEach(tag => {
+            tag.setAttribute('role', 'button');
+            tag.setAttribute('tabindex', '0');
+            tag.setAttribute('aria-pressed', tag.classList.contains('selected') ? 'true' : 'false');
+            tag.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+            });
             tag.addEventListener('click', function() {
+                setTimeout(() => this.setAttribute('aria-pressed', this.classList.contains('selected') ? 'true' : 'false'), 0);
                 const lang = this.dataset.lang;
                 
                 if (this.classList.contains('selected')) {
@@ -744,6 +752,7 @@
                 
             } catch (error) {
                 console.error('OCR Error:', error);
+                if (worker) { try { await worker.terminate(); } catch (e) {} worker = null; }
                 alert('Error during text extraction: ' + error.message);
             } finally {
                 // Reset button

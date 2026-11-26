@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    <link rel="stylesheet" href="../css/theme.css">
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://punjab.pages.dev/pan/">
@@ -496,11 +497,12 @@
         function renderBreakdown(pan, isValid) {
             const container = document.getElementById('panBreakdown');
             // Pad to 10 for empty slots
-            const padded = pan.padEnd(10, '');
+            const padded = pan.padEnd(10, ' ');
             const labels = ['Area', 'Area', 'Area', 'Entity', 'Surname', 'Seq', 'Seq', 'Seq', 'Seq', 'Check'];
             const classes = ['c-area','c-area','c-area','c-entity','c-name','c-seq','c-seq','c-seq','c-seq','c-check'];
 
             container.innerHTML = padded.split('').map((ch, i) => {
+                ch = ch.trim();
                 const cls = ch ? classes[i] : 'c-empty';
                 return `<div class="pan-char-block">
                     <div class="pan-char ${cls}">${ch || '?'}</div>

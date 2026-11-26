@@ -21,6 +21,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .editor-section {
@@ -602,26 +603,39 @@
                 
                 updateProgress(30, 'Rendering HTML to canvas...');
                 
-                // Create temporary container
-                const container = document.createElement('div');
-                container.innerHTML = html;
-                container.style.width = orientation === 'portrait' ? '210mm' : '297mm';
-                container.style.background = 'white';
-                container.style.padding = '20px';
-                document.body.appendChild(container);
-                
+                // Render inside an isolated off-screen iframe so the site's own CSS cannot leak in
+                const widthPx = orientation === 'portrait' ? 794 : 1123;
+                const frame = document.createElement('iframe');
+                frame.style.cssText = `position:absolute;left:-10000px;top:0;border:0;width:${widthPx}px;height:1200px;`;
+                document.body.appendChild(frame);
+                const fdoc = frame.contentDocument;
+                fdoc.open();
+                fdoc.write(html);
+                fdoc.close();
+                await new Promise(r => setTimeout(r, 300)); // let styles/images settle
+                if (fdoc.body && !fdoc.body.style.background && getComputedStyle(fdoc.body).backgroundColor === 'rgba(0, 0, 0, 0)') {
+                    fdoc.body.style.background = '#ffffff';
+                }
+                const contentHeight = Math.max(fdoc.documentElement.scrollHeight, fdoc.body.scrollHeight, 1);
+                frame.style.height = contentHeight + 'px';
                 // Render to canvas
-                const canvas = await html2canvas(container, {
-                    scale: scale,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff'
-                });
-                
+                let canvas;
+                try {
+                    canvas = await html2canvas(fdoc.documentElement, {
+                        scale: scale,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff',
+                        width: widthPx,
+                        height: contentHeight,
+                        windowWidth: widthPx,
+                        windowHeight: contentHeight
+                    });
+                } finally {
+                    document.body.removeChild(frame);
+                }
                 updateProgress(60, 'Converting to PDF...');
                 
-                // Remove temporary container
-                document.body.removeChild(container);
                 
                 // Create PDF
                 const pdf = new jsPDF({

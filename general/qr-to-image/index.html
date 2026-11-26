@@ -20,6 +20,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .qr-scanner {
@@ -329,6 +330,12 @@
                     qrPreview.src = e.target.result;
                     document.getElementById('qrScanner').style.display = 'block';
                     document.getElementById('errorMessage').classList.remove('active');
+                    document.getElementById('resultsSection').style.display = 'none';
+                    extractedImageData = null;
+                };
+                qrImage.onerror = () => {
+                    qrImage = null;
+                    alert('Could not read image: ' + file.name);
                 };
                 qrImage.src = e.target.result;
             };
@@ -350,7 +357,13 @@
             ctx.drawImage(qrImage, 0, 0);
             
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            if (typeof jsQR === 'undefined') {
+                showError('QR decoding library failed to load. Check your connection and reload the page.');
+                return;
+            }
             const code = jsQR(imageData.data, imageData.width, imageData.height);
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorMessage').classList.remove('active');
             
             if (code && code.data) {
                 // Check if the decoded data is a data URL (image)
@@ -379,7 +392,7 @@
                 document.getElementById('imageHeight').textContent = decodedImage.naturalHeight;
                 
                 // Extract format from data URL
-                const formatMatch = extractedImageData.match(/^data:image\/([a-z]+);/);
+                const formatMatch = extractedImageData.match(/^data:image\/([a-z0-9.+-]+);/i);
                 const format = formatMatch ? formatMatch[1].toUpperCase() : 'Unknown';
                 document.getElementById('imageFormat').textContent = format;
                 
@@ -420,7 +433,7 @@
             link.href = url;
             
             // Get extension from MIME type
-            const ext = mime.split('/')[1];
+            const ext = mime.split('/')[1].replace('jpeg', 'jpg').replace(/\+.*$/, '');
             link.download = 'extracted_image.' + ext;
             link.click();
             

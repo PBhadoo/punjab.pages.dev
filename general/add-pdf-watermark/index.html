@@ -26,6 +26,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .pdf-info {
@@ -1060,6 +1061,8 @@
             }
         });
 
+        document.getElementById('previewImg').addEventListener('load', () => updatePreview());
+
         // Upload handling
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
@@ -1091,7 +1094,7 @@
         });
 
         async function handleFile(file) {
-            fileName = file.name.replace('.pdf', '');
+            fileName = file.name.replace(/\.pdf$/i, '');
             const arrayBuffer = await file.arrayBuffer();
             pdfBytes = new Uint8Array(arrayBuffer);
             
@@ -1198,8 +1201,22 @@
             if (watermarkMode === 'text') {
                 element.textContent = text;
                 element.style.fontSize = `${fontSize * 1.2}px`;
-                element.style.color = `rgba(128, 128, 128, ${opacity})`;
+                element.style.color = 'rgb(128, 128, 128)';
                 element.style.backgroundImage = 'none';
+                element.style.width = '';
+                element.style.height = '';
+                element.style.whiteSpace = 'pre';
+            } else {
+                element.textContent = '';
+                const pi = document.getElementById('previewImg');
+                if (watermarkImage && pi.naturalWidth) {
+                    element.style.backgroundImage = `url(${watermarkImage})`;
+                    element.style.backgroundSize = 'contain';
+                    element.style.backgroundRepeat = 'no-repeat';
+                    const wpx = Math.min(canvas.width * 0.5, 0.3 * 1.2 * pi.naturalWidth);
+                    element.style.width = `${wpx}px`;
+                    element.style.height = `${wpx * pi.naturalHeight / pi.naturalWidth}px`;
+                }
             }
             
             element.style.opacity = opacity;
@@ -1310,82 +1327,100 @@
                 alert('Please enter watermark text');
                 return;
             }
-            
             if (watermarkMode === 'image' && !watermarkImage) {
                 alert('Please upload a watermark image');
                 return;
             }
-            
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('progressFill').style.width = '20%';
-            
             try {
                 const opacity = parseInt(document.getElementById('opacity').value) / 100;
                 const rotation = parseInt(document.getElementById('rotation').value);
                 const pages = pdfDoc.getPages();
-                
                 document.getElementById('progressFill').style.width = '40%';
-                
+                // Prepare the watermark once (embedded a single time, reused on every page)
+                let wmImage = null, wmFont = null, wmText = '', wmW = 0, wmH = 0;
+                const fontSize = parseInt(document.getElementById('fontSize').value) || 48;
+                if (watermarkMode === 'text') {
+                    wmText = document.getElementById('watermarkText').value;
+                    const needsCanvas = /[\r\n]/.test(wmText) || /[^\x20-\x7E\xA0-\xFF]/.test(wmText);
+                    if (!needsCanvas) {
+                        wmFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+                        wmW = wmFont.widthOfTextAtSize(wmText, fontSize);
+                        wmH = fontSize;
+                    } else {
+                        // Multi-line or non-Latin text (e.g. Gurmukhi): render with the browser's fonts
+                        const lines = wmText.split(/\r?\n/);
+                        const k = 2, lh = fontSize * k * 1.3;
+                        const c = document.createElement('canvas');
+                        const cx = c.getContext('2d');
+                        const fontSpec = `700 ${fontSize * k}px Inter, "Noto Sans Gurmukhi", "Raavi", sans-serif`;
+                        cx.font = fontSpec;
+                        const maxW = Math.max(...lines.map(l => cx.measureText(l).width));
+                        c.width = Math.max(1, Math.ceil(maxW + 8));
+                        c.height = Math.ceil(lh * lines.length + 8);
+                        cx.font = fontSpec;
+                        cx.fillStyle = '#808080';
+                        cx.textBaseline = 'middle';
+                        lines.forEach((l, n) => cx.fillText(l, 4, 4 + lh * n + lh / 2));
+                        const bytes = await fetch(c.toDataURL('image/png')).then(r => r.arrayBuffer());
+                        wmImage = await pdfDoc.embedPng(bytes);
+                        wmW = c.width / k;
+                        wmH = c.height / k;
+                    }
+                } else {
+                    const imageBytes = await fetch(watermarkImage).then(res => res.arrayBuffer());
+                    wmImage = watermarkImage.startsWith('data:image/png')
+                        ? await pdfDoc.embedPng(imageBytes)
+                        : await pdfDoc.embedJpg(imageBytes);
+                }
                 for (let i = 0; i < pages.length; i++) {
                     const page = pages[i];
                     const { width, height } = page.getSize();
-                    
-                    if (watermarkMode === 'text') {
-                        const text = document.getElementById('watermarkText').value;
-                        const fontSize = parseInt(document.getElementById('fontSize').value);
-                        const textWidth = fontSize * text.length * 0.6;
-                        const textHeight = fontSize;
-                        
-                        const { x, y } = calculatePosition(width, height, textWidth, textHeight);
-                        
-                        page.drawText(text, {
+                    let w = wmW, h = wmH;
+                    if (watermarkMode === 'image') {
+                        const sc = Math.min(0.3, (width * 0.5) / wmImage.width);
+                        w = wmImage.width * sc;
+                        h = wmImage.height * sc;
+                    }
+                    // Box position (unrotated) + manual fine-tune offsets (preview px / 1.2 render scale)
+                    const pos = calculatePosition(width, height, w, h);
+                    const centerX = pos.x + w / 2 + manualOffsetX / 1.2;
+                    const centerY = pos.y + h / 2 - manualOffsetY / 1.2;
+                    // Preview rotates clockwise (CSS) around the centre; mirror that in the PDF
+                    const phi = -rotation * Math.PI / 180;
+                    const x = centerX - (w / 2 * Math.cos(phi) - h / 2 * Math.sin(phi));
+                    const y = centerY - (w / 2 * Math.sin(phi) + h / 2 * Math.cos(phi));
+                    if (wmFont) {
+                        page.drawText(wmText, {
                             x: x,
                             y: y,
                             size: fontSize,
+                            font: wmFont,
                             color: PDFLib.rgb(0.5, 0.5, 0.5),
                             opacity: opacity,
-                            rotate: PDFLib.degrees(rotation)
+                            rotate: PDFLib.degrees(-rotation)
                         });
                     } else {
-                        // Image watermark
-                        const imageBytes = await fetch(watermarkImage).then(res => res.arrayBuffer());
-                        let image;
-                        
-                        if (watermarkImage.includes('image/png')) {
-                            image = await pdfDoc.embedPng(imageBytes);
-                        } else {
-                            image = await pdfDoc.embedJpg(imageBytes);
-                        }
-                        
-                        const imgDims = image.scale(0.3);
-                        const { x, y } = calculatePosition(width, height, imgDims.width, imgDims.height);
-                        
-                        page.drawImage(image, {
+                        page.drawImage(wmImage, {
                             x: x,
                             y: y,
-                            width: imgDims.width,
-                            height: imgDims.height,
+                            width: w,
+                            height: h,
                             opacity: opacity,
-                            rotate: PDFLib.degrees(rotation)
+                            rotate: PDFLib.degrees(-rotation)
                         });
                     }
-                    
                     const progress = 40 + ((i + 1) / pages.length) * 50;
                     document.getElementById('progressFill').style.width = progress + '%';
                 }
-                
                 document.getElementById('progressFill').style.width = '90%';
-                
                 const pdfBytesOut = await pdfDoc.save();
-                
                 document.getElementById('progressFill').style.width = '100%';
-                
                 const blob = new Blob([pdfBytesOut], { type: 'application/pdf' });
                 const url = URL.createObjectURL(blob);
-                
                 document.getElementById('progressSection').classList.remove('active');
                 document.getElementById('resultsSection').classList.add('active');
-                
                 const downloadBtn = document.getElementById('downloadBtn');
                 downloadBtn.onclick = () => {
                     const a = document.createElement('a');
@@ -1393,13 +1428,11 @@
                     a.download = `${fileName}_watermarked.pdf`;
                     a.click();
                 };
-                
             } catch (error) {
                 alert('Error adding watermark: ' + error.message);
                 document.getElementById('progressSection').classList.remove('active');
             }
         }
-
         function calculatePosition(pageWidth, pageHeight, itemWidth, itemHeight) {
             const margin = 50;
             let x, y;

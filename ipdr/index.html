@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    <link rel="stylesheet" href="../css/theme.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <!-- Favicon -->
@@ -450,8 +451,16 @@
             }
         });
 
+        function escHtml(v) {
+            return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
         function handleFile(file) {
             if (!file) return;
+            if (/\.xlsx?$/i.test(file.name)) {
+                showToast('Excel files are not supported directly. Please save the sheet as CSV and upload that.');
+                return;
+            }
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
@@ -614,7 +623,7 @@
             tbody.innerHTML = sorted.map(([domain, stats], idx) => `
                 <tr>
                     <td>${idx + 1}</td>
-                    <td><span class="mono">${domain}</span></td>
+                    <td><span class="mono">${escHtml(domain)}</span></td>
                     <td>${stats.count.toLocaleString()}</td>
                     <td>${formatBytes(stats.volume)}</td>
                     <td>${stats.first.toLocaleString()}</td>
@@ -654,7 +663,7 @@
             const tbody = document.getElementById('ipAnalysisBody');
             tbody.innerHTML = sorted.map(([ip, stats]) => `
                 <tr>
-                    <td><span class="mono">${ip}</span></td>
+                    <td><span class="mono">${escHtml(ip)}</span></td>
                     <td>${stats.count.toLocaleString()}</td>
                     <td>${formatBytes(stats.volume)}</td>
                     <td>${formatDuration(stats.duration)}</td>
@@ -812,7 +821,7 @@
             const tbody = document.getElementById('cellTowerBody');
             tbody.innerHTML = sorted.map(([cellId, stats]) => `
                 <tr>
-                    <td><span class="mono">${cellId}</span></td>
+                    <td><span class="mono">${escHtml(cellId)}</span></td>
                     <td>${stats.count.toLocaleString()}</td>
                     <td>${formatBytes(stats.volume)}</td>
                     <td>${stats.first.toLocaleString()}</td>
@@ -833,10 +842,10 @@
                     <div class="timeline-item ${volumeClass}">
                         <div class="timeline-time">${r.startTime.toLocaleString()}</div>
                         <div class="timeline-content">
-                            <div class="timeline-ip">${r.ip || 'No IP'} ${r.domain ? '→ ' + extractDomain(r.domain) : ''}</div>
+                            <div class="timeline-ip">${escHtml(r.ip || 'No IP')} ${r.domain ? '→ ' + escHtml(extractDomain(r.domain)) : ''}</div>
                             <div class="timeline-details">
-                                ${formatBytes(r.volume)} • ${r.protocol}
-                                ${r.cellId ? ` • Cell: ${r.cellId}` : ''}
+                                ${formatBytes(r.volume)} • ${escHtml(r.protocol)}
+                                ${r.cellId ? ` • Cell: ${escHtml(r.cellId)}` : ''}
                             </div>
                         </div>
                     </div>

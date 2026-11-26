@@ -26,6 +26,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .page-manager {
@@ -404,6 +405,7 @@
     <script>
         const { PDFDocument } = PDFLib;
         let pdfDocument = null;
+        let pdfJsDoc = null;
         let pdfFileName = '';
         let pagesToDelete = new Set();
         let totalPageCount = 0;
@@ -446,10 +448,19 @@
         async function handlePDFFile(file) {
             pdfFileName = file.name;
             const arrayBuffer = await file.arrayBuffer();
-            pdfDocument = await PDFDocument.load(arrayBuffer);
-            
+            try {
+                pdfDocument = await PDFDocument.load(arrayBuffer);
+            } catch (error) {
+                pdfDocument = null;
+                document.getElementById('pageManager').style.display = 'none';
+                alert('Error loading PDF: ' + error.message);
+                return;
+            }
+            pagesToDelete.clear();
+            document.getElementById('resultsSection').style.display = 'none';
+
             // Load with PDF.js for rendering
-            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) });
             pdfJsDoc = await loadingTask.promise;
             
             totalPageCount = pdfDocument.getPageCount();
@@ -645,7 +656,7 @@
             
             const link = document.createElement('a');
             link.href = url;
-            link.download = pdfFileName.replace('.pdf', '_modified.pdf');
+            link.download = pdfFileName.replace(/\.pdf$/i, '') + '_modified.pdf';
             link.click();
             
             URL.revokeObjectURL(url);

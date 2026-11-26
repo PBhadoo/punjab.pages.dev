@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/tool-common.css">
+    <link rel="stylesheet" href="../css/theme.css">
     <!-- Favicon -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <!-- Canonical & SEO -->
@@ -339,7 +340,9 @@
         }
         
         .checkbox-item:hover { background: rgba(0,0,0,0.3); }
-        .checkbox-item input { display: none; }
+        .checkbox-item { position: relative; }
+        .checkbox-item input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+        .checkbox-item input:focus-visible + .checkmark { outline: 2px solid var(--focus-ring, #60a5fa); outline-offset: 2px; }
         
         .checkmark {
             width: 20px; height: 20px; border: 2px solid var(--card-border); border-radius: 4px;

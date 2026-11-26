@@ -18,6 +18,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .detector-results {
@@ -239,9 +240,9 @@
                 </div>
                 
                 <div style="max-width: 600px; margin: 0 auto;">
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <input type="url" id="urlInput" placeholder="Enter file URL (e.g., https://example.com/file.pdf)" 
-                               style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+                               style="flex: 1 1 200px; min-width: 0; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
                         <button onclick="analyzeURL()" style="padding: 12px 24px; background: var(--accent-color); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
                             <i class="fas fa-link"></i> Analyze URL
                         </button>
@@ -382,41 +383,114 @@
     </div>
 
     <script>
-        const FILE_SIGNATURES = {
+        // Signature rules are checked in order (most specific first). `at` = byte offset of the signature.
+        // `exts` lists every extension that is legitimate for the format (used for mismatch warnings).
+        const hexOf = (str) => Array.from(str).map(c => c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')).join('');
+        const FILE_SIGNATURES = [
             // Images
-            'FFD8FF': { format: 'JPEG Image', mime: 'image/jpeg', ext: '.jpg', category: 'Image' },
-            '89504E47': { format: 'PNG Image', mime: 'image/png', ext: '.png', category: 'Image' },
-            '47494638': { format: 'GIF Image', mime: 'image/gif', ext: '.gif', category: 'Image' },
-            '424D': { format: 'BMP Image', mime: 'image/bmp', ext: '.bmp', category: 'Image' },
-            '52494646': { format: 'WebP Image', mime: 'image/webp', ext: '.webp', category: 'Image' },
-            
+            { hex: 'FFD8FF', format: 'JPEG Image', mime: 'image/jpeg', ext: '.jpg', exts: ['.jpg', '.jpeg', '.jpe', '.jfif'], category: 'Image' },
+            { hex: '89504E470D0A1A0A', format: 'PNG Image', mime: 'image/png', ext: '.png', exts: ['.png', '.apng'], category: 'Image' },
+            { hex: '474946383961', format: 'GIF Image (GIF89a)', mime: 'image/gif', ext: '.gif', exts: ['.gif'], category: 'Image' },
+            { hex: '474946383761', format: 'GIF Image (GIF87a)', mime: 'image/gif', ext: '.gif', exts: ['.gif'], category: 'Image' },
+            { hex: '424D', format: 'BMP Image', mime: 'image/bmp', ext: '.bmp', exts: ['.bmp', '.dib'], category: 'Image',
+              check: (b) => b.length >= 14 && b[6] === 0 && b[7] === 0 && b[8] === 0 && b[9] === 0 },
+            { hex: '49492A00', format: 'TIFF Image (little-endian)', mime: 'image/tiff', ext: '.tif', exts: ['.tif', '.tiff'], category: 'Image' },
+            { hex: '4D4D002A', format: 'TIFF Image (big-endian)', mime: 'image/tiff', ext: '.tif', exts: ['.tif', '.tiff'], category: 'Image' },
+            { hex: '00000100', format: 'ICO Icon', mime: 'image/x-icon', ext: '.ico', exts: ['.ico'], category: 'Image',
+              check: (b) => b.length >= 6 && (b[4] > 0 || b[5] > 0) },
+            { hex: '38425053', format: 'Photoshop Document', mime: 'image/vnd.adobe.photoshop', ext: '.psd', exts: ['.psd'], category: 'Image' },
+            { hex: '52494646', format: 'WebP Image', mime: 'image/webp', ext: '.webp', exts: ['.webp'], category: 'Image',
+              check: (b) => hexOf('WEBP') === toHex(b, 8, 4) },
+            // RIFF containers other than WebP
+            { hex: '52494646', format: 'WAV Audio', mime: 'audio/wav', ext: '.wav', exts: ['.wav', '.wave'], category: 'Audio',
+              check: (b) => hexOf('WAVE') === toHex(b, 8, 4) },
+            { hex: '52494646', format: 'AVI Video', mime: 'video/x-msvideo', ext: '.avi', exts: ['.avi'], category: 'Video',
+              check: (b) => hexOf('AVI ') === toHex(b, 8, 4) },
             // Documents
-            '25504446': { format: 'PDF Document', mime: 'application/pdf', ext: '.pdf', category: 'Document' },
-            '504B0304': { format: 'ZIP Archive / Office Document', mime: 'application/zip', ext: '.zip', category: 'Archive/Document' },
-            'D0CF11E0A1B11AE1': { format: 'Microsoft Office Document (DOC/XLS/PPT)', mime: 'application/msword', ext: '.doc', category: 'Document' },
-            '7B5C7274': { format: 'RTF Document', mime: 'application/rtf', ext: '.rtf', category: 'Document' },
-            
+            { hex: '25504446', format: 'PDF Document', mime: 'application/pdf', ext: '.pdf', exts: ['.pdf'], category: 'Document' },
+            { hex: '7B5C72746631', format: 'RTF Document', mime: 'application/rtf', ext: '.rtf', exts: ['.rtf'], category: 'Document' },
+            { hex: 'D0CF11E0A1B11AE1', format: 'Microsoft Compound File (DOC/XLS/PPT/MSG/MSI)', mime: 'application/x-ole-storage', ext: '.doc',
+              exts: ['.doc', '.dot', '.xls', '.xlt', '.ppt', '.pps', '.pot', '.msg', '.msi', '.vsd', '.pub', '.mpp', '.wps'], category: 'Document' },
+            { hex: '53514C69746520666F726D6174203300', format: 'SQLite Database', mime: 'application/x-sqlite3', ext: '.db',
+              exts: ['.db', '.sqlite', '.sqlite3', '.db3', '.sqlitedb'], category: 'Database' },
             // Archives
-            '52617221': { format: 'RAR Archive', mime: 'application/x-rar-compressed', ext: '.rar', category: 'Archive' },
-            '377ABCAF271C': { format: '7-Zip Archive', mime: 'application/x-7z-compressed', ext: '.7z', category: 'Archive' },
-            '1F8B': { format: 'GZIP Archive', mime: 'application/gzip', ext: '.gz', category: 'Archive' },
-            
+            { hex: '504B0304', format: 'ZIP Archive / Office Open XML / JAR / APK', mime: 'application/zip', ext: '.zip',
+              exts: ['.zip', '.docx', '.xlsx', '.pptx', '.docm', '.xlsm', '.pptm', '.odt', '.ods', '.odp', '.jar', '.apk', '.epub', '.xpi', '.aab', '.war', '.kmz', '.zipx'], category: 'Archive/Document' },
+            { hex: '504B0506', format: 'ZIP Archive (empty)', mime: 'application/zip', ext: '.zip', exts: ['.zip'], category: 'Archive' },
+            { hex: '526172211A0700', format: 'RAR Archive (v1.5-4)', mime: 'application/vnd.rar', ext: '.rar', exts: ['.rar'], category: 'Archive' },
+            { hex: '526172211A070100', format: 'RAR Archive (v5)', mime: 'application/vnd.rar', ext: '.rar', exts: ['.rar'], category: 'Archive' },
+            { hex: '377ABCAF271C', format: '7-Zip Archive', mime: 'application/x-7z-compressed', ext: '.7z', exts: ['.7z'], category: 'Archive' },
+            { hex: '1F8B', format: 'GZIP Archive', mime: 'application/gzip', ext: '.gz', exts: ['.gz', '.gzip', '.tgz'], category: 'Archive' },
+            { hex: '425A68', format: 'BZIP2 Archive', mime: 'application/x-bzip2', ext: '.bz2', exts: ['.bz2', '.tbz2'], category: 'Archive' },
+            { hex: 'FD377A585A00', format: 'XZ Archive', mime: 'application/x-xz', ext: '.xz', exts: ['.xz', '.txz'], category: 'Archive' },
+            { hex: '7573746172', at: 257, format: 'TAR Archive', mime: 'application/x-tar', ext: '.tar', exts: ['.tar'], category: 'Archive' },
             // Executables
-            '4D5A': { format: 'Windows Executable', mime: 'application/x-msdownload', ext: '.exe', category: 'Executable' },
-            '7F454C46': { format: 'Linux ELF Executable', mime: 'application/x-executable', ext: '', category: 'Executable' },
-            
+            { hex: '4D5A', format: 'Windows Executable (PE/DOS)', mime: 'application/vnd.microsoft.portable-executable', ext: '.exe',
+              exts: ['.exe', '.dll', '.sys', '.scr', '.ocx', '.cpl', '.drv', '.com', '.efi', '.ax'], category: 'Executable' },
+            { hex: '7F454C46', format: 'Linux ELF Executable', mime: 'application/x-executable', ext: '',
+              exts: ['', '.so', '.o', '.elf', '.bin', '.out', '.axf'], category: 'Executable' },
+            { hex: 'CAFEBABE', format: 'Java Class File', mime: 'application/java-vm', ext: '.class', exts: ['.class'], category: 'Executable' },
+            { hex: '4C0000000114020000000000C000000000000046', format: 'Windows Shortcut (LNK)', mime: 'application/x-ms-shortcut', ext: '.lnk', exts: ['.lnk'], category: 'Executable' },
             // Video
-            '000000': { format: 'MP4 Video', mime: 'video/mp4', ext: '.mp4', category: 'Video' },
-            '1A45DFA3': { format: 'Matroska Video (MKV)', mime: 'video/x-matroska', ext: '.mkv', category: 'Video' },
-            '464C56': { format: 'Flash Video', mime: 'video/x-flv', ext: '.flv', category: 'Video' },
-            
+            { hex: '66747970', at: 4, format: 'MP4 / ISO Base Media Video', mime: 'video/mp4', ext: '.mp4',
+              exts: ['.mp4', '.m4v', '.m4a', '.m4b', '.mov', '.3gp', '.3g2', '.heic', '.heif', '.avif', '.f4v'], category: 'Video', refine: refineFtyp },
+            { hex: '1A45DFA3', format: 'Matroska / WebM Video', mime: 'video/x-matroska', ext: '.mkv', exts: ['.mkv', '.webm', '.mka', '.mk3d'], category: 'Video' },
+            { hex: '464C5601', format: 'Flash Video', mime: 'video/x-flv', ext: '.flv', exts: ['.flv', '.f4v'], category: 'Video' },
+            { hex: '000001BA', format: 'MPEG Program Stream', mime: 'video/mpeg', ext: '.mpg', exts: ['.mpg', '.mpeg', '.vob'], category: 'Video' },
             // Audio
-            '494433': { format: 'MP3 Audio', mime: 'audio/mpeg', ext: '.mp3', category: 'Audio' },
-            '664C6143': { format: 'FLAC Audio', mime: 'audio/flac', ext: '.flac', category: 'Audio' },
-            
-            // Database
-            '53514C69746520666F726D6174': { format: 'SQLite Database', mime: 'application/x-sqlite3', ext: '.db', category: 'Database' }
-        };
+            { hex: '494433', format: 'MP3 Audio (ID3 tag)', mime: 'audio/mpeg', ext: '.mp3', exts: ['.mp3'], category: 'Audio' },
+            { hex: 'FF', format: 'MP3 / AAC Audio (frame sync)', mime: 'audio/mpeg', ext: '.mp3', exts: ['.mp3', '.aac', '.mp2'], category: 'Audio',
+              check: (b) => b.length >= 2 && [0xFB, 0xFA, 0xF3, 0xF2, 0xF1, 0xF9, 0xE3, 0xE2].includes(b[1]) },
+            { hex: '664C6143', format: 'FLAC Audio', mime: 'audio/flac', ext: '.flac', exts: ['.flac'], category: 'Audio' },
+            { hex: '4F676753', format: 'Ogg Container', mime: 'application/ogg', ext: '.ogg', exts: ['.ogg', '.oga', '.ogv', '.opus', '.spx', '.ogx'], category: 'Audio/Video' },
+            { hex: '4D546864', format: 'MIDI Audio', mime: 'audio/midi', ext: '.mid', exts: ['.mid', '.midi', '.kar'], category: 'Audio' },
+            // Text-based formats with a recognisable start
+            { hex: '3C3F786D6C', format: 'XML Document', mime: 'application/xml', ext: '.xml',
+              exts: ['.xml', '.svg', '.xhtml', '.xsl', '.xslt', '.rss', '.atom', '.kml', '.gpx', '.plist', '.xaml', '.csproj', '.config', '.wsdl'], category: 'Text/Markup', refine: refineXml },
+            { hex: '253F', format: 'PostScript Document', mime: 'application/postscript', ext: '.ps', exts: ['.ps', '.eps', '.ai'], category: 'Document',
+              check: (b) => toHex(b, 0, 4) === hexOf('%!PS') }
+        ];
+
+        function toHex(bytes, offset, length) {
+            return Array.from(bytes.slice(offset, offset + length)).map(v => v.toString(16).toUpperCase().padStart(2, '0')).join('');
+        }
+
+        function bytesToAscii(bytes, length) {
+            return Array.from(bytes.slice(0, length)).map(v => String.fromCharCode(v)).join('');
+        }
+
+        function refineFtyp(b, info) {
+            const brand = bytesToAscii(b.slice(8, 12), 4);
+            if (brand === 'qt  ') return { ...info, format: 'QuickTime Movie', mime: 'video/quicktime', ext: '.mov' };
+            if (brand === 'M4A ' || brand === 'M4B ') return { ...info, format: 'MPEG-4 Audio (M4A)', mime: 'audio/mp4', ext: '.m4a', category: 'Audio' };
+            if (/^(heic|heix|hevc|mif1|msf1)/.test(brand)) return { ...info, format: 'HEIC / HEIF Image', mime: 'image/heic', ext: '.heic', category: 'Image' };
+            if (brand === 'avif') return { ...info, format: 'AVIF Image', mime: 'image/avif', ext: '.avif', category: 'Image' };
+            if (/^3g/.test(brand)) return { ...info, format: '3GPP Video', mime: 'video/3gpp', ext: '.3gp' };
+            return info;
+        }
+
+        function refineXml(b, info) {
+            const head = bytesToAscii(b, 1024).toLowerCase();
+            if (head.includes('<svg')) return { ...info, format: 'SVG Image', mime: 'image/svg+xml', ext: '.svg', category: 'Image' };
+            return info;
+        }
+
+        // Heuristic: is this (first 1KB) plausible plain text / source code?
+        function looksLikeText(bytes) {
+            if (bytes.length === 0) return false;
+            let start = 0;
+            if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) start = 3;
+            let bad = 0;
+            for (let i = start; i < bytes.length; i++) {
+                const c = bytes[i];
+                if (c === 0) return false;
+                if (c < 32 && c !== 9 && c !== 10 && c !== 13 && c !== 12 && c !== 27) bad++;
+            }
+            return bad / bytes.length < 0.02;
+        }
+
+        // Every extension that belongs to a known binary format (text files should not carry these)
+        const BINARY_EXTS = new Set(FILE_SIGNATURES.filter(e => e.category !== 'Text/Markup').flatMap(e => e.exts).filter(Boolean));
 
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
@@ -454,7 +528,8 @@
             document.getElementById('fileName').textContent = file.name;
             document.getElementById('fileSize').textContent = formatFileSize(file.size);
             
-            const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            const dotIdx = file.name.lastIndexOf('.');
+            const extension = dotIdx > 0 ? file.name.substring(dotIdx).toLowerCase() : '';
             document.getElementById('fileExtension').textContent = extension || 'None';
             
             const reader = new FileReader();
@@ -475,26 +550,45 @@
                 document.getElementById('detectorResults').style.display = 'block';
             };
             
+            reader.onerror = () => alert('Could not read file: ' + file.name);
             reader.readAsArrayBuffer(file.slice(0, 1024)); // Read first 1KB
         }
 
         function detectFormat(bytes) {
-            // Convert bytes to hex string for pattern matching
-            const hexString = Array.from(bytes.slice(0, 16))
-                .map(byte => byte.toString(16).toUpperCase().padStart(2, '0'))
-                .join('');
-            
-            // Check against known signatures
-            for (const [signature, info] of Object.entries(FILE_SIGNATURES)) {
-                if (hexString.startsWith(signature)) {
-                    return { ...info, signature };
-                }
+            if (bytes.length === 0) {
+                return { format: 'Empty File', mime: 'application/x-empty', ext: 'unknown', exts: [], category: 'Unknown', signature: 'No data' };
             }
-            
+
+            for (const entry of FILE_SIGNATURES) {
+                const at = entry.at || 0;
+                const sigLen = entry.hex.length / 2;
+                if (toHex(bytes, at, sigLen) !== entry.hex) continue;
+                if (entry.check && !entry.check(bytes)) continue;
+                let info = { format: entry.format, mime: entry.mime, ext: entry.ext, exts: entry.exts, category: entry.category };
+                if (entry.refine) info = entry.refine(bytes, info);
+                const sigHex = toHex(bytes, at, sigLen).replace(/(..)(?=.)/g, '$1 ');
+                return { ...info, signature: (at ? `${sigHex} (offset ${at})` : sigHex) };
+            }
+
+            if (looksLikeText(bytes)) {
+                const head = bytesToAscii(bytes, 1024).trimStart().toLowerCase();
+                if (head.startsWith('<!doctype html') || head.startsWith('<html')) {
+                    return { format: 'HTML Document', mime: 'text/html', ext: '.html', exts: ['.html', '.htm', '.xhtml', '.php', '.asp', '.aspx', '.jsp'], category: 'Text/Markup', signature: 'Text content (HTML markup)' };
+                }
+                if (head.startsWith('<svg')) {
+                    return { format: 'SVG Image', mime: 'image/svg+xml', ext: '.svg', exts: ['.svg'], category: 'Image', signature: 'Text content (SVG markup)' };
+                }
+                if (head.startsWith('{') || head.startsWith('[')) {
+                    return { format: 'Plain Text / possibly JSON', mime: 'text/plain', ext: '.txt', exts: null, category: 'Text', signature: 'Text content' };
+                }
+                return { format: 'Plain Text', mime: 'text/plain', ext: '.txt', exts: null, category: 'Text', signature: 'Text content (no binary signature)' };
+            }
+
             return {
                 format: 'Unknown Format',
                 mime: 'application/octet-stream',
                 ext: 'unknown',
+                exts: [],
                 category: 'Unknown',
                 signature: 'Not recognized'
             };
@@ -504,14 +598,25 @@
             document.getElementById('detectedFormat').textContent = detected.format;
             document.getElementById('mimeType').textContent = detected.mime;
             document.getElementById('fileCategory').textContent = detected.category;
-            document.getElementById('expectedExtension').textContent = detected.ext || 'N/A';
+            document.getElementById('expectedExtension').textContent = (detected.ext && detected.ext !== 'unknown') ? detected.ext : (detected.ext === '' ? 'None (no extension)' : 'N/A');
             document.getElementById('signatureMatch').textContent = detected.signature;
             
             // Check for extension mismatch
-            if (detected.ext !== 'unknown' && actualExtension && !actualExtension.includes(detected.ext.replace('.', ''))) {
+            const ext = (actualExtension || '').toLowerCase();
+            let mismatch = false;
+            if (ext && detected.ext !== 'unknown') {
+                if (detected.exts === null) {
+                    // Plain text: fine unless the file claims to be a known binary type
+                    mismatch = BINARY_EXTS.has(ext);
+                } else {
+                    mismatch = !detected.exts.includes(ext);
+                }
+            }
+            if (mismatch) {
                 document.getElementById('warningBox').classList.add('active');
-                document.getElementById('warningDescription').textContent = 
-                    `The file has a "${actualExtension}" extension but appears to be a ${detected.format} (expected ${detected.ext}). ` +
+                document.getElementById('warningDescription').textContent =
+                    `The file has a "${ext}" extension but its content appears to be ${detected.format}` +
+                    (detected.ext ? ` (expected ${detected.ext})` : '') + `. ` +
                     `This could indicate a disguised or incorrectly labeled file.`;
             } else {
                 document.getElementById('warningBox').classList.remove('active');
@@ -612,7 +717,7 @@
                     });
                     
                     if (!proxyResponse.ok) {
-                        throw new Error('Proxy fetch failed: ' + await proxyResponse.text());
+                        throw new Error('Proxy fetch failed (HTTP ' + proxyResponse.status + '). The file could not be fetched from the server.');
                     }
                     
                     updateProgress(70, 'Proxy fetch successful!');

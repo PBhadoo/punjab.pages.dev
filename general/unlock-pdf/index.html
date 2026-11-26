@@ -15,11 +15,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- pdf-lib -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@cantoo/pdf-lib@2.11.1/dist/pdf-lib.min.js"></script>
     
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .warning-box {
@@ -454,12 +455,16 @@
             try {
                 // Try to load PDF to check if encrypted
                 try {
-                    await PDFLib.PDFDocument.load(pdfBytes);
+                    const probe = await PDFLib.PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+                    if (probe.isEncrypted) throw new Error('encrypted');
                     isEncrypted = false;
                     alert('This PDF is not password-protected. No unlocking needed.');
                     return;
                 } catch (error) {
-                    // If loading fails, might be encrypted
+                    if (error.message !== 'encrypted') {
+                        alert('Error loading PDF: ' + error.message);
+                        return;
+                    }
                     isEncrypted = true;
                 }
                 
@@ -498,11 +503,6 @@
                 
                 document.getElementById('progressFill').style.width = '60%';
                 
-                // Note: pdf-lib v1.17.1 has limited decryption support
-                // This demonstrates the concept, but full PDF decryption
-                // requires more advanced libraries or server-side processing
-                
-                // Save unlocked PDF (without encryption)
                 const pdfBytesOut = await pdfDoc.save();
                 
                 document.getElementById('progressFill').style.width = '100%';
@@ -512,9 +512,6 @@
                 
                 document.getElementById('progressSection').classList.remove('active');
                 document.getElementById('resultsSection').classList.add('active');
-                
-                // Show notice about limitations
-                alert('Note: Full PDF decryption with all encryption types requires specialized libraries. This tool provides basic decryption. For complex encrypted PDFs, consider professional tools.');
                 
                 const downloadBtn = document.getElementById('downloadBtn');
                 downloadBtn.onclick = () => {

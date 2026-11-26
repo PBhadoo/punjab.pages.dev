@@ -17,11 +17,12 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .images-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr));
             gap: 20px;
             margin: 30px 0;
         }
@@ -228,11 +229,12 @@
         .bulk-actions {
             display: flex;
             gap: 15px;
+            flex-wrap: wrap;
             margin-top: 20px;
         }
         
         .bulk-actions button {
-            flex: 1;
+            flex: 1 1 140px;
             padding: 15px;
             border: none;
             border-radius: 10px;
@@ -535,6 +537,8 @@
                         images.push(imageData);
                         updateDisplay();
                     };
+                    img.onerror = () => alert('Could not read image: ' + file.name);
+                    img.onerror = () => alert('Could not read image: ' + file.name);
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
@@ -589,54 +593,58 @@
                 const canvas = document.createElement('canvas');
                 canvas.width = imageData.width;
                 canvas.height = imageData.height;
-                
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
-                
+
+                const finish = () => {
+                    ctx.globalAlpha = 1;
+                    imageData.watermarkedData = canvas.toDataURL(`image/${imageData.format}`, 0.95);
+                    updateDisplay();
+                };
+
                 if (watermarkType === 'text') {
                     addTextWatermark(ctx, canvas.width, canvas.height);
+                    finish();
                 } else {
-                    addImageWatermark(ctx, canvas.width, canvas.height);
+                    // The watermark image must be loaded before drawing, otherwise it is missing from the export
+                    addImageWatermark(ctx, canvas.width, canvas.height, finish);
                 }
-                
-                imageData.watermarkedData = canvas.toDataURL(`image/${imageData.format}`, 0.95);
-                updateDisplay();
             };
             img.src = imageData.originalData;
         }
 
         function addTextWatermark(ctx, width, height) {
             const text = document.getElementById('watermarkText').value;
-            const fontSize = document.getElementById('fontSize').value;
+            if (!text) return;
+            const fontSize = parseInt(document.getElementById('fontSize').value) || 40;
             const fontWeight = document.getElementById('fontWeight').value;
             const color = document.getElementById('textColor').value;
             const opacity = document.getElementById('textOpacity').value / 100;
-            
-            ctx.font = `${fontWeight} ${fontSize}px Inter`;
+
+            ctx.font = `${fontWeight} ${fontSize}px Inter, sans-serif`;
             ctx.fillStyle = color;
             ctx.globalAlpha = opacity;
-            
-            const textMetrics = ctx.measureText(text);
-            const textWidth = textMetrics.width;
-            const textHeight = fontSize;
-            
-            const pos = getWatermarkPosition(width, height, textWidth, textHeight);
+            ctx.textBaseline = 'top';
+
+            const textWidth = ctx.measureText(text).width;
+            const pos = getWatermarkPosition(width, height, textWidth, fontSize);
             ctx.fillText(text, pos.x, pos.y);
         }
 
-        function addImageWatermark(ctx, width, height) {
+        function addImageWatermark(ctx, width, height, done) {
             const watermark = new Image();
             watermark.onload = () => {
                 const size = document.getElementById('watermarkSize').value / 100;
                 const opacity = document.getElementById('imageOpacity').value / 100;
-                
                 const wmWidth = width * size;
                 const wmHeight = (watermark.height / watermark.width) * wmWidth;
-                
                 const pos = getWatermarkPosition(width, height, wmWidth, wmHeight);
-                
                 ctx.globalAlpha = opacity;
                 ctx.drawImage(watermark, pos.x, pos.y, wmWidth, wmHeight);
+                done();
+            };
+            watermark.onerror = () => {
+                alert('Could not load the watermark image');
             };
             watermark.src = watermarkImageData;
         }
@@ -648,39 +656,39 @@
             switch (watermarkPosition) {
                 case 'top-left':
                     x = padding;
-                    y = wmHeight + padding;
+                    y = padding;
                     break;
                 case 'top-center':
                     x = (canvasWidth - wmWidth) / 2;
-                    y = wmHeight + padding;
+                    y = padding;
                     break;
                 case 'top-right':
                     x = canvasWidth - wmWidth - padding;
-                    y = wmHeight + padding;
+                    y = padding;
                     break;
                 case 'middle-left':
                     x = padding;
-                    y = (canvasHeight + wmHeight) / 2;
+                    y = (canvasHeight - wmHeight) / 2;
                     break;
                 case 'center':
                     x = (canvasWidth - wmWidth) / 2;
-                    y = (canvasHeight + wmHeight) / 2;
+                    y = (canvasHeight - wmHeight) / 2;
                     break;
                 case 'middle-right':
                     x = canvasWidth - wmWidth - padding;
-                    y = (canvasHeight + wmHeight) / 2;
+                    y = (canvasHeight - wmHeight) / 2;
                     break;
                 case 'bottom-left':
                     x = padding;
-                    y = canvasHeight - padding;
+                    y = canvasHeight - wmHeight - padding;
                     break;
                 case 'bottom-center':
                     x = (canvasWidth - wmWidth) / 2;
-                    y = canvasHeight - padding;
+                    y = canvasHeight - wmHeight - padding;
                     break;
                 case 'bottom-right':
                     x = canvasWidth - wmWidth - padding;
-                    y = canvasHeight - padding;
+                    y = canvasHeight - wmHeight - padding;
                     break;
             }
             

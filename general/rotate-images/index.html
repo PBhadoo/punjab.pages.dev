@@ -17,6 +17,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .images-grid {
@@ -464,6 +465,7 @@
                         images.push(imageData);
                         updateDisplay();
                     };
+                    img.onerror = () => alert('Could not read image: ' + file.name);
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
@@ -476,16 +478,17 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Calculate canvas size based on rotation
+                // Calculate canvas size from the rotated bounding box
                 const rotation = imageData.rotation % 360;
-                if (rotation === 90 || rotation === 270) {
-                    canvas.width = imageData.height;
-                    canvas.height = imageData.width;
-                } else {
-                    canvas.width = imageData.width;
-                    canvas.height = imageData.height;
+                const rad = (rotation * Math.PI) / 180;
+                const cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
+                canvas.width = Math.max(1, Math.round(imageData.width * cos + imageData.height * sin));
+                canvas.height = Math.max(1, Math.round(imageData.width * sin + imageData.height * cos));
+                if (imageData.format === 'jpeg') {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
-                
+
                 // Apply transformations
                 ctx.translate(canvas.width / 2, canvas.height / 2);
                 ctx.rotate((rotation * Math.PI) / 180);
@@ -522,10 +525,24 @@
             const imageData = images.find(img => img.id == id);
             if (!imageData) return;
             
-            imageData.rotation = parseInt(angle) % 360;
+            const parsed = parseInt(angle);
+            if (isNaN(parsed)) {
+                alert('Please enter a valid angle');
+                return;
+            }
+            imageData.rotation = parsed % 360;
             if (imageData.rotation < 0) imageData.rotation += 360;
             
             rotateImage(imageData);
+        }
+
+        // Flip is applied to the source before rotation, so at 90/270 degrees the
+        // axes swap to keep "horizontal" meaning horizontal on screen.
+        function toggleFlip(imageData, direction) {
+            const swap = imageData.rotation === 90 || imageData.rotation === 270;
+            const horizontal = (direction === 'horizontal') !== swap;
+            if (horizontal) imageData.flipH = !imageData.flipH;
+            else imageData.flipV = !imageData.flipV;
         }
 
         function applyFlip(id, direction) {
@@ -563,11 +580,7 @@
 
         function flipAll(direction) {
             images.forEach(imageData => {
-                if (direction === 'horizontal') {
-                    imageData.flipH = !imageData.flipH;
-                } else if (direction === 'vertical') {
-                    imageData.flipV = !imageData.flipV;
-                }
+                toggleFlip(imageData, direction);
                 rotateImage(imageData);
             });
         }

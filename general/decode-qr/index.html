@@ -20,6 +20,7 @@
     <!-- Application CSS -->
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/homepage.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     
     <style>
         .results-section {
@@ -277,6 +278,8 @@
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) {
                 handleFile(file);
+            } else {
+                alert('Please drop a valid image file');
             }
         });
 
@@ -296,7 +299,15 @@
                 img.onload = () => {
                     decodeQRCode(img, e.target.result);
                 };
+                img.onerror = () => {
+                    document.getElementById('loadingSpinner').classList.remove('active');
+                    document.getElementById('errorSection').style.display = 'block';
+                };
                 img.src = e.target.result;
+            };
+            reader.onerror = () => {
+                document.getElementById('loadingSpinner').classList.remove('active');
+                document.getElementById('errorSection').style.display = 'block';
             };
             reader.readAsDataURL(file);
         }
@@ -314,13 +325,18 @@
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
             // Decode QR code
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            let code = null;
+            try {
+                code = jsQR(imageData.data, imageData.width, imageData.height);
+            } catch (err) {
+                console.error('QR decode failed', err);
+            }
             
             document.getElementById('loadingSpinner').classList.remove('active');
             
             if (code) {
                 // Success
-                decodedData = code.data;
+                decodedData = code.data.replace(/^\uFEFF/, '');
                 document.getElementById('previewImage').src = imageUrl;
                 document.getElementById('decodedText').textContent = decodedData;
                 document.getElementById('resultsSection').classList.add('active');
