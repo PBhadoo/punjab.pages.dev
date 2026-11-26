@@ -380,6 +380,12 @@
             }
         });
 
+        document.getElementById('errorCorrection').addEventListener('change', () => {
+            if (originalImage) {
+                compressImage();
+            }
+        });
+
         qualitySlider.addEventListener('input', (e) => {
             qualityValue.textContent = e.target.value + '%';
             if (originalImage) {
@@ -400,43 +406,50 @@
                     compressImage();
                     document.getElementById('qrSettings').style.display = 'block';
                 };
+                originalImage.onerror = () => {
+                    originalImage = null;
+                    alert('Could not read image: ' + file.name);
+                };
                 originalImage.src = e.target.result;
             };
             
             reader.readAsDataURL(file);
         }
 
+        // Max bytes a QR code can hold (version 40, byte mode) per error-correction level
+        const QR_CAPACITY = { L: 2953, M: 2331, Q: 1663, H: 1273 };
+
         function compressImage() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Limit maximum dimensions
-            const maxDim = 400;
-            let width = originalImage.width;
-            let height = originalImage.height;
-            
-            if (width > height && width > maxDim) {
-                height = (height * maxDim) / width;
-                width = maxDim;
-            } else if (height > maxDim) {
-                width = (width * maxDim) / height;
-                height = maxDim;
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            
-            ctx.drawImage(originalImage, 0, 0, width, height);
-            
             const quality = parseInt(qualitySlider.value) / 100;
-            compressedDataURL = canvas.toDataURL('image/jpeg', quality);
-            
+            const level = document.getElementById('errorCorrection').value;
+            const limit = QR_CAPACITY[level] || QR_CAPACITY.M;
+
+            // Shrink the image until the data URL fits inside a QR code (min 8px on the long side)
+            let maxDim = 400;
+            let dataURL = '';
+            while (true) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const scale = Math.min(1, maxDim / Math.max(originalImage.width, originalImage.height));
+                const width = Math.max(1, Math.round(originalImage.width * scale));
+                const height = Math.max(1, Math.round(originalImage.height * scale));
+                canvas.width = width;
+                canvas.height = height;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(originalImage, 0, 0, width, height);
+                dataURL = canvas.toDataURL('image/jpeg', quality);
+                if (dataURL.length <= limit || maxDim <= 8) break;
+                maxDim = Math.max(8, Math.floor(maxDim * 0.85));
+            }
+
+            compressedDataURL = dataURL;
             const compressedSize = Math.round((compressedDataURL.length * 3) / 4);
             document.getElementById('compressedSize').textContent = formatFileSize(compressedSize);
             document.getElementById('base64Length').textContent = compressedDataURL.length.toLocaleString();
-            
-            // Show warning if data is too large
-            if (compressedDataURL.length > 2000) {
+
+            // Warn only if even the smallest version does not fit
+            if (compressedDataURL.length > limit) {
                 document.getElementById('sizeWarning').classList.add('active');
             } else {
                 document.getElementById('sizeWarning').classList.remove('active');

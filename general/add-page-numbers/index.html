@@ -943,7 +943,7 @@
         });
 
         async function handleFile(file) {
-            fileName = file.name.replace('.pdf', '');
+            fileName = file.name.replace(/\.pdf$/i, '');
             const arrayBuffer = await file.arrayBuffer();
             pdfBytes = new Uint8Array(arrayBuffer);
             
@@ -1099,7 +1099,7 @@
         function updatePageNumber(pageNum, element, canvas) {
             const fontSize = parseInt(document.getElementById('fontSize').value);
             const fontColor = document.getElementById('fontColor').value;
-            const startNumber = parseInt(document.getElementById('startNumber').value);
+            const startNumber = parseInt(document.getElementById('startNumber').value) || 1;
             const format = document.getElementById('format').value;
             const totalPages = pdfJsDoc.numPages;
             
@@ -1122,7 +1122,7 @@
             element.style.fontSize = `${fontSize * 1.2}px`;
             element.style.color = fontColor;
             
-            const margin = 10;
+            const margin = 36; // 30pt PDF margin at the 1.2x preview scale
             
             // Position the page number with manual offsets
             element.style.transform = 'none';
@@ -1164,40 +1164,33 @@
         async function addPageNumbers() {
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('progressFill').style.width = '20%';
-            
             try {
-                const fontSize = parseInt(document.getElementById('fontSize').value);
+                const fontSize = parseInt(document.getElementById('fontSize').value) || 12;
                 const fontColor = document.getElementById('fontColor').value;
-                const startNumber = parseInt(document.getElementById('startNumber').value);
+                const startNumber = parseInt(document.getElementById('startNumber').value) || 1;
                 const format = document.getElementById('format').value;
-                
                 const rgb = hexToRgb(fontColor);
+                const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const pages = pdfDoc.getPages();
                 const totalPages = pages.length;
-                
                 document.getElementById('progressFill').style.width = '40%';
-                
                 for (let i = 0; i < pages.length; i++) {
                     const page = pages[i];
                     const { width, height } = page.getSize();
                     const pageNumber = startNumber + i;
-                    
                     let text;
                     if (format === 'simple') {
                         text = `${pageNumber}`;
                     } else if (format === 'page') {
                         text = `Page ${pageNumber}`;
                     } else {
-                        text = `Page ${pageNumber} of ${totalPages}`;
+                        text = `Page ${pageNumber} of ${totalPages + startNumber - 1}`;
                     }
-                    
-                    const textWidth = fontSize * text.length * 0.6; // Approximate width
+                    const textWidth = font.widthOfTextAtSize(text, fontSize);
                     const margin = 30;
-                    
                     // Convert pixel offsets to PDF points (1.2 scale factor from preview)
                     const offsetXPoints = manualOffsetX / 1.2;
                     const offsetYPoints = manualOffsetY / 1.2;
-                    
                     let x, y;
                     switch (selectedPosition) {
                         case 'top-left':
@@ -1209,46 +1202,39 @@
                             y = height - margin - offsetYPoints;
                             break;
                         case 'top-right':
-                            x = width - textWidth - margin - offsetXPoints;
+                            x = width - textWidth - margin + offsetXPoints;
                             y = height - margin - offsetYPoints;
                             break;
                         case 'bottom-left':
                             x = margin + offsetXPoints;
-                            y = margin + offsetYPoints;
+                            y = margin - offsetYPoints;
                             break;
                         case 'bottom-center':
                             x = (width - textWidth) / 2 + offsetXPoints;
-                            y = margin + offsetYPoints;
+                            y = margin - offsetYPoints;
                             break;
                         case 'bottom-right':
-                            x = width - textWidth - margin - offsetXPoints;
-                            y = margin + offsetYPoints;
+                            x = width - textWidth - margin + offsetXPoints;
+                            y = margin - offsetYPoints;
                             break;
                     }
-                    
                     page.drawText(text, {
                         x: x,
                         y: y,
                         size: fontSize,
+                        font: font,
                         color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255)
                     });
-                    
                     const progress = 40 + ((i + 1) / pages.length) * 50;
                     document.getElementById('progressFill').style.width = progress + '%';
                 }
-                
                 document.getElementById('progressFill').style.width = '90%';
-                
                 const pdfBytesOut = await pdfDoc.save();
-                
                 document.getElementById('progressFill').style.width = '100%';
-                
                 const blob = new Blob([pdfBytesOut], { type: 'application/pdf' });
                 const url = URL.createObjectURL(blob);
-                
                 document.getElementById('progressSection').classList.remove('active');
                 document.getElementById('resultsSection').classList.add('active');
-                
                 const downloadBtn = document.getElementById('downloadBtn');
                 downloadBtn.onclick = () => {
                     const a = document.createElement('a');
@@ -1256,13 +1242,11 @@
                     a.download = `${fileName}_numbered.pdf`;
                     a.click();
                 };
-                
             } catch (error) {
                 alert('Error adding page numbers: ' + error.message);
                 document.getElementById('progressSection').classList.remove('active');
             }
         }
-
         function hexToRgb(hex) {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             return result ? {

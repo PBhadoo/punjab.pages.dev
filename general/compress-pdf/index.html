@@ -501,8 +501,15 @@
             originalSize = file.size;
             
             const arrayBuffer = await file.arrayBuffer();
-            originalPDF = await PDFDocument.load(arrayBuffer);
-            
+            try {
+                originalPDF = await PDFDocument.load(arrayBuffer);
+            } catch (error) {
+                originalPDF = null;
+                alert('Error loading PDF: ' + error.message);
+                return;
+            }
+            originalBuffer = arrayBuffer;
+            document.getElementById('resultsSection').style.display = 'none';
             document.getElementById('compressionSettings').style.display = 'block';
         }
 

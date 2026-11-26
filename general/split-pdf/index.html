@@ -562,6 +562,8 @@
                 // Generate page selector
                 generatePageSelector(pageCount);
             } catch (error) {
+                pdfDocument = null;
+                document.getElementById('pdfInfo').classList.remove('active');
                 alert('Error loading PDF: ' + error.message);
             }
         }
@@ -686,7 +688,7 @@
                 
                 const pdfBytes = await newPdf.save();
                 
-                const fileName = pdfFileName.replace('.pdf', '') + 
+                const fileName = pdfFileName.replace(/\.pdf$/i, '') + 
                     (range.start === range.end ? `_page_${range.start}.pdf` : `_pages_${range.start}-${range.end}.pdf`);
                 
                 splitResults.push({

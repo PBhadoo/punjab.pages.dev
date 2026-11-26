@@ -599,6 +599,10 @@
         let lastBsnlResult = null;
         let lastAirtelResult = null;
         let lastViResult = null;
+        // True only when every live operator check actually answered (so "none of them" is a real finding, not an outage)
+        function allOperatorChecksAnswered() {
+            return !!(lastJioResult && lastBsnlResult && lastAirtelResult && lastViResult);
+        }
 
         // Helper functions for lookup spinner
         function showLookupSpinner(title, status) {
@@ -642,6 +646,8 @@
             // Reset API results
             lastJioResult = null;
             lastBsnlResult = null;
+            lastAirtelResult = null;
+            lastViResult = null;
             document.getElementById('resultsSection').style.display = 'block';
             
             // Reset warning box to default
@@ -1329,6 +1335,13 @@
             if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10 && 
                 (!lastJioResult || !lastJioResult.isJio) && (!lastBsnlResult || !lastBsnlResult.isBsnl) && 
                 (!lastAirtelResult || !lastAirtelResult.isAirtel) && (!lastViResult || (!lastViResult.isVi && !lastViResult.isProbableVi))) {
+                if (!allOperatorChecksAnswered()) {
+                    const row = document.getElementById('currentOperatorRow');
+                    if (row) {
+                        row.style.display = 'grid';
+                        document.getElementById('currentOperatorValue').innerHTML = '<span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fas fa-exclamation-triangle"></i> Not verified (live operator checks unavailable)</span>';
+                    }
+                } else {
                 
                 const currentOpRow = document.getElementById('currentOperatorRow');
                 if (currentOpRow) {
@@ -1341,6 +1354,7 @@
                             <span style="font-size: 0.75rem; color: var(--text-secondary);">(Not Jio/BSNL/Airtel/Vi)</span>
                         </div>
                     `;
+                }
                 }
             }
             
@@ -1401,7 +1415,7 @@
                 text += `Note: Vi API unavailable, but NOT found on Jio, BSNL, or Airtel.\n`;
                 text += `By process of elimination, this is likely a Vi number.\n`;
             } else if (parsed.countryCode === '91' && parsed.nationalNumber.length === 10) {
-                text += `Current Operator: Other/MVNO/Invalid (Not Jio/BSNL/Airtel/Vi)\n`;
+                text += allOperatorChecksAnswered() ? `Current Operator: Other/MVNO/Invalid (Not Jio/BSNL/Airtel/Vi)\n` : `Current Operator: Not verified (live operator checks unavailable)\n`;
             }
             
             text += `\nNote: Original operator info is based on allocation. Current operator verified via live APIs where possible.\n`;
@@ -1508,6 +1522,9 @@
                     addLine('Current Operator', 'Vi (Probable - Not Verified)');
                     addLine('Note', 'Vi API unavailable, but NOT on Jio/BSNL/Airtel');
                     addLine('Deduction', 'Likely Vi by process of elimination');
+                } else if (!allOperatorChecksAnswered()) {
+                    addLine('Current Operator', 'Not verified');
+                    addLine('Note', 'Live operator checks were unavailable');
                 } else {
                     addLine('Current Operator', 'Other/MVNO/Invalid');
                     addLine('Note', 'Not Jio/BSNL/Airtel/Vi');
@@ -1569,9 +1586,15 @@
                 doc.rect(15, y, 180, 25, 'F');
                 doc.setTextColor(75, 85, 99);
                 doc.setFontSize(10);
-                doc.text('Other/MVNO/Invalid Number:', 20, y + 10);
-                doc.setFontSize(9);
-                doc.text('This number is NOT on Jio, BSNL, Airtel or Vi. May be MVNO or invalid.', 20, y + 18);
+                if (allOperatorChecksAnswered()) {
+                    doc.text('Other/MVNO/Invalid Number:', 20, y + 10);
+                    doc.setFontSize(9);
+                    doc.text('This number is NOT on Jio, BSNL, Airtel or Vi. May be MVNO or invalid.', 20, y + 18);
+                } else {
+                    doc.text('Current operator not verified:', 20, y + 10);
+                    doc.setFontSize(9);
+                    doc.text('Live operator checks were unavailable. Original allocation shown only.', 20, y + 18);
+                }
             } else {
                 // Non-Indian or unknown
                 doc.setFillColor(255, 243, 205);

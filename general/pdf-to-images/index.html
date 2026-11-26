@@ -519,6 +519,8 @@
                 
                 document.getElementById('pdfInfo').classList.add('active');
             } catch (error) {
+                pdfDocument = null;
+                document.getElementById('pdfInfo').classList.remove('active');
                 alert('Error loading PDF: ' + error.message);
             }
         }
@@ -668,7 +670,7 @@
         function downloadImage(index) {
             const image = convertedImages[index];
             const link = document.createElement('a');
-            const fileName = pdfFileName.replace('.pdf', '') + `_page_${image.pageNum}.${image.format}`;
+            const fileName = pdfFileName.replace(/\.pdf$/i, '') + `_page_${image.pageNum}.${image.format}`;
             
             link.href = image.data;
             link.download = fileName;

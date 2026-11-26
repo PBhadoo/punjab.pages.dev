@@ -337,16 +337,28 @@
             const qrcodeDiv = document.getElementById('qrcode');
             qrcodeDiv.innerHTML = '';
             
+            if (typeof QRCode === 'undefined') {
+                alert('QR library failed to load. Check your connection and reload the page.');
+                return;
+            }
+
             // Generate new QR code
-            qrCodeInstance = new QRCode(qrcodeDiv, {
-                text: text,
-                width: size,
-                height: size,
-                colorDark: colorDark,
-                colorLight: colorLight,
-                correctLevel: QRCode.CorrectLevel[errorCorrection]
-            });
-            
+            try {
+                qrCodeInstance = new QRCode(qrcodeDiv, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    colorDark: colorDark,
+                    colorLight: colorLight,
+                    correctLevel: QRCode.CorrectLevel[errorCorrection]
+                });
+            } catch (err) {
+                qrcodeDiv.innerHTML = '';
+                document.getElementById('resultsSection').classList.remove('active');
+                alert('Text is too long to fit in a QR code at this error-correction level. Shorten it or choose a lower level.');
+                return;
+            }
+
             // Show results
             setTimeout(() => {
                 document.getElementById('resultsSection').classList.add('active');

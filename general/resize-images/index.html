@@ -440,6 +440,7 @@
                         images.push(imageData);
                         updateDisplay();
                     };
+                    img.onerror = () => alert('Could not read image: ' + file.name);
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
@@ -480,10 +481,10 @@
                 
                 if (maintainAspect && imageData.maintainAspect) {
                     const aspectRatio = imageData.originalWidth / imageData.originalHeight;
-                    if (width !== imageData.targetWidth) {
+                    if (width !== null && width !== undefined) {
                         imageData.targetWidth = newWidth;
                         imageData.targetHeight = Math.round(newWidth / aspectRatio);
-                    } else if (height !== imageData.targetHeight) {
+                    } else if (height !== null && height !== undefined) {
                         imageData.targetHeight = newHeight;
                         imageData.targetWidth = Math.round(newHeight * aspectRatio);
                     }

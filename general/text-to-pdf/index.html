@@ -433,15 +433,15 @@ The live word count, character count, and page estimation will update as you typ
                 
                 // Get settings
                 const fontFamily = document.getElementById('fontFamily').value;
-                const fontSize = parseInt(document.getElementById('fontSize').value);
+                const fontSize = parseInt(document.getElementById('fontSize').value) || 12;
                 const lineHeight = parseFloat(document.getElementById('lineHeight').value);
                 const textAlign = document.getElementById('textAlign').value;
                 const pageSize = document.getElementById('pageSize').value;
                 const orientation = document.getElementById('orientation').value;
-                const marginTop = parseInt(document.getElementById('marginTop').value);
-                const marginRight = parseInt(document.getElementById('marginRight').value);
-                const marginBottom = parseInt(document.getElementById('marginBottom').value);
-                const marginLeft = parseInt(document.getElementById('marginLeft').value);
+                const marginTop = parseInt(document.getElementById('marginTop').value) || 0;
+                const marginRight = parseInt(document.getElementById('marginRight').value) || 0;
+                const marginBottom = parseInt(document.getElementById('marginBottom').value) || 0;
+                const marginLeft = parseInt(document.getElementById('marginLeft').value) || 0;
                 
                 // Create PDF
                 const pdf = new jsPDF({
@@ -450,6 +450,17 @@ The live word count, character count, and page estimation will update as you typ
                     format: pageSize
                 });
                 
+                // jsPDF's built-in fonts cannot show non-Latin scripts (e.g. Gurmukhi):
+                // render those pages with the browser's fonts and embed them as images.
+                if (/[^\u0000-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/.test(text)) {
+                    renderUnicodeText(pdf, text, { fontFamily, fontSize, lineHeight, textAlign, marginTop, marginRight, marginBottom, marginLeft });
+                    generatedPDF = pdf.output('blob');
+                    document.getElementById('pdfPages').textContent = pdf.getNumberOfPages();
+                    document.getElementById('pdfSize').textContent = (generatedPDF.size / 1024).toFixed(2) + ' KB';
+                    document.getElementById('resultsSection').style.display = 'block';
+                    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+                    return;
+                }
                 // Set font
                 pdf.setFont(fontFamily);
                 pdf.setFontSize(fontSize);
@@ -524,6 +535,57 @@ The live word count, character count, and page estimation will update as you typ
                 alert('Error generating PDF: ' + error.message);
                 console.error(error);
             }
+        }
+
+        function renderUnicodeText(pdf, text, o) {
+            const pw = pdf.internal.pageSize.getWidth();
+            const ph = pdf.internal.pageSize.getHeight();
+            const k = 8; // px per mm
+            const family = { helvetica: 'sans-serif', times: 'serif', courier: 'monospace' }[o.fontFamily] || 'sans-serif';
+            const font = `${o.fontSize * 0.352778 * k}px "Noto Sans Gurmukhi", "Noto Serif Gurmukhi", "Raavi", ${family}`;
+            const maxW = (pw - o.marginLeft - o.marginRight) * k;
+            const lh = o.fontSize * 0.352778 * o.lineHeight * k;
+            const mk = () => {
+                const c = document.createElement('canvas');
+                c.width = Math.round(pw * k); c.height = Math.round(ph * k);
+                const x = c.getContext('2d');
+                x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+                x.fillStyle = '#000'; x.font = font; x.textBaseline = 'top';
+                return [c, x];
+            };
+            let [c, x] = mk();
+            // Wrap into lines
+            const lines = [];
+            text.split(/\r?\n/).forEach(par => {
+                if (!par.trim()) { lines.push(''); return; }
+                let cur = '';
+                par.split(/(\s+)/).forEach(tok => {
+                    if (x.measureText(cur + tok).width <= maxW || !cur) { cur += tok; }
+                    else { lines.push(cur.trimEnd()); cur = tok.trimStart(); }
+                    while (x.measureText(cur).width > maxW && cur.length > 1) { // very long word
+                        let n = cur.length - 1;
+                        while (n > 1 && x.measureText(cur.slice(0, n)).width > maxW) n--;
+                        lines.push(cur.slice(0, n)); cur = cur.slice(n);
+                    }
+                });
+                lines.push(cur.trimEnd());
+            });
+            let y = o.marginTop * k, first = true;
+            const flush = () => {
+                if (!first) pdf.addPage();
+                pdf.addImage(c.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pw, ph);
+                first = false;
+            };
+            lines.forEach(line => {
+                if (y + lh > (ph - o.marginBottom) * k) { flush(); [c, x] = mk(); y = o.marginTop * k; }
+                const w = x.measureText(line).width;
+                let px = o.marginLeft * k;
+                if (o.textAlign === 'center') px = (pw * k - w) / 2;
+                else if (o.textAlign === 'right') px = (pw - o.marginRight) * k - w;
+                x.fillText(line, px, y);
+                y += lh;
+            });
+            flush();
         }
 
         function downloadPDF() {

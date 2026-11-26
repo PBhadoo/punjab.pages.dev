@@ -214,19 +214,19 @@
             <div class="pattern-options">
                 <div class="control-group">
                     <label class="control-label">Prefix</label>
-                    <input type="text" class="control-input" id="prefix" placeholder="e.g., IMG_" onkeyup="updatePreview()">
+                    <input type="text" class="control-input" id="prefix" placeholder="e.g., IMG_" oninput="updatePreview()">
                 </div>
                 <div class="control-group">
                     <label class="control-label">Suffix</label>
-                    <input type="text" class="control-input" id="suffix" placeholder="e.g., _copy" onkeyup="updatePreview()">
+                    <input type="text" class="control-input" id="suffix" placeholder="e.g., _copy" oninput="updatePreview()">
                 </div>
                 <div class="control-group">
                     <label class="control-label">Replace Text</label>
-                    <input type="text" class="control-input" id="findText" placeholder="Find..." onkeyup="updatePreview()">
+                    <input type="text" class="control-input" id="findText" placeholder="Find..." oninput="updatePreview()">
                 </div>
                 <div class="control-group">
                     <label class="control-label">With</label>
-                    <input type="text" class="control-input" id="replaceText" placeholder="Replace with..." onkeyup="updatePreview()">
+                    <input type="text" class="control-input" id="replaceText" placeholder="Replace with..." oninput="updatePreview()">
                 </div>
             </div>
             
@@ -355,6 +355,8 @@
 
         function handleFiles(files) {
             uploadedFiles = files;
+            renamedBlob = null;
+            document.getElementById('resultsSection').style.display = 'none';
             
             const totalSize = files.reduce((sum, file) => sum + file.size, 0);
             document.getElementById('fileCount').textContent = files.length;
@@ -379,7 +381,8 @@
             
             // Apply find/replace
             if (findText) {
-                name = name.replace(new RegExp(findText, 'g'), replaceText);
+                // Literal (not regex) find & replace, so characters like ( . * [ are safe
+                name = name.split(findText).join(replaceText);
             }
             
             // Add prefix
@@ -398,36 +401,64 @@
                 name = name + '_' + num;
             }
             
-            return name + ext;
+            // Characters not allowed in file names (and path separators) become underscores
+            return (name + ext).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_');
+        }
+
+        // Compute final names for all files; duplicates get " (2)", " (3)"... so none are lost in the ZIP
+        function computeNames() {
+            const used = new Set();
+            return uploadedFiles.map((file, index) => {
+                let name = generateNewName(file.name, index);
+                if (used.has(name.toLowerCase())) {
+                    const dot = name.lastIndexOf('.');
+                    const base = dot > 0 ? name.substring(0, dot) : name;
+                    const ext = dot > 0 ? name.substring(dot) : '';
+                    let n = 2;
+                    while (used.has((base + ' (' + n + ')' + ext).toLowerCase())) n++;
+                    name = base + ' (' + n + ')' + ext;
+                }
+                used.add(name.toLowerCase());
+                return name;
+            });
         }
 
         function updatePreview() {
             const previewList = document.getElementById('previewList');
             previewList.innerHTML = '';
             
+            const newNames = computeNames();
             uploadedFiles.forEach((file, index) => {
-                const newName = generateNewName(file.name, index);
-                
                 const row = document.createElement('div');
                 row.className = 'preview-row';
-                row.innerHTML = `
-                    <div class="original-name">${file.name}</div>
-                    <div class="new-name">${newName}</div>
-                `;
+                const orig = document.createElement('div');
+                orig.className = 'original-name';
+                orig.textContent = file.name;
+                const next = document.createElement('div');
+                next.className = 'new-name';
+                next.textContent = newNames[index];
+                row.appendChild(orig);
+                row.appendChild(next);
                 previewList.appendChild(row);
             });
         }
 
         async function applyRename() {
+            if (uploadedFiles.length === 0) {
+                alert('Please select files first');
+                return;
+            }
             document.getElementById('progressSection').classList.add('active');
             updateProgress(10, 'Creating ZIP archive...');
             
             try {
                 const zip = new JSZip();
                 
+                const newNames = computeNames();
+                
                 for (let i = 0; i < uploadedFiles.length; i++) {
                     const file = uploadedFiles[i];
-                    const newName = generateNewName(file.name, i);
+                    const newName = newNames[i];
                     
                     updateProgress(10 + (i / uploadedFiles.length) * 80, `Adding ${newName}...`);
                     

@@ -447,6 +447,18 @@
     <script>
         let currentImageData = null;
         let currentFileName = '';
+        let decodedImageData = null;
+
+        // Guess the image type of a raw base64 string from its first bytes
+        function sniffMime(b64) {
+            const sigs = [
+                ['iVBORw0KGgo', 'image/png'], ['/9j/', 'image/jpeg'], ['R0lGOD', 'image/gif'],
+                ['UklGR', 'image/webp'], ['Qk', 'image/bmp'], ['PHN2Zy', 'image/svg+xml'],
+                ['PD94bWw', 'image/svg+xml'], ['AAABAA', 'image/x-icon']
+            ];
+            for (const [sig, mime] of sigs) if (b64.startsWith(sig)) return mime;
+            return 'image/png';
+        }
 
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
@@ -491,6 +503,7 @@
                 displayBase64(currentImageData);
             };
             
+            reader.onerror = () => alert('Could not read file: ' + file.name);
             reader.readAsDataURL(file);
         }
 
@@ -514,7 +527,11 @@
         function copyBase64(btn) {
             const textArea = document.getElementById('base64Text');
             textArea.select();
-            document.execCommand('copy');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textArea.value).catch(() => document.execCommand('copy'));
+            } else {
+                document.execCommand('copy');
+            }
 
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
@@ -566,13 +583,13 @@
             }
             
             try {
-                // Handle data URI format or raw base64
+                // Handle data URI format or raw base64 (whitespace/newlines are ignored)
                 let base64Data = input;
-                if (input.startsWith('data:')) {
-                    base64Data = input;
+                if (!input.startsWith('data:')) {
+                    const raw = input.replace(/\s+/g, '');
+                    base64Data = 'data:' + sniffMime(raw) + ';base64,' + raw;
                 } else {
-                    // Try to detect image format
-                    base64Data = 'data:image/png;base64,' + input;
+                    base64Data = input.replace(/\s+/g, '');
                 }
                 
                 // Test if valid by creating an image
@@ -584,7 +601,7 @@
                     const dimensionsSpan = document.getElementById('imageDimensions');
                     
                     previewImg.src = base64Data;
-                    currentImageData = base64Data;
+                    decodedImageData = base64Data;
                     
                     // Extract format
                     const formatMatch = base64Data.match(/data:image\/([^;]+)/);
@@ -597,6 +614,8 @@
                 };
                 
                 img.onerror = () => {
+                    document.getElementById('imagePreview').style.display = 'none';
+                    decodedImageData = null;
                     alert('Invalid Base64 string. Please check your input.');
                 };
                 
@@ -608,14 +627,16 @@
         }
 
         function downloadDecodedImage() {
-            if (!currentImageData) return;
+            if (!decodedImageData) return;
             
             const link = document.createElement('a');
-            link.href = currentImageData;
+            link.href = decodedImageData;
             
             // Extract format from data URI
-            const formatMatch = currentImageData.match(/data:image\/([^;]+)/);
-            const format = formatMatch ? formatMatch[1] : 'png';
+            const formatMatch = decodedImageData.match(/data:image\/([^;]+)/);
+            let format = formatMatch ? formatMatch[1] : 'png';
+            if (format === 'jpeg') format = 'jpg';
+            if (format.startsWith('svg')) format = 'svg';
             
             link.download = `decoded_image.${format}`;
             link.click();

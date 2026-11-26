@@ -44,6 +44,9 @@ if (_yearEl) _yearEl.textContent = new Date().getFullYear();
                 currentImage.onload = () => {
                     analyzeImage();
                 };
+                currentImage.onerror = () => {
+                    showToast('Could not read this file as an image (corrupt or unsupported)');
+                };
                 currentImage.src = e.target.result;
             };
             reader.readAsDataURL(file);
@@ -103,7 +106,7 @@ if (_yearEl) _yearEl.textContent = new Date().getFullYear();
             originalImg.src = currentImage.src;
             
             document.getElementById('imageInfo').innerHTML = `
-                <p><strong>Filename:</strong> ${imageFile.name}</p>
+                <p><strong>Filename:</strong> ${escHtml(imageFile.name)}</p>
                 <p><strong>Dimensions:</strong> ${currentImage.width} × ${currentImage.height} pixels</p>
                 <p><strong>File Size:</strong> ${formatFileSize(imageFile.size)}</p>
                 <p><strong>Type:</strong> ${imageFile.type}</p>
@@ -1182,7 +1185,7 @@ if (_yearEl) _yearEl.textContent = new Date().getFullYear();
                         }
                         html += `<div class="metadata-item">
                             <span class="meta-label">${formatTagName(tag)}</span>
-                            <span class="meta-value">${value}</span>
+                            <span class="meta-value">${escHtml(value)}</span>
                         </div>`;
                     }
                 });
@@ -1192,7 +1195,7 @@ if (_yearEl) _yearEl.textContent = new Date().getFullYear();
                     if (!importantTags.includes(tag) && typeof allMetadata[tag] !== 'object') {
                         html += `<div class="metadata-item">
                             <span class="meta-label">${formatTagName(tag)}</span>
-                            <span class="meta-value">${allMetadata[tag]}</span>
+                            <span class="meta-value">${escHtml(allMetadata[tag])}</span>
                         </div>`;
                     }
                 });
@@ -1200,6 +1203,10 @@ if (_yearEl) _yearEl.textContent = new Date().getFullYear();
                 html += '</div>';
                 metadataGrid.innerHTML = html;
             });
+        }
+
+        function escHtml(v) {
+            return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
 
         function formatTagName(tag) {

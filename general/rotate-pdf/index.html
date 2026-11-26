@@ -515,6 +515,7 @@
         let pdfJsDoc = null;
         let currentRotations = {}; // Track rotation for each page
         let allPDFs = []; // Store all uploaded PDFs
+        let baseRotations = {}; // Original /Rotate of each page
         
         async function handlePDFFiles(files) {
             for (const file of files) {
@@ -541,10 +542,12 @@
                 
                 // Initialize rotation tracking
                 const pageCount = pdfDocument.getPageCount();
+                const mergedPages = pdfDocument.getPages();
                 for (let i = 1; i <= pageCount; i++) {
                     if (!currentRotations[i]) {
                         currentRotations[i] = 0;
                     }
+                    baseRotations[i] = mergedPages[i - 1].getRotation().angle;
                 }
                 
                 generatePageGrid();
@@ -721,7 +724,8 @@
         }
         
         function rotateIndividualPage(pageNum, angle) {
-            currentRotations[pageNum] = (currentRotations[pageNum] + angle) % 360;
+            currentRotations[pageNum] = ((currentRotations[pageNum] || 0) + angle) % 360;
+            enableRotateButton();
             const container = document.getElementById(`canvas-container-${pageNum}`);
             if (container) {
                 container.style.transform = `rotate(${currentRotations[pageNum]}deg)`;
@@ -747,70 +751,61 @@
         }
         
         async function applyGlobalRotation() {
-            if (!rotationAngle) {
-                alert('Please select a rotation angle (90°, 180°, or 270°)');
-                return;
-            }
-
             if (!pdfDocument) {
                 alert('Please upload a PDF file first');
                 return;
             }
-
-            if (selectionMode === 'select' && selectedPages.size === 0) {
+            const hasIndividual = Object.values(currentRotations).some(r => r % 360 !== 0);
+            if (!rotationAngle && !hasIndividual) {
+                alert('Please select a rotation angle (90°, 180°, or 270°)');
+                return;
+            }
+            if (rotationAngle && selectionMode === 'select' && selectedPages.size === 0 && !hasIndividual) {
                 alert('Please select at least one page to rotate');
                 return;
             }
-
             // Update visual preview
             const pageCount = pdfJsDoc ? pdfJsDoc.numPages : 0;
-            for (let i = 1; i <= pageCount; i++) {
+            for (let i = 1; i <= pageCount && rotationAngle; i++) {
                 const shouldRotate = selectionMode === 'all' || selectedPages.has(i);
                 if (shouldRotate) {
                     rotateIndividualPage(i, rotationAngle);
                 }
             }
-
+            rotationAngle = null;
+            document.querySelectorAll('.rotate-btn').forEach(btn => btn.classList.remove('active'));
             // Now apply rotation to the actual PDF and save it
             document.getElementById('progressSection').style.display = 'block';
             updateProgress(20, 'Loading PDF...');
-
             try {
                 const pages = pdfDocument.getPages();
                 const totalPages = pages.length;
-
-                let pagesToRotate = [];
-                if (selectionMode === 'all') {
-                    pagesToRotate = Array.from({ length: totalPages }, (_, i) => i);
-                } else {
-                    pagesToRotate = Array.from(selectedPages).map(p => p - 1);
+                // The preview rotations (global + per-page buttons) are the source of truth
+                const pagesToRotate = [];
+                for (let i = 0; i < totalPages; i++) {
+                    const delta = ((currentRotations[i + 1] || 0) % 360 + 360) % 360;
+                    if (delta !== 0) pagesToRotate.push(i);
+                    pages[i].setRotation(degrees((baseRotations[i + 1] + delta) % 360));
                 }
-
                 updateProgress(50, `Rotating ${pagesToRotate.length} page(s)...`);
-
-                pagesToRotate.forEach(pageIndex => {
-                    const page = pages[pageIndex];
-                    const currentRotation = page.getRotation().angle;
-                    page.setRotation(degrees(currentRotation + rotationAngle));
-                });
-
                 updateProgress(80, 'Saving rotated PDF...');
-
                 rotatedPDFBytes = await pdfDocument.save();
-
                 updateProgress(100, 'Rotation complete!');
-
                 document.getElementById('rotatedCount').textContent = pagesToRotate.length;
-
                 setTimeout(() => {
                     document.getElementById('progressSection').style.display = 'none';
                     document.getElementById('resultsSection').style.display = 'block';
                 }, 500);
-
             } catch (error) {
                 alert('Error rotating PDF: ' + error.message);
                 document.getElementById('progressSection').style.display = 'none';
             }
+        }
+        function enableRotateButton() {
+            const rotateBtn = document.getElementById('rotateBtn');
+            rotateBtn.disabled = false;
+            rotateBtn.style.opacity = '1';
+            rotateBtn.style.cursor = 'pointer';
         }
 
         function selectRotation(el, angle) {
@@ -911,7 +906,7 @@
             
             const link = document.createElement('a');
             link.href = url;
-            link.download = pdfFileName.replace('.pdf', '_rotated.pdf');
+            link.download = pdfFileName.replace(/\.pdf$/i, '') + '_rotated.pdf';
             link.click();
             
             URL.revokeObjectURL(url);
@@ -926,6 +921,7 @@
             rotationAngle = null; // Reset to no selection
             selectionMode = 'all';
             currentRotations = {};
+            baseRotations = {};
             allPDFs = [];
             
             document.getElementById('rotationControls').style.display = 'none';

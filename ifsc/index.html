@@ -553,6 +553,12 @@
                 const bankName = BANK_MAP[bankCode] || `Unknown bank (${bankCode})`;
                 lastResult = { BANK: bankName, IFSC: raw, offline: true };
                 renderOfflineDetails(raw, bankCode, bankName);
+                if (err && err.message === 'HTTP 404') {
+                    document.querySelector('#bankHeader p').textContent = 'IFSC not found in the RBI branch directory';
+                    const st = document.querySelector('#fieldsGrid .field-item:last-child');
+                    st.querySelector('.field-label').innerHTML = '<i class="fas fa-triangle-exclamation"></i> Lookup Status';
+                    st.querySelector('.field-value').textContent = 'Not found - check the code. Bank name decoded from the prefix only.';
+                }
             }
         }
 
@@ -564,18 +570,18 @@
 
         function renderBreakdown(ifsc) {
             const container = document.getElementById('ifscBreakdown');
-            const padded = ifsc.padEnd(11, '');
+            const padded = ifsc.padEnd(11, ' ');
 
             const bankChars   = padded.slice(0, 4).split('');
-            const zeroChar    = padded[4] || '?';
+            const zeroChar    = padded[4].trim() || '?';
             const branchChars = padded.slice(5, 11).split('');
 
             const bankHtml = bankChars.map((c, i) =>
-                `<div class="ifsc-char ic-bank">${c || '?'}</div>`
+                `<div class="ifsc-char ic-bank">${c.trim() || '?'}</div>`
             ).join('');
 
             const branchHtml = branchChars.map(c =>
-                `<div class="ifsc-char ic-branch">${c || '?'}</div>`
+                `<div class="ifsc-char ic-branch">${c.trim() || '?'}</div>`
             ).join('');
 
             container.innerHTML = `
@@ -597,6 +603,8 @@
         }
 
         function renderDetails(data, ifsc) {
+            const esc = v => (v == null ? v : String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+            data = Object.assign({}, data, {BANK: esc(data.BANK), BRANCH: esc(data.BRANCH), CITY: esc(data.CITY), DISTRICT: esc(data.DISTRICT), STATE: esc(data.STATE), ADDRESS: esc(data.ADDRESS), MICR: esc(data.MICR), CONTACT: esc(data.CONTACT)});
             document.getElementById('detailsCard').style.display = 'block';
 
             const bankName = data.BANK || BANK_MAP[ifsc.slice(0,4)] || ifsc.slice(0,4);

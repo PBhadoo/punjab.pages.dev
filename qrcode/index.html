@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="../css/theme.css">
 
     <!-- QR Code Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     
     <style>
@@ -902,6 +902,27 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
+        // QR drawing helper (qrcode-generator, proper UTF-8 support). Returns false if data is too long.
+        function drawQR(container, text) {
+            qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+            const qr = qrcode(0, 'H');
+            qr.addData(text);
+            qr.make();
+            const n = qr.getModuleCount(), margin = 2, size = 220;
+            const cell = Math.max(1, Math.floor(size / (n + margin * 2)));
+            const dim = cell * (n + margin * 2);
+            const canvas = document.createElement('canvas');
+            canvas.width = dim; canvas.height = dim;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, dim, dim);
+            ctx.fillStyle = '#000000';
+            for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+                if (qr.isDark(r, c)) ctx.fillRect((c + margin) * cell, (r + margin) * cell, cell, cell);
+            }
+            canvas.style.maxWidth = '100%';
+            container.appendChild(canvas);
+        }
+
         // Generate QR Code
         function generateQR() {
             const data = getQRData();
@@ -914,14 +935,13 @@
             const outputDiv = document.getElementById('qrOutput');
             outputDiv.innerHTML = '';
             
-            qrCodeInstance = new QRCode(outputDiv, {
-                text: data,
-                width: 220,
-                height: 220,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
+            try {
+                drawQR(outputDiv, data);
+            } catch (err) {
+                document.getElementById('qrResult').style.display = 'none';
+                showToast('Data is too long for a QR code. Please shorten it.', true);
+                return;
+            }
             
             document.getElementById('qrResult').style.display = 'block';
         }
@@ -957,7 +977,8 @@
                     const type = document.getElementById('qrWifiType')?.value;
                     const hidden = document.getElementById('qrWifiHidden')?.checked;
                     if (!ssid) return '';
-                    return `WIFI:T:${type};S:${ssid};P:${password};H:${hidden ? 'true' : 'false'};;`;
+                    const wesc = v => String(v || '').replace(/([\\;,:"])/g, '\\$1');
+                    return `WIFI:T:${type};S:${wesc(ssid)};P:${wesc(password)};H:${hidden ? 'true' : 'false'};;`;
                 case 'vcard':
                     const fname = document.getElementById('qrVcardFname')?.value || '';
                     const lname = document.getElementById('qrVcardLname')?.value || '';
@@ -1237,14 +1258,12 @@
             const outputDiv = document.getElementById('upiQrOutput');
             outputDiv.innerHTML = '';
             
-            upiQrCodeInstance = new QRCode(outputDiv, {
-                text: upiUrl,
-                width: 220,
-                height: 220,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
+            try {
+                drawQR(outputDiv, upiUrl);
+            } catch (err) {
+                showToast('Could not generate the UPI QR code.', true);
+                return;
+            }
             
             document.getElementById('upiResult').style.display = 'block';
         }

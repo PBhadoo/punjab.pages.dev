@@ -489,8 +489,9 @@
                     const img = new Image();
                     img.src = image.data;
 
-                    await new Promise((resolve) => {
-                        img.onload = () => {
+                    await new Promise((resolve, reject) => {
+                        img.onerror = () => reject(new Error('Could not read image ' + image.name));
+                        const draw = () => {
                             const imgAspectRatio = img.width / img.height;
                             let imgWidth, imgHeight, x, y;
 
@@ -524,9 +525,18 @@
                                 y = margin;
                             }
 
-                            pdf.addImage(image.data, 'JPEG', x, y, imgWidth, imgHeight);
+                            // Re-encode via canvas so PNG/WebP/GIF/transparent images all work
+                            const c = document.createElement('canvas');
+                            c.width = img.naturalWidth;
+                            c.height = img.naturalHeight;
+                            const cx = c.getContext('2d');
+                            cx.fillStyle = '#ffffff';
+                            cx.fillRect(0, 0, c.width, c.height);
+                            cx.drawImage(img, 0, 0);
+                            pdf.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', x, y, imgWidth, imgHeight);
                             resolve();
                         };
+                        img.onload = () => { try { draw(); } catch (e) { reject(e); } };
                     });
                 }
 

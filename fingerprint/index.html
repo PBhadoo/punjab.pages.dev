@@ -674,6 +674,10 @@
                 try {
                     analysisResult = performDermatoglyphicAnalysis(analyzeImage);
                     displayAnalysisResults();
+                    if (!analysisResult.minutiae || !analysisResult.minutiae.total) {
+                        document.getElementById('analysisSubtitle').textContent = 'No ridge pattern detected - results are unreliable';
+                        showToast('No fingerprint ridges detected. Use a clear fingerprint image.');
+                    }
                 } catch (error) {
                     showToast('Error analyzing fingerprint: ' + error.message);
                     console.error(error);
@@ -3397,7 +3401,7 @@
                 document.getElementById('ridgeStats').innerHTML = `
                     <div class="minutiae-grid">
                         <div class="minutiae-stat">
-                            <div class="count">${r.ridgeCount.primaryCount || r.ridgeCount.estimated}</div>
+                            <div class="count">${r.ridgeCount.primaryCount || r.ridgeCount.estimated || 0}</div>
                             <div class="label">Ridge Count</div>
                         </div>
                         <div class="minutiae-stat">
@@ -3677,14 +3681,14 @@
                         <h5 style="color: #3b82f6; margin-bottom: 10px;"><i class="fas fa-fingerprint"></i> Print 1 (Known)</h5>
                         <p><strong>Pattern:</strong> ${comparison1.pattern.type} (${comparison1.pattern.subtype})</p>
                         <p><strong>Minutiae:</strong> ${comparison1.minutiae.total} total</p>
-                        <p><strong>Ridge Count:</strong> ${comparison1.ridgeCount.primaryCount || comparison1.ridgeCount.estimated}</p>
+                        <p><strong>Ridge Count:</strong> ${comparison1.ridgeCount.primaryCount || comparison1.ridgeCount.estimated || 0}</p>
                         <p><strong>Quality:</strong> ${comparison1.quality.grade} (${comparison1.quality.overall}%)</p>
                     </div>
                     <div style="padding: 15px; background: rgba(245, 158, 11, 0.1); border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.2);">
                         <h5 style="color: #f59e0b; margin-bottom: 10px;"><i class="fas fa-fingerprint"></i> Print 2 (Questioned)</h5>
                         <p><strong>Pattern:</strong> ${comparison2.pattern.type} (${comparison2.pattern.subtype})</p>
                         <p><strong>Minutiae:</strong> ${comparison2.minutiae.total} total</p>
-                        <p><strong>Ridge Count:</strong> ${comparison2.ridgeCount.primaryCount || comparison2.ridgeCount.estimated}</p>
+                        <p><strong>Ridge Count:</strong> ${comparison2.ridgeCount.primaryCount || comparison2.ridgeCount.estimated || 0}</p>
                         <p><strong>Quality:</strong> ${comparison2.quality.grade} (${comparison2.quality.overall}%)</p>
                     </div>
                 </div>
@@ -3750,7 +3754,7 @@
             
             text += `RIDGE ANALYSIS\n`;
             text += `--------------\n`;
-            text += `Ridge Count: ${r.ridgeCount.primaryCount || r.ridgeCount.estimated}\n`;
+            text += `Ridge Count: ${r.ridgeCount.primaryCount || r.ridgeCount.estimated || 0}\n`;
             text += `Ridge Density: ${r.ridgeCount.density}%\n\n`;
             
             text += `QUALITY ASSESSMENT\n`;
@@ -3852,7 +3856,7 @@
             
             doc.setFontSize(11);
             doc.setFont(undefined, 'normal');
-            doc.text(`Ridge Count: ${r.ridgeCount.primaryCount || r.ridgeCount.estimated}`, 25, y); y += 7;
+            doc.text(`Ridge Count: ${r.ridgeCount.primaryCount || r.ridgeCount.estimated || 0}`, 25, y); y += 7;
             doc.text(`Ridge Density: ${r.ridgeCount.density}%`, 25, y); y += 12;
             
             // Quality
@@ -3896,13 +3900,13 @@
             text += `Print 1 Analysis:\n`;
             text += `  Pattern: ${comparison1.pattern.type} (${comparison1.pattern.subtype})\n`;
             text += `  Minutiae: ${comparison1.minutiae.total}\n`;
-            text += `  Ridge Count: ${comparison1.ridgeCount.primaryCount || comparison1.ridgeCount.estimated}\n`;
+            text += `  Ridge Count: ${comparison1.ridgeCount.primaryCount || comparison1.ridgeCount.estimated || 0}\n`;
             text += `  Quality: ${comparison1.quality.grade}\n\n`;
 
             text += `Print 2 Analysis:\n`;
             text += `  Pattern: ${comparison2.pattern.type} (${comparison2.pattern.subtype})\n`;
             text += `  Minutiae: ${comparison2.minutiae.total}\n`;
-            text += `  Ridge Count: ${comparison2.ridgeCount.primaryCount || comparison2.ridgeCount.estimated}\n`;
+            text += `  Ridge Count: ${comparison2.ridgeCount.primaryCount || comparison2.ridgeCount.estimated || 0}\n`;
             text += `  Quality: ${comparison2.quality.grade}\n\n`;
             
             text += `Analysis Timestamp: ${new Date().toLocaleString()}\n\n`;
